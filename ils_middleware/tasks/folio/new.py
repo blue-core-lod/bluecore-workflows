@@ -36,9 +36,9 @@ def _check_for_existance(records: list, folio_client: FolioClient) -> tuple:
 def _push_to_xcom(records: list, task_instance):
     for record in records:
         logger.debug(record)
-        task_instance.xcom_push(
-            key=record["electronicAccess"][0]["uri"], value=record["id"]
-        )
+        uri = record["electronicAccess"][0]["uri"]
+        uuid = uri.split("/")[-1]
+        task_instance.xcom_push(key=uuid, value=record["id"])
 
 
 def _post_to_okapi(**kwargs):
@@ -95,8 +95,9 @@ def post_folio_records(**kwargs):
 
     inventory_records = []
     for instance_uri in resources:
+        instance_uuid = instance_uri.split("/")[-1]
         inventory_records.append(
-            task_instance.xcom_pull(key=instance_uri, task_ids=task_id)
+            task_instance.xcom_pull(key=instance_uuid, task_ids=task_id)
         )
 
     new_records, existing_records = _check_for_existance(
