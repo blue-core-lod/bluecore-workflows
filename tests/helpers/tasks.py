@@ -144,7 +144,7 @@ mock_resource_attributes = {
         "group": "yale",
         "target": "ils",
     },
-    "https://api.development.sinopia.io/resource/8888-9999-0000-1111": {
+    "8888-9999-0000-1111": {
         "email": "fmulder@stanford.edu",
         "group": "yale",
         "target": "ils",
@@ -296,7 +296,7 @@ def mock_task_instance(monkeypatch, tmp_path):
                 "email": mock_resource_attributes[key]["email"],
                 "group": mock_resource_attributes[key]["group"],
                 "target": mock_resource_attributes[key]["target"],
-                "resource_uri": key,
+                "resource_uri": f"https://api.development.sinopia.io/resource/{key}",
                 "resource": mock_resources[key],
             }
         elif key == "overlay_resources":
