@@ -47,6 +47,7 @@ with DAG(
     description="Cornell FOLIO DAG",
     start_date=datetime(2021, 8, 14),
     tags=["folio"],
+    schedule=None,
     catchup=False,
 ) as dag:
 

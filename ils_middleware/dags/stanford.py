@@ -49,6 +49,7 @@ with DAG(
     start_date=datetime(2021, 8, 24),
     tags=["symphony", "folio"],
     catchup=False,
+    schedule=None,
     on_failure_callback=dag_failure_callback,
 ) as dag:
 
