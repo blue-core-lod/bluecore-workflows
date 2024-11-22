@@ -33,8 +33,9 @@ def _add_local_system_id(
 
 
 def _pull_identifiers(tasks, resource_uri, instance) -> typing.Optional[str]:
+    resource_uuid = resource_uri.split("/")[-1]
     for task_id in tasks:
-        value = instance.xcom_pull(key=resource_uri, task_ids=task_id)
+        value = instance.xcom_pull(key=resource_uuid, task_ids=task_id)
         if value:
             return value
     return None
@@ -99,8 +100,9 @@ def new_local_admin_metadata(*args, **kwargs):
     sinopia_api_uri = Variable.get("sinopia_api_uri")
 
     for resource_uri in resources:
+        resource_uuid = resource_uri.split("/")[-1]
         message = task_instance.xcom_pull(
-            key=resource_uri, task_ids="sqs-message-parse"
+            key=resource_uuid, task_ids="sqs-message-parse"
         )
         resource = message.get("resource")
         group = resource.get("group")
@@ -158,4 +160,4 @@ def new_local_admin_metadata(*args, **kwargs):
             raise Exception(msg)
 
         logger.debug(f"Results of new_admin_result {new_admin_result.text}")
-        task_instance.xcom_push(key=resource_uri, value=admin_metadata_uri)
+        task_instance.xcom_push(key=resource_uuid, value=admin_metadata_uri)

@@ -24,8 +24,9 @@ def send_update_success_emails(**kwargs) -> None:
 
     ses_hook = SesHook(aws_conn_id="aws_ses_connection")
     for resource_uri in resources:
+        resource_uuid = resource_uri.split("/")[-1]
         message = task_instance.xcom_pull(
-            key=resource_uri, task_ids="sqs-message-parse"
+            key=resource_uuid, task_ids="sqs-message-parse"
         )
         email_attributes = _email_on_success_attributes(message)
         ses_hook.send_email(**email_attributes)
@@ -51,8 +52,9 @@ def send_task_failure_notifications(**kwargs) -> None:
         key="conversion_failures", task_ids="process_symphony.rdf2marc"
     )
     for resource_uri in failed_resources or []:
+        resource_uuid = resource_uri.split("/")[-1]
         message = task_instance.xcom_pull(
-            key=resource_uri, task_ids="sqs-message-parse"
+            key=resource_uuid, task_ids="sqs-message-parse"
         )
         email_attributes = _email_on_failure_attributes(message)
         ses_hook.send_email(**email_attributes)
