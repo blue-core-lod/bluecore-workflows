@@ -99,7 +99,8 @@ def load_to_s3(s3_hook, bfwork_alma_xml, instance_uri):
 
 
 def push_to_xcom(task_instance, instance_uri, bfwork_alma_xml):
-    task_instance.xcom_push(key=instance_uri, value=bfwork_alma_xml.decode("utf-8"))
+    instance_uuid = instance_uri.split("/")[-1]
+    task_instance.xcom_push(key=instance_uuid, value=bfwork_alma_xml.decode("utf-8"))
 
 
 def send_work_to_alma_s3(**kwargs):
