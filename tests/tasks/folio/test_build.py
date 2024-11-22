@@ -142,7 +142,8 @@ def test_happypath_build_records(
         folio_url=okapi_uri,
         folio_connection_id="stanford_folio",
     )
-    record = test_task_instance().xcom_pull(key=instance_uri)
+    instance_uuid = instance_uri.split("/")[-1]
+    record = test_task_instance().xcom_pull(key=instance_uuid)
 
     assert record["metadata"]["createdByUserId"].startswith(
         "faecc486-50f1-5082-a6d0-5e967e6f4786"
