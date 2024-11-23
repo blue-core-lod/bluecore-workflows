@@ -108,7 +108,8 @@ def test_parse_messages(
     assert result == "completed_parse"
 
     resource = mock_resources[0]
-    assert task_instance.xcom_pull(key=resource).get("resource") == mock_resource(
+    uuid = resource.split("/")[-1]
+    assert task_instance.xcom_pull(key=uuid).get("resource") == mock_resource(
         resource
     )
 

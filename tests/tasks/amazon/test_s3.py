@@ -38,13 +38,13 @@ def test_get_from_s3(mock_env_vars, mock_s3_hook, mock_task_instance):
     get_from_s3(task_instance=test_task_instance())
     assert (
         test_task_instance().xcom_pull(
-            key="https://api.development.sinopia.io/resource/0000-1111-2222-3333"
+            key="0000-1111-2222-3333"
         )
         == "tests/fixtures/record.mar"
     )
     assert (
         test_task_instance().xcom_pull(
-            key="https://api.development.sinopia.io/resource/4444-5555-6666-7777"
+            key="4444-5555-6666-7777"
         )
         == "tests/fixtures/record.mar"
     )
@@ -59,7 +59,7 @@ def test_send_to_s3(mock_env_vars, mock_s3_load_string, mock_task_instance):
     assert (
         json.loads(
             test_task_instance().xcom_pull(
-                key="https://api.development.sinopia.io/resource/0000-1111-2222-3333"
+                key="0000-1111-2222-3333"
             )
         )
         == marc_json
@@ -67,7 +67,7 @@ def test_send_to_s3(mock_env_vars, mock_s3_load_string, mock_task_instance):
     assert (
         json.loads(
             test_task_instance().xcom_pull(
-                key="https://api.development.sinopia.io/resource/4444-5555-6666-7777"
+                key="4444-5555-6666-7777"
             )
         )
         == marc_json
