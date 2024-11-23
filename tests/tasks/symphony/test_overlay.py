@@ -56,7 +56,7 @@ def test_overlay_marc_in_symphony(
         marc_json=MARC_JSON,
     )
     assert task_instance.xcom_pull(
-        key="https://api.development.sinopia.io/resource/0000-1111-2222-3333"
+        key="0000-1111-2222-3333"
     ).startswith(CATKEY)
 
 

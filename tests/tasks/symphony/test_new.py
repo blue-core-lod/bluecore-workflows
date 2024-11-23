@@ -50,7 +50,7 @@ def test_NewMARCtoSymphony(
     )
     assert (
         task_instance.xcom_pull(
-            key="https://api.development.sinopia.io/resource/0000-1111-2222-3333"
+            key="0000-1111-2222-3333"
         )
         == "45678"
     )
