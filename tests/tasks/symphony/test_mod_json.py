@@ -9,8 +9,6 @@ task_instance = test_task_instance()
 
 def test_to_symphony_json(mock_task_instance):  # noqa: F811
     to_symphony_json(task_instance=task_instance)
-    symphony_json = task_instance.xcom_pull(
-        key="0000-1111-2222-3333"
-    )
+    symphony_json = task_instance.xcom_pull(key="0000-1111-2222-3333")
     assert symphony_json["standard"].startswith("MARC21")
     assert symphony_json["leader"].startswith("01498nam a2200265 u 4500")

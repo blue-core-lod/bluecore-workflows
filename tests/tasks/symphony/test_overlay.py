@@ -55,9 +55,7 @@ def test_overlay_marc_in_symphony(
         catkey=CATKEY,
         marc_json=MARC_JSON,
     )
-    assert task_instance.xcom_pull(
-        key="0000-1111-2222-3333"
-    ).startswith(CATKEY)
+    assert task_instance.xcom_pull(key="0000-1111-2222-3333").startswith(CATKEY)
 
 
 def test_missing_catkey(

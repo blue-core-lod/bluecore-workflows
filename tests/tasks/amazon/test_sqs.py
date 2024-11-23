@@ -109,9 +109,7 @@ def test_parse_messages(
 
     resource = mock_resources[0]
     uuid = resource.split("/")[-1]
-    assert task_instance.xcom_pull(key=uuid).get("resource") == mock_resource(
-        resource
-    )
+    assert task_instance.xcom_pull(key=uuid).get("resource") == mock_resource(resource)
 
 
 @pytest.fixture

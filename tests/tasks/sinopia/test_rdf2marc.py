@@ -30,15 +30,11 @@ def mock_lambda(monkeypatch):
 def test_Rdf2Marc(mock_task_instance, mock_lambda):  # noqa: F811
     Rdf2Marc(task_instance=task_instance)
     assert (
-        task_instance.xcom_pull(
-            key="0000-1111-2222-3333"
-        )
+        task_instance.xcom_pull(key="0000-1111-2222-3333")
         == "airflow/0000-1111-2222-3333/record.mar"
     )
     assert (
-        task_instance.xcom_pull(
-            key="4444-5555-6666-7777"
-        )
+        task_instance.xcom_pull(key="4444-5555-6666-7777")
         == "airflow/4444-5555-6666-7777/record.mar"
     )
 

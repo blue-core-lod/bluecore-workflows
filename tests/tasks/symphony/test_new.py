@@ -48,12 +48,7 @@ def test_NewMARCtoSymphony(
         library_key="GREEN",
         marc_json={"leader": "11222999   adf", "fields": [{"tag": "245"}]},
     )
-    assert (
-        task_instance.xcom_pull(
-            key="0000-1111-2222-3333"
-        )
-        == "45678"
-    )
+    assert task_instance.xcom_pull(key="0000-1111-2222-3333") == "45678"
 
 
 @pytest.fixture
