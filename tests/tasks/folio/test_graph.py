@@ -73,21 +73,10 @@ def test_construct_graph(mock_requests, mock_task_instance):  # noqa: F811
         task_instance=test_task_instance(),
     )
 
-    assert (
-        "graph"
-        in test_task_instance()
-        .xcom_pull(
-            key="https://api.development.sinopia.io/resource/0000-1111-2222-3333"
-        )
-        .keys()
-    )
+    assert "graph" in test_task_instance().xcom_pull(key="0000-1111-2222-3333").keys()
 
     assert (
-        test_task_instance()
-        .xcom_pull(
-            key="https://api.development.sinopia.io/resource/0000-1111-2222-3333"
-        )
-        .get("work_uri")
+        test_task_instance().xcom_pull(key="0000-1111-2222-3333").get("work_uri")
         == "https://api.development.sinopia.io/resource/6497a461-42dc-42bf-b433-5e47c73f7e89"
     )
 

@@ -22,7 +22,7 @@ def mock_task_instance(monkeypatch, test_graph: rdflib.Graph):
     def mock_xcom_pull(*args, **kwargs):
         key = kwargs.get("key")
         task_ids = kwargs.get("task_ids", "")
-        if key.startswith(instance_uri):
+        if key == "b0319047-acd0-4f30-bd8b-98e6c1bac6b0":
             if task_ids.startswith("bf-graph"):
                 return {
                     "graph": test_graph.serialize(format="json-ld"),
@@ -53,7 +53,8 @@ def test_folio(mock_task_instance, test_graph: rdflib.Graph):  # noqa: F811
         task_groups_ids=[""],
     )
 
-    title_list = test_task_instance().xcom_pull(key=instance_uri)
+    instance_uuid = instance_uri.split("/")[-1]
+    title_list = test_task_instance().xcom_pull(key=instance_uuid)
 
     # Main Title
     assert title_list[0].startswith("Scrivere di Islam")
@@ -70,7 +71,8 @@ def test_folio_work(mock_task_instance, test_graph: rdflib.Graph):  # noqa: F811
         task_groups_ids=[""],
     )
 
-    contributors_list = test_task_instance().xcom_pull(key=instance_uri)
+    instance_uuid = instance_uri.split("/")[-1]
+    contributors_list = test_task_instance().xcom_pull(key=instance_uuid)
 
     # First Contributor Name (tests for both options as SPARQL query is not
     # explictly defining an order

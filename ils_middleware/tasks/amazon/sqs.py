@@ -43,9 +43,10 @@ def parse_messages(**kwargs) -> str:
     resources_with_errors = []
 
     resource_uri = message["resource"]["uri"]
+    resource_uuid = resource_uri.split("/")[-1]
     try:
         task_instance.xcom_push(
-            key=resource_uri,
+            key=resource_uuid,
             value={
                 "email": message["user"]["email"],
                 "group": message["group"],

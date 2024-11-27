@@ -68,8 +68,9 @@ def send_instance_to_alma_s3(**kwargs):
             replace=True,
         )
         # save to xcom
+        instance_uuid = instance_uri.split("/")[-1]
         task_instance.xcom_push(
-            key=instance_uri, value=instance_alma_xml.decode("utf-8")
+            key=instance_uuid, value=instance_alma_xml.decode("utf-8")
         )
         logger.info(f"Saved BFInstance description for {instance_uri} to alma.")
         logger.info(f"bf_instance_alma_xml: {instance_alma_xml.decode('utf-8')}")

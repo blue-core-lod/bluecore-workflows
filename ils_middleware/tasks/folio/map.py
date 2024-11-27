@@ -85,10 +85,11 @@ def _build_and_query_graph(**kwargs) -> list:
 
     query_params = {}
     task_id = _task_id(task_groups)
+    instance_uuid = instance_uri.split("/")[-1]
 
     if uri_type.startswith("bf_work"):
         query_params[uri_type] = task_instance.xcom_pull(
-            key=instance_uri, task_ids=task_id
+            key=instance_uuid, task_ids=task_id
         ).get("work_uri")
     else:
         query_params[uri_type] = instance_uri
@@ -97,7 +98,8 @@ def _build_and_query_graph(**kwargs) -> list:
 
     query = template.format(**query_params)
     graph = rdflib.Graph()
-    json_ld = task_instance.xcom_pull(key=instance_uri, task_ids=task_id).get("graph")
+
+    json_ld = task_instance.xcom_pull(key=instance_uuid, task_ids=task_id).get("graph")
     graph.parse(data=json_ld, format="json-ld")
     logging.info(f"SPARQL:\n{query}")
     return [row for row in graph.query(query)]
@@ -119,5 +121,6 @@ def map_to_folio(**kwargs):
             bf_class=bf_class,
             **kwargs,
         )
-        task_instance.xcom_push(key=instance_uri, value=values)
+        instance_uuid = instance_uri.split("/")[-1]
+        task_instance.xcom_push(key=instance_uuid, value=values)
     return "mapping_complete"

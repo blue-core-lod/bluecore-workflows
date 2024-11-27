@@ -67,7 +67,8 @@ def NewInstancetoAlma(**kwargs):
     if status == 200:
         xml_response = ET.fromstring(result)
         mms_id = xml_response.xpath("//mms_id/text()")
-        task_instance.xcom_push(key=instance_uri, value=mms_id)
+        instance_uuid = instance_uri.split("/")[-1]
+        task_instance.xcom_push(key=instance_uuid, value=mms_id)
     elif status == 400:
         # run xslt on the result in case the response is 400 and we need to update the record
         put_mms_id_str = parse_400(result)
@@ -110,7 +111,8 @@ def putInstanceToAlma(
     put_update_status = put_update.status_code
     match put_update_status:
         case 200:
-            task_instance.xcom_push(key=instance_uri, value=put_mms_id_str)
+            instance_uuid = instance_uri.split("/")[-1]
+            task_instance.xcom_push(key=instance_uuid, value=put_mms_id_str)
         case 500:
             raise Exception(f"Internal server error from Alma API: {put_update_status}")
         case _:

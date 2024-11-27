@@ -16,8 +16,9 @@ def NewMARCtoSymphony(**kwargs):
     )
 
     for resource_uri in resources:
+        resource_uuid = resource_uri.split("/")[-1]
         marc_json = task_instance.xcom_pull(
-            key=resource_uri, task_ids="process_symphony.convert_to_symphony_json"
+            key=resource_uuid, task_ids="process_symphony.convert_to_symphony_json"
         )
 
         payload = {
@@ -54,9 +55,9 @@ def NewMARCtoSymphony(**kwargs):
                 }
             ],
         }
-
+        resource_uuid = resource_uri.split("/")[-1]
         task_instance.xcom_push(
-            key=resource_uri,
+            key=resource_uuid,
             value=SymphonyRequest(
                 **kwargs,
                 data=json.dumps(payload),

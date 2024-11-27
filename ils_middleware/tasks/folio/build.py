@@ -294,10 +294,12 @@ def _inventory_record(**kwargs) -> dict:
         "source": "SINOPIA",
         "electronicAccess": [_electronic_access(**kwargs)],
     }
+    instance_uuid = instance_uri.split("/")[-1]
+
     for folio_field in FOLIO_FIELDS:
         post_processing = transforms.get(folio_field, _default_transform)
         task_id = _task_ids(task_groups, folio_field)
-        raw_values = task_instance.xcom_pull(key=instance_uri, task_ids=task_id)
+        raw_values = task_instance.xcom_pull(key=instance_uuid, task_ids=task_id)
         if raw_values:
             record_field, values = post_processing(
                 values=raw_values,
@@ -335,5 +337,6 @@ def build_records(**kwargs):
             folio_client=folio_client,
             **kwargs,
         )
-        task_instance.xcom_push(key=resource_uri, value=inventory_rec)
+        resource_uuid = resource_uri.split("/")[-1]
+        task_instance.xcom_push(key=resource_uuid, value=inventory_rec)
     return "build-complete"

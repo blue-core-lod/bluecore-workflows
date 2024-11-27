@@ -52,7 +52,8 @@ def Rdf2Marc(**kwargs):
             msg = f"RDF2MARC conversion failed for {instance_uri}, error: {payload.get('errorMessage')}"
             conversion_failures[instance_uri] = msg
         elif result["StatusCode"] == 200:
-            task_instance.xcom_push(key=instance_uri, value=marc_path)
+            instance_uuid = instance_uri.split("/")[-1]
+            task_instance.xcom_push(key=instance_uuid, value=marc_path)
         else:
             msg = f"RDF2MARC conversion failed for {instance_uri}: {result['FunctionError']}"
             conversion_failures[instance_uri] = msg

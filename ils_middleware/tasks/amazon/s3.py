@@ -28,7 +28,8 @@ def get_from_s3(**kwargs):
             key=f"marc/airflow/{instance_id}/record.mar",
             bucket_name=Variable.get("marc_s3_bucket"),
         )
-        task_instance.xcom_push(key=instance_uri, value=temp_file)
+        instance_uuid = instance_uri.split("/")[-1]
+        task_instance.xcom_push(key=instance_uuid, value=temp_file)
 
 
 def send_to_s3(**kwargs):
@@ -45,7 +46,7 @@ def send_to_s3(**kwargs):
         instance_path = urlparse(instance_uri).path
         instance_id = path.split(instance_path)[-1]
         temp_file = task_instance.xcom_pull(
-            key=instance_uri, task_ids="process_symphony.download_marc"
+            key=instance_id, task_ids="process_symphony.download_marc"
         )
         marc_record = marc_record_from_temp_file(instance_id, temp_file)
         s3_hook.load_string(
@@ -54,7 +55,7 @@ def send_to_s3(**kwargs):
             Variable.get("marc_s3_bucket"),
             replace=True,
         )
-        task_instance.xcom_push(key=instance_uri, value=marc_record.as_json())
+        task_instance.xcom_push(key=instance_id, value=marc_record.as_json())
 
 
 def marc_record_from_temp_file(instance_id, temp_file):

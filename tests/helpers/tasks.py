@@ -60,7 +60,7 @@ def test_mms_id():
 
 
 mock_resources = {
-    "https://api.development.sinopia.io/resource/0000-1111-2222-3333": {
+    "0000-1111-2222-3333": {
         "user": "jpnelson",
         "group": "stanford",
         "editGroups": ["other", "pcc"],
@@ -99,7 +99,7 @@ mock_resources = {
         "uri": "https://api.development.sinopia.io/resource/7b55e6f7-f91e-4c7a-bbcd-c074485ad18d",
         "timestamp": "2021-10-29T20:30:58.821Z",
     },
-    "https://api.development.sinopia.io/resource/4444-5555-6666-7777": {
+    "4444-5555-6666-7777": {
         "user": "jpnelson",
         "group": "stanford",
         "editGroups": ["other", "pcc"],
@@ -127,24 +127,24 @@ mock_resources = {
         "uri": "https://api.development.sinopia.io/resource/7b55e6f7-f91e-4c7a-bbcd-c074485ad18d",
         "timestamp": "2021-10-29T20:30:58.821Z",
     },
-    "https://api.development.sinopia.io/resource/8888-9999-0000-1111": {
+    "8888-9999-0000-1111": {
         "user": "jpnelson",
         "group": "stanford",
     },
 }
 
 mock_resource_attributes = {
-    "https://api.development.sinopia.io/resource/0000-1111-2222-3333": {
+    "0000-1111-2222-3333": {
         "email": "dscully@stanford.edu",
         "group": "stanford",
         "target": "ils",
     },
-    "https://api.development.sinopia.io/resource/4444-5555-6666-7777": {
+    "4444-5555-6666-7777": {
         "email": "fmulder@stanford.edu",
         "group": "yale",
         "target": "ils",
     },
-    "https://api.development.sinopia.io/resource/8888-9999-0000-1111": {
+    "8888-9999-0000-1111": {
         "email": "fmulder@stanford.edu",
         "group": "yale",
         "target": "ils",
@@ -222,7 +222,7 @@ folio_properties = {
 }
 
 folio_ids = {
-    "https://api.development.sinopia.io/resource/0000-1111-2222-3333": {
+    "0000-1111-2222-3333": {
         "id": "98a0337a-ec22-53aa-8ffc-933a86d10159",
         "hrid": "in000789",
         "electronicAccess": [
@@ -231,7 +231,7 @@ folio_ids = {
             }
         ],
     },
-    "https://api.development.sinopia.io/resource/4444-5555-6666-7777": {
+    "4444-5555-6666-7777": {
         "id": "147b1171-740e-513e-84d5-b63a9642792c",
         "hrid": "in000001234",
         "electronicAccess": [
@@ -296,7 +296,7 @@ def mock_task_instance(monkeypatch, tmp_path):
                 "email": mock_resource_attributes[key]["email"],
                 "group": mock_resource_attributes[key]["group"],
                 "target": mock_resource_attributes[key]["target"],
-                "resource_uri": key,
+                "resource_uri": f"https://api.development.sinopia.io/resource/{key}",
                 "resource": mock_resources[key],
             }
         elif key == "overlay_resources":

@@ -111,8 +111,9 @@ def test_happypath_post_folio_record(
         task_groups_ids=[""],
     )
 
+    instance_uuid = instance_uri.split("/")[-1]
     assert (
-        test_task_instance().xcom_pull(key=instance_uri)
+        test_task_instance().xcom_pull(key=instance_uuid)
     ) == "147b1171-740e-513e-84d5-b63a9642792c"
 
 

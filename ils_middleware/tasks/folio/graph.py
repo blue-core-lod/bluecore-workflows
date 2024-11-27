@@ -30,8 +30,9 @@ def construct_graph(**kwargs):
     resources = task_instance.xcom_pull(key="resources", task_ids="sqs-message-parse")
 
     for instance_uri in resources:
+        instance_uuid = instance_uri.split("/")[-1]
         resource = task_instance.xcom_pull(
-            key=instance_uri, task_ids="sqs-message-parse"
+            key=instance_uuid, task_ids="sqs-message-parse"
         ).get("resource")
         work_refs = resource.get("bfWorkRefs")
         if len(work_refs) < 1:
@@ -41,7 +42,7 @@ def construct_graph(**kwargs):
         ]  # Grabs the first Work URI, may need a way to specify a work
         graph = _build_graph(resource.get("data"), work_uri)
         task_instance.xcom_push(
-            key=instance_uri,
+            key=instance_uuid,
             value={"graph": graph.serialize(format="json-ld"), "work_uri": work_uri},
         )
     return "constructed_graphs"

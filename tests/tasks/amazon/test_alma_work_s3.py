@@ -177,8 +177,9 @@ def test_push_to_xcom():
     instance_uri = "http://example.com/instance"
     bfwork_alma_xml = b"<rdf:RDF></rdf:RDF>"
     push_to_xcom(mock_task_instance, instance_uri, bfwork_alma_xml)
+    instance_uuid = instance_uri.split("/")[-1]
     mock_task_instance.xcom_push.assert_called_once_with(
-        key=instance_uri, value=bfwork_alma_xml.decode("utf-8")
+        key=instance_uuid, value=bfwork_alma_xml.decode("utf-8")
     )
 
 
@@ -268,6 +269,6 @@ def test_send_work_to_alma_s3(
     assert expected_value == actual_value
 
     mock_task_instance.xcom_push.assert_called_once_with(
-        key=URIRef("https://example.com/resource/instance_uri"),
+        key="instance_uri",
         value=mock_task_instance.xcom_push.call_args[1]["value"],
     )

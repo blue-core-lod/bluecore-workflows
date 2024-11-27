@@ -61,16 +61,12 @@ def test_new_local_admin_metadata(
     )
 
     assert (
-        test_task_instance().xcom_pull(
-            key="https://api.development.sinopia.io/resource/0000-1111-2222-3333"
-        )
+        test_task_instance().xcom_pull(key="0000-1111-2222-3333")
         == "https://api.development.sinopia.io/resource/1a3cebda-34b9-4e15-bc79-f6a5f915ce76"
     )
 
     assert (
-        test_task_instance().xcom_pull(
-            key="https://api.development.sinopia.io/resource/4444-5555-6666-7777"
-        )
+        test_task_instance().xcom_pull(key="4444-5555-6666-7777")
         == "https://api.development.sinopia.io/resource/1a3cebda-34b9-4e15-bc79-f6a5f915ce76"
     )
 
