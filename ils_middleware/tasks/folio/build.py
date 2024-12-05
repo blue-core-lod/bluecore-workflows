@@ -245,6 +245,8 @@ def _user_folio_id(okapi_url: str, folio_user: str) -> str:
 transforms = {
     "identifiers.isbn": _identifiers,
     "identifiers.oclc": _identifiers,
+    "identifiers.doi": _identifiers,
+    "identifiers.lccn": _identifiers,
     "instance_format": _instance_format_ids,
     "instance_type": _instance_type_id,
     "language": _language,
