@@ -58,6 +58,7 @@ BF_TO_FOLIO_MAP = {
     },
     "publication": {"template": bf_instance_map.publication, "uri": "instance"},
     "subjects": {"template": bf_work_map.subject, "uri": "work"},
+    "genre": {"template": bf_work_map.genre, "uri": "work"},
     "title": {
         "template": bf_instance_map.title,
         "uri": "instance",
