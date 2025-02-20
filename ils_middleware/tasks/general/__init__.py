@@ -1,4 +1,14 @@
+import httpx
+
 from airflow.sdk import get_current_context
+
+
+def get_resource(resource_uri: str) -> dict:
+    """Retrieves the Resource from Bluecore API"""
+    result = httpx.get(resource_uri)
+    if result.status_code < 400:
+        return result.json()
+    return {}
 
 
 def message_from_context(**kwargs):
