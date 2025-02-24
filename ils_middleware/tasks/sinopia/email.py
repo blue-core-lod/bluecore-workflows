@@ -4,8 +4,6 @@ from airflow.providers.amazon.aws.hooks.ses import SesHook
 
 import logging
 
-from honeybadger import honeybadger
-
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +40,7 @@ def send_task_failure_notifications(**kwargs) -> None:
     )
 
     for resource_uri in bad_resources or []:
-        honeybadger.notify(
+        logger.error(
             f"Unable to determine user to notify for resource: {resource_uri}",
             context=err_msg_context,
         )
@@ -64,7 +62,6 @@ def send_task_failure_notifications(**kwargs) -> None:
 
 
 def notify_and_log(err_msg: str, err_msg_context: dict) -> None:
-    honeybadger.notify(err_msg, context=err_msg_context)
     logger.error(f"{err_msg}: err_msg_context={err_msg_context}")
 
 
