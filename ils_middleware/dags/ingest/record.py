@@ -4,10 +4,11 @@ import logging
 from datetime import datetime
 
 from airflow.decorators import dag, task
-from airflow.operators.python import get_current_context
+from airflow.operators.python import get_current_context, PythonVirtualenvOperator
 
 from ils_middleware.tasks.amazon.bluecore_records_s3 import get_file
 from ils_middleware.tasks.bluecore.batch import is_zip, parse_file_to_graph
+from ils_middleware.tasks.bluecore.storage import get_bluecore_db, store_bluecore_resources
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +17,7 @@ logger = logging.getLogger(__name__)
      catchup=False,
      tags=['ingest', 'record'],
      default_args={"owner": "airflow"},)
-def loader():
+def resource_loader():
     @task()
     def ingest():
         context = get_current_context()
@@ -49,17 +50,22 @@ def loader():
     def process_zip(**kwargs):
         logger.info(f"Process zip file")
 
-    @task(trigger_rule="one_success")
-    def store(*args, **kwargs):
-        record=kwargs.get("record")
-        logger.info(f"Storing data {record}")
+
+    @task
+    def bluecore_db_info(**kwargs):
+        return get_bluecore_db()
+
 
     file_path = ingest()
     next_task = choose_processing(file=file_path) 
     records = process(file=file_path)
     process_zip_task = process_zip(file=file_path)
+    bluecore_db = bluecore_db_info()
 
     next_task >> [records, process_zip_task]
     process_zip_task >> records
-    store.expand(record=records)
-loader()
+
+    store_bluecore_resources(records=records, bluecore_db=bluecore_db)
+
+
+resource_loader()
