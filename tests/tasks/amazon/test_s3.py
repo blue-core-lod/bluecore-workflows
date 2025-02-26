@@ -9,7 +9,7 @@ from airflow.models.taskinstance import TaskInstance
 
 from ils_middleware.tasks.amazon.s3 import get_from_s3, send_to_s3
 
-from tasks import test_task_instance, mock_task_instance, marc_as_json
+from tasks import test_task_instance, mock_task_instance, marc_as_json # noqa
 
 
 @pytest.fixture
@@ -33,7 +33,7 @@ def mock_s3_load_string():
         yield mocked
 
 
-def test_get_from_s3(mock_env_vars, mock_s3_hook, mock_task_instance):
+def test_get_from_s3(mock_env_vars, mock_s3_hook, mock_task_instance):  # noqa
     """Test downloading a file from S3 into a temp file"""
     get_from_s3(task_instance=test_task_instance())
     assert (
@@ -46,7 +46,7 @@ def test_get_from_s3(mock_env_vars, mock_s3_hook, mock_task_instance):
     )
 
 
-def test_send_to_s3(mock_env_vars, mock_s3_load_string, mock_task_instance):
+def test_send_to_s3(mock_env_vars, mock_s3_load_string, mock_task_instance):  # noqa
     """Test sending a file to s3"""
 
     send_to_s3(task_instance=test_task_instance())
