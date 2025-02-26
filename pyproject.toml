@@ -24,14 +24,12 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "black",
-    "flake8",
     "mypy",
     "pytest",
     "pytest-cov",
     "pytest-mock",
     "types-mock",
-    "requests-mock"
+    "requests-mock",
 ]
 
 [build-system]
