@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Blue Core Workflows using Apache Airflow"
 readme = "README.md"
 authors = [{ name = "Jeremy Nelson", email = "jpnelson@stanford.edu"}]
-requires-python = ">=3.11,<3.13"
+requires-python = ">=3.12"
 
 dependencies = [
     "pymarc",
@@ -19,7 +19,8 @@ dependencies = [
     "numpy",
     "pendulum",
     "psycopg2-binary>=2.9.10",
-    "boto3"
+    "boto3",
+    "blue-core-data-models>=0.2.0",
 ] 
 
 [dependency-groups]

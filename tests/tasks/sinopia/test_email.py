@@ -14,7 +14,6 @@ from ils_middleware.tasks.sinopia.email import (
     send_notification_emails,
     send_update_success_emails,
     send_task_failure_notifications,
-    honeybadger,  # for spying on notifications
     logger,  # for spying on logging
 )
 
@@ -118,7 +117,6 @@ def test_send_task_failure_notifications(
     execution_date = datetime(2021, 9, 21)
     task_instance = test_task_instance()
 
-    hb_notify_spy = mocker.spy(honeybadger, "notify")
     logger_spy = mocker.spy(logger, "error")
 
     mock_ses_hook_obj = mocker.Mock(SesHook)
