@@ -32,6 +32,7 @@ dev = [
     "types-mock",
     "requests-mock",
     "ruff>=0.9.7",
+    "apache-airflow-providers-postgres>=6.1.0",
 ]
 
 [build-system]
