@@ -12,7 +12,6 @@ def get_file(**kwargs):
     if file_str.startswith("s3"):
         bucket_name=kwargs["bucket"]
         s3_hook = S3Hook(aws_conn_id=aws_conn_id)
-        logger.info(f"S3 conn {type(s3_hook.config)}\n{dir(s3_hook.config)}")
         local_file_path = s3_hook.download_file(
             key=file_str,
             bucket_name=bucket_name,
