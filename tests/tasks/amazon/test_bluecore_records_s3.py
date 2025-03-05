@@ -1,4 +1,4 @@
-import pytest
+import pytest  # noqa
 
 from ils_middleware.tasks.amazon.bluecore_records_s3 import get_file, httpx
 
@@ -15,7 +15,7 @@ class MockHTTPXResponse(object):
 class MockS3Hook(object):
 
     def download_file(self, **kwargs):
-        return f"/tmp/bluecore_12275150.jsonld"
+        return "/tmp/bluecore_12275150.jsonld"
 
 
 def test_get_file_s3(mocker):

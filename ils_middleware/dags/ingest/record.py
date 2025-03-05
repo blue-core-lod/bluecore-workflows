@@ -4,7 +4,7 @@ import logging
 from datetime import datetime
 
 from airflow.decorators import dag, task
-from airflow.operators.python import get_current_context, PythonVirtualenvOperator
+from airflow.operators.python import get_current_context
 
 from ils_middleware.tasks.amazon.bluecore_records_s3 import get_file
 from ils_middleware.tasks.bluecore.batch import is_zip, parse_file_to_graph
@@ -48,7 +48,7 @@ def resource_loader():
 
     @task
     def process_zip(**kwargs):
-        logger.info(f"Process zip file")
+        logger.info("Process zip file")
 
 
     @task
