@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
      default_args={"owner": "airflow"},)
 def resource_loader():
     @task()
-    def ingest():
+    def ingest() -> str:
         context = get_current_context()
         params = context.get("params")
         if params is None:
@@ -32,15 +32,15 @@ def resource_loader():
         return local_file_path
 
     @task.branch(task_id="process_choice")
-    def choose_processing(**kwargs):
-        file_path = kwargs.get("file")
+    def choose_processing(**kwargs) -> list:
+        file_path = kwargs.get("file", "")
         if is_zip(file_path):
             return ['process_zip']
         return ['process']
 
     @task(trigger_rule="one_success")
-    def process(*args, **kwargs):
-        file_path = kwargs.get("file")
+    def process(*args, **kwargs) -> list:
+        file_path = kwargs.get("file", "")
         logger.info(f"Processing data {file_path}")
         resources = parse_file_to_graph(file_path)
         logger.info(f"{len(resources)} Resources to process")
@@ -48,11 +48,12 @@ def resource_loader():
 
     @task
     def process_zip(**kwargs):
+        # Placeholder to be implemented in a follow-up PR
         logger.info("Process zip file")
 
 
     @task
-    def bluecore_db_info(**kwargs):
+    def bluecore_db_info(**kwargs) -> str:
         return get_bluecore_db()
 
 
