@@ -20,7 +20,6 @@ dependencies = [
     "pendulum",
     "psycopg2-binary>=2.9.10",
     "boto3",
-    "blue-core-data-models>=0.2.0",
 ] 
 
 [dependency-groups]

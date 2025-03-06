@@ -460,27 +460,12 @@ wheels = [
 ]
 
 [[package]]
-name = "blue-core-data-models"
-version = "0.2.0"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "alembic" },
-    { name = "psycopg2-binary" },
-    { name = "rdflib" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/af/cc/f369b50184f19fce9e6c137017ff39d68007777633b702d785cba3e245b0/blue_core_data_models-0.2.0.tar.gz", hash = "sha256:1fe36218ced33112298043c0618dcd5e160112803259e549302d57e1bfe336b8", size = 6360 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/de/38/db8ca954794454dd56ebb57e61c3c97646cbf6a7c1350b51b4c8ac77d522/blue_core_data_models-0.2.0-py3-none-any.whl", hash = "sha256:ca645e6bd8efba5547949f8678d3872aa8023cc7498228ff9d9a897af581bdcd", size = 6700 },
-]
-
-[[package]]
 name = "bluecore-workflows"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
     { name = "apache-airflow-providers-amazon" },
-    { name = "blue-core-data-models" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
@@ -510,7 +495,6 @@ dev = [
 requires-dist = [
     { name = "apache-airflow", specifier = ">=2.10.5" },
     { name = "apache-airflow-providers-amazon", specifier = ">=9.2.0" },
-    { name = "blue-core-data-models", specifier = ">=0.2.0" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
