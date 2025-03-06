@@ -72,13 +72,13 @@ x-airflow-common:
     AIRFLOW_VAR_STANFORD_FOLIO_LOGIN: 'USERNAME'
     AIRFLOW_VAR_STANFORD_FOLIO_PASSWORD: 'PASSWORD'
     AIRFLOW_VAR_STANFORD_FOLIO_AUTH_URL: 'https://okapi-folio.dev.sul.stanford.edu/authn/login'
-    HONEYBADGER_API_KEY: ${HONEYBADGER_API_KEY:-}
     LOGLEVEL: ${LOGLEVEL:-DEBUG}
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
   volumes:
     - ./ils_middleware:/opt/airflow/ils_middleware
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
+    - ./uploads:/opt/airflow/uploads
   user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
   depends_on:
     redis:

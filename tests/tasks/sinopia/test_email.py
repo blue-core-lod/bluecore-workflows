@@ -14,7 +14,6 @@ from ils_middleware.tasks.sinopia.email import (
     send_notification_emails,
     send_update_success_emails,
     send_task_failure_notifications,
-    honeybadger,  # for spying on notifications
     logger,  # for spying on logging
 )
 
@@ -118,7 +117,6 @@ def test_send_task_failure_notifications(
     execution_date = datetime(2021, 9, 21)
     task_instance = test_task_instance()
 
-    hb_notify_spy = mocker.spy(honeybadger, "notify")
     logger_spy = mocker.spy(logger, "error")
 
     mock_ses_hook_obj = mocker.Mock(SesHook)
@@ -136,10 +134,6 @@ def test_send_task_failure_notifications(
         "task_instance": task_instance,
     }
     expected_err_context = {"parent_task_ids": [], "kwargs": expected_kwargs}
-    hb_notify_spy.assert_called_with(
-        "Error executing upstream task for https://api.development.sinopia.io/resource/8888-9999-0000-1111",
-        context=expected_err_context,
-    )
     logger_spy.assert_called_with(
         f"Error executing upstream task for https://api.development.sinopia.io/resource/8888-9999-0000-1111: err_msg_context={expected_err_context}"  # noqa: E501
     )
