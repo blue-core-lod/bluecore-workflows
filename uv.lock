@@ -460,17 +460,17 @@ wheels = [
 ]
 
 [[package]]
-name = "blue-core-data-models"
-version = "0.2.0"
+name = "bluecore-models"
+version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
     { name = "psycopg2-binary" },
     { name = "rdflib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/af/cc/f369b50184f19fce9e6c137017ff39d68007777633b702d785cba3e245b0/blue_core_data_models-0.2.0.tar.gz", hash = "sha256:1fe36218ced33112298043c0618dcd5e160112803259e549302d57e1bfe336b8", size = 6360 }
+sdist = { url = "https://files.pythonhosted.org/packages/9b/05/6c44ff24012a47ca2db8792081ea3f005499c18f4d9a1cd413168b283e9f/bluecore_models-0.2.1.tar.gz", hash = "sha256:76f5e329550c5e14956b6e0b8f6b8b132906a2a8658fd786322325e5bceecd47", size = 30072 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/de/38/db8ca954794454dd56ebb57e61c3c97646cbf6a7c1350b51b4c8ac77d522/blue_core_data_models-0.2.0-py3-none-any.whl", hash = "sha256:ca645e6bd8efba5547949f8678d3872aa8023cc7498228ff9d9a897af581bdcd", size = 6700 },
+    { url = "https://files.pythonhosted.org/packages/b4/a9/caa46053c5e33b1d2055eff29349f6c6e6b8bbe140687da3f392ddfc3686/bluecore_models-0.2.1-py3-none-any.whl", hash = "sha256:83b1507930af1717f52b836c05e7e543c7b09291a89af3cc93cf20f0b30052e9", size = 7289 },
 ]
 
 [[package]]
@@ -480,7 +480,7 @@ source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
     { name = "apache-airflow-providers-amazon" },
-    { name = "blue-core-data-models" },
+    { name = "bluecore-models" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
@@ -510,7 +510,7 @@ dev = [
 requires-dist = [
     { name = "apache-airflow", specifier = ">=2.10.5" },
     { name = "apache-airflow-providers-amazon", specifier = ">=9.2.0" },
-    { name = "blue-core-data-models", specifier = ">=0.2.0" },
+    { name = "bluecore-models", specifier = ">=0.2.1" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
