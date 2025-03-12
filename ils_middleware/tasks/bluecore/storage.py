@@ -11,7 +11,7 @@ def get_bluecore_db():
 
 
 @task.virtualenv(
-    requirements=["blue-core-data-models"],
+    requirements=["bluecore-models"],
     system_site_packages=False,
 )
 def store_bluecore_resources(**kwargs):
