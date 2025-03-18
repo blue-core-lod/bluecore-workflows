@@ -23,7 +23,6 @@ def mock_variable(monkeypatch):
 
 @pytest.mark.parametrize("dag_path", DAG_PATHS)
 def test_dag_integrity(dag_path, mock_variable):
-
     module = _import_file(dag_path.name, dag_path)
 
     dag_objects = [var for var in vars(module).values() if isinstance(var, models.DAG)]

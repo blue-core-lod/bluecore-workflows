@@ -6,11 +6,12 @@ from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
 logger = logging.getLogger(__name__)
 
+
 def get_file(**kwargs):
     aws_conn_id = kwargs.get("aws_conn_id", "aws_bluecore_s3")
     file_str = kwargs.get("file")
     if file_str.startswith("s3"):
-        bucket_name=kwargs["bucket"]
+        bucket_name = kwargs["bucket"]
         s3_hook = S3Hook(aws_conn_id=aws_conn_id)
         local_file_path = s3_hook.download_file(
             key=file_str,

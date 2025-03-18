@@ -9,7 +9,7 @@ from airflow.models.taskinstance import TaskInstance
 
 from ils_middleware.tasks.amazon.s3 import get_from_s3, send_to_s3
 
-from tasks import test_task_instance, mock_task_instance, marc_as_json # noqa
+from tasks import test_task_instance, mock_task_instance, marc_as_json  # noqa
 
 
 @pytest.fixture

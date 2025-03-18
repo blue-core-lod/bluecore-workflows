@@ -40,7 +40,7 @@ def send_task_failure_notifications(**kwargs) -> None:
     )
 
     for resource_uri in bad_resources or []:
-        logger.error(
+        logger.error(  # type: ignore
             f"Unable to determine user to notify for resource: {resource_uri}",
             context=err_msg_context,
         )

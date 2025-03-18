@@ -173,7 +173,6 @@ def test_not_local_admin_templatet(mock_requests):
 
 
 def test_dups_in_retrieve_all_metadata(mock_requests):
-
     result = _retrieve_all_metadata(
         [
             "https://api.sinopia.io/resource/1234abcde",

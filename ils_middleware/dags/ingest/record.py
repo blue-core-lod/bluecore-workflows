@@ -1,4 +1,5 @@
 """Record Loader Workflow for a single file."""
+
 import logging
 
 from datetime import datetime
@@ -8,15 +9,21 @@ from airflow.operators.python import get_current_context
 
 from ils_middleware.tasks.amazon.bluecore_records_s3 import get_file
 from ils_middleware.tasks.bluecore.batch import is_zip, parse_file_to_graph
-from ils_middleware.tasks.bluecore.storage import get_bluecore_db, store_bluecore_resources
+from ils_middleware.tasks.bluecore.storage import (
+    get_bluecore_db,
+    store_bluecore_resources,
+)
 
 logger = logging.getLogger(__name__)
 
-@dag(schedule_interval=None, 
-     start_date=datetime(2025, 2, 20), 
-     catchup=False,
-     tags=['ingest', 'record'],
-     default_args={"owner": "airflow"},)
+
+@dag(
+    schedule_interval=None,
+    start_date=datetime(2025, 2, 20),
+    catchup=False,
+    tags=["ingest", "record"],
+    default_args={"owner": "airflow"},
+)
 def resource_loader():
     @task()
     def ingest() -> str:
@@ -35,8 +42,8 @@ def resource_loader():
     def choose_processing(**kwargs) -> list:
         file_path = kwargs.get("file", "")
         if is_zip(file_path):
-            return ['process_zip']
-        return ['process']
+            return ["process_zip"]
+        return ["process"]
 
     @task(trigger_rule="one_success")
     def process(*args, **kwargs) -> list:
@@ -51,14 +58,12 @@ def resource_loader():
         # Placeholder to be implemented in a follow-up PR
         logger.info("Process zip file")
 
-
     @task
     def bluecore_db_info(**kwargs) -> str:
         return get_bluecore_db()
 
-
     file_path = ingest()
-    next_task = choose_processing(file=file_path) 
+    next_task = choose_processing(file=file_path)
     records = process(file=file_path)
     process_zip_task = process_zip(file=file_path)
     bluecore_db = bluecore_db_info()

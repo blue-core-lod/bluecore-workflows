@@ -38,7 +38,9 @@ def mock_new_request(monkeypatch, mocker: MockerFixture):
 
 
 def test_NewMARCtoSymphony(
-    mock_connection, mock_new_request, mock_task_instance  # noqa: F811
+    mock_connection,
+    mock_new_request,
+    mock_task_instance,  # noqa: F811
 ):  # noqa: F811
     """Tests NewMARCtoSymphony"""
     NewMARCtoSymphony(

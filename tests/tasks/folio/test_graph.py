@@ -104,6 +104,5 @@ def test_missing_workref(mock_requests, mock_bad_work_task_instance):
 
 
 def test_missing_work_build_graph(mock_requests, mock_bad_work_task_instance):
-
     with pytest.raises(ValueError, match=f"Error retrieving {work_uri}"):
         _build_graph([], work_uri)

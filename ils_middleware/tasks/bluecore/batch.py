@@ -3,7 +3,12 @@ import pathlib
 
 import rdflib
 
-from bluecore.utils.graph import BF, generate_entity_graph, generate_other_resources, init_graph
+from bluecore.utils.graph import (
+    BF,
+    generate_entity_graph,
+    generate_other_resources,
+    init_graph,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -57,10 +62,10 @@ def parse_file_to_graph(file_str: str) -> list:
             }
         )
         _add_other_resources(
-            resources=resources, 
-            file_graph=file_graph, 
-            entity_graph=work_graph, 
-            entity=work
+            resources=resources,
+            file_graph=file_graph,
+            entity_graph=work_graph,
+            entity=work,
         )
     for instance in file_graph.subjects(predicate=rdflib.RDF.type, object=BF.Instance):
         if isinstance(instance, rdflib.BNode):
@@ -79,9 +84,9 @@ def parse_file_to_graph(file_str: str) -> list:
             instance_payload["work_uri"] = str(instance_of_work)
         resources.append(instance_payload)
         _add_other_resources(
-            resources=resources, 
-            file_graph=file_graph, 
+            resources=resources,
+            file_graph=file_graph,
             entity_graph=instance_graph,
-            entity=instance
+            entity=instance,
         )
     return resources

@@ -15,5 +15,5 @@ def SymphonyLogin(**kwargs) -> str:
         data=json.dumps({"login": login, "password": password}),
         headers={"Content-Type": "application/json", "Accept": "application/json"},
         endpoint="user/staff/login",
-        filter=lambda response: response.json().get("sessionToken")
+        filter=lambda response: response.json().get("sessionToken"),
     )

@@ -50,7 +50,6 @@ with DAG(
     schedule=None,
     catchup=False,
 ) as dag:
-
     get_messages = PythonOperator(
         task_id="get-message-from-context", python_callable=message_from_context
     )
@@ -93,7 +92,6 @@ with DAG(
     )
 
     with TaskGroup(group_id="update_sinopia") as sinopia_update_group:
-
         # Sinopia Login
         login_sinopia = PythonOperator(
             task_id="sinopia-login",
