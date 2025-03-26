@@ -10,6 +10,8 @@ def get_bluecore_db():
     return str(pg_hook.sqlalchemy_url)
 
 
+
+
 @task.virtualenv(
     requirements=["bluecore-models"],
     system_site_packages=False,
@@ -22,7 +24,7 @@ def store_bluecore_resources(**kwargs):
     """
     from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
-    from bluecore.models import Instance, Work
+    from bluecore.models import Instance, Work, OtherResource, ResourceBase, BibframeOtherResources
 
     records = kwargs['records']
     bluecore_db_conn_string = kwargs["bluecore_db"]
@@ -43,6 +45,21 @@ def store_bluecore_resources(**kwargs):
                         if db_work:
                             instance.work = db_work
                     session.add(instance)
+
+                case "OtherResource":
+                    other_resource = session.query(OtherResource).where(OtherResource.uri == payload["uri"])
+                    if not other_resource:
+                        other_resource = OtherResource(
+                            uri=payload["uri"],
+                            data=payload["resource"]
+                        )
+                        session.add(other_resource)
+                    bibframe_resource = session.query(ResourceBase).where(ResourceBase.uri == payload["bibframe_resource_uri"]).first()
+                    bf_other_resource = BibframeOtherResources(
+                        other_resource=other_resource,
+                        bibframe_resource=bibframe_resource
+                    )
+                    session.add(bf_other_resource)
 
                 case "Work":             
                     work = Work(
