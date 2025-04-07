@@ -47,19 +47,7 @@ default_args = {
 
 institutions = [
     "ucdavis",
-    "princeton",
     "penn",
-    "northwestern",
-    "newcastle",
-    "dnal",
-    "memorial",
-    "miami",
-    "leeds",
-    "harvard",
-    "emory",
-    "jmu",
-    "brandeis",
-    "PUC",
 ]
 
 
