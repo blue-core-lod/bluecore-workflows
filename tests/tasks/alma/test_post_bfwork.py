@@ -31,9 +31,11 @@ os.environ["uri_region"] = "https://api-na.hosted.exlibrisgroup.com"
 os.environ["institution"] = "penn"
 
 task_instance = mock_task_instance
-alma_uri = "https://api-na.hosted.exlibrisgroup.com/almaws/v1/bibs?from_nz_mms_id=&from_cz_mms_id=&\
+alma_uri = (
+    "https://api-na.hosted.exlibrisgroup.com/almaws/v1/bibs?from_nz_mms_id=&from_cz_mms_id=&\
             normalization=&validate=false&override_warning=true&check_match=false&import_profile=&apikey=\
             12ab34c56789101112131415161718192021"
+)
 MockDag = Mock()
 MockDag.dag_id = "penn"
 actual_dag = MockDag

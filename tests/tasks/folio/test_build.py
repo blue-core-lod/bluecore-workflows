@@ -130,7 +130,6 @@ def test_happypath_build_records(
     mock_requests_okapi,  # noqa: F811
     mock_task_instance,  # noqa: F811
 ):  # noqa: F811
-
     mocker.patch(
         "ils_middleware.tasks.folio.build.Connection.get_connection_from_secrets",
         return_value=mock_airflow_connection,
@@ -198,7 +197,6 @@ def test_identifiers_issn(mock_folio_client, mock_task_instance):  # noqa: F811
 
 
 def test_identifiers_isbn(mock_folio_client, mock_task_instance):  # noqa: F811
-
     identifiers = _identifiers(
         values=[["123456"]],
         folio_client=MockFolioClient(),

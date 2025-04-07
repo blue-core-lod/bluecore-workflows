@@ -52,7 +52,6 @@ with DAG(
     schedule=None,
     on_failure_callback=dag_failure_callback,
 ) as dag:
-
     get_messages = PythonOperator(
         task_id="get-message-from-context", python_callable=message_from_context
     )
@@ -63,7 +62,6 @@ with DAG(
     )
 
     with TaskGroup(group_id="process_folio") as folio_task_group:
-
         bf_graphs = PythonOperator(task_id="bf-graph", python_callable=construct_graph)
 
         with TaskGroup(group_id="folio_mapping") as folio_map_task_group:
@@ -106,7 +104,6 @@ with DAG(
     )
 
     with TaskGroup(group_id="update_sinopia") as sinopia_update_group:
-
         # Sinopia Login
         login_sinopia = PythonOperator(
             task_id="sinopia-login",

@@ -64,7 +64,6 @@ def test_folio(mock_task_instance, test_graph: rdflib.Graph):  # noqa: F811
 
 
 def test_folio_work(mock_task_instance, test_graph: rdflib.Graph):  # noqa: F811
-
     map_to_folio(
         task_instance=test_task_instance(),
         folio_field="contributor.primary.Person",

@@ -81,7 +81,8 @@ def mock_failure_no_user_available_task_instance(monkeypatch):
 
 
 def test_send_update_success_emails(
-    mock_task_instance, mocker: MockerFixture  # noqa: F811
+    mock_task_instance,
+    mocker: MockerFixture,  # noqa: F811
 ) -> None:
     task_instance = test_task_instance()
 
@@ -112,7 +113,8 @@ def test_send_update_success_emails(
 
 
 def test_send_task_failure_notifications(
-    mock_task_instance, mocker: MockerFixture  # noqa: F811
+    mock_task_instance,
+    mocker: MockerFixture,  # noqa: F811
 ) -> None:
     execution_date = datetime(2021, 9, 21)
     task_instance = test_task_instance()

@@ -60,7 +60,6 @@ def mock_httpx_client(*args, **kwargs):
 
 
 class MockFolioClient(object):
-
     def __init__(self, *args, **kwargs):
         self.okapi_url = okapi_uri
         self.okapi_headers = {}
@@ -124,7 +123,6 @@ def test_raised_error(
     caplog,
     mocker: MockerFixture,  # noqa: F811
 ):
-
     mocker.patch(
         "ils_middleware.tasks.folio.new.Connection.get_connection_from_secrets",
         return_value=mock_airflow_connection,
@@ -141,7 +139,6 @@ def test_raised_error(
 
 
 def test_check_for_existance_existing_record(mocker, mock_task_instance):  # noqa: F811
-
     mocker.patch(
         "ils_middleware.tasks.folio.new.Connection.get_connection_from_secrets",
         return_value=mock_airflow_connection,
@@ -155,7 +152,6 @@ def test_check_for_existance_existing_record(mocker, mock_task_instance):  # noq
 
 
 class MockTaskInstance(object):
-
     def xcom_push(self, *args, **kwargs):
         pass
 

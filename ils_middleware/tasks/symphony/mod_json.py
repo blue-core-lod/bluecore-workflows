@@ -15,7 +15,6 @@ def _get_subfields(subfields: dict) -> list:
 
 def _get_variable_field(value, new_field):
     if "ind1" in value:
-
         new_field["inds"] = "".join([value["ind1"], value["ind2"]])
     new_field["subfields"] = []
     for row in value["subfields"]:

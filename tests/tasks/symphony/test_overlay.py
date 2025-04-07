@@ -46,7 +46,9 @@ def mock_new_request(monkeypatch, mocker: MockerFixture):
 
 
 def test_overlay_marc_in_symphony(
-    mock_new_request, mock_connection, mock_task_instance  # noqa: F811
+    mock_new_request,
+    mock_connection,
+    mock_task_instance,  # noqa: F811
 ):
     overlay_marc_in_symphony(
         task_instance=task_instance,
@@ -59,7 +61,9 @@ def test_overlay_marc_in_symphony(
 
 
 def test_missing_catkey(
-    mock_new_request, mock_connection, mock_task_instance  # noqa: F811
+    mock_new_request,
+    mock_connection,
+    mock_task_instance,  # noqa: F811
 ):  # noqa: F811
     overlay_marc_in_symphony(
         task_instance=task_instance,

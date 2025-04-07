@@ -135,7 +135,6 @@ def test_parse_messages_bad_resources(
     mock_task_instance_bad_resource,
     mock_resources,  # noqa: F811
 ):
-
     parse_messages(task_instance=mock_task_instance_bad_resource)
 
     assert len(mock_task_instance_bad_resource.xcom_pull(key="bad_resources")) == 1
