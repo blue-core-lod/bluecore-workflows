@@ -3,7 +3,7 @@ import pathlib
 
 import rdflib
 
-from bluecore.utils.graph import (
+from bluecore_models.utils.graph import (
     BF,
     generate_entity_graph,
     generate_other_resources,
