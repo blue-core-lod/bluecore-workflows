@@ -1,4 +1,5 @@
 version = 1
+revision = 1
 requires-python = ">=3.12"
 
 [[package]]
@@ -461,16 +462,16 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.3.0"
+version = "0.4.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
     { name = "psycopg2-binary" },
     { name = "rdflib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/76/1d/e4d45da6d61bd8cbaffa842b26fd4c17d927150f45ff4b93ea864c47d7f4/bluecore_models-0.3.0.tar.gz", hash = "sha256:f29dfca11ccc3b950b8249e05ccdfbcdf41b676156da4f36debcd22eee03f8a0", size = 31002 }
+sdist = { url = "https://files.pythonhosted.org/packages/b5/c3/86ef97c3c579ff50171bf6d425f6ad377ac965e8b37d070d0209b9d625d0/bluecore_models-0.4.1.tar.gz", hash = "sha256:62dd345a0ef31e6562b96d2e26f0e962ba66ec3cfbad57cda2f7312458d3fed4", size = 31917 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/54/df/7c5b57aa0cfff82d03b88c45e2c1d99762df8a56a2cd4b6099bdeca94b8e/bluecore_models-0.3.0-py3-none-any.whl", hash = "sha256:010c059b018f85ac67437bd040fd052ce2bf338852122a97413c7ce74e1d1d20", size = 7911 },
+    { url = "https://files.pythonhosted.org/packages/6b/53/796a89f2691166401e96c5281bd5aa645abdb5ad4e17c403e482aabe6a14/bluecore_models-0.4.1-py3-none-any.whl", hash = "sha256:f2eb95836295d09aaab5f621c516c776eb0f8ed524a1e2c27e91bc71abc6152d", size = 9432 },
 ]
 
 [[package]]
@@ -510,7 +511,7 @@ dev = [
 requires-dist = [
     { name = "apache-airflow", specifier = ">=2.10.5" },
     { name = "apache-airflow-providers-amazon", specifier = ">=9.2.0" },
-    { name = "bluecore-models", specifier = ">=0.3.0" },
+    { name = "bluecore-models", specifier = ">=0.4.1" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
