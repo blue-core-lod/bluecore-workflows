@@ -23,7 +23,7 @@ def store_bluecore_resources(**kwargs):
     """
     from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
-    from bluecore.models import (
+    from bluecore_models.models import (
         Instance,
         Work,
         OtherResource,
