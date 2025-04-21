@@ -23,7 +23,7 @@ def store_bluecore_resources(**kwargs):
     """
     from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
-    from bluecore.models import (
+    from bluecore_models.models import (
         Instance,
         Work,
         OtherResource,
@@ -40,20 +40,30 @@ def store_bluecore_resources(**kwargs):
         for payload in records:
             match payload["class"]:
                 case "Instance":
-                    instance = Instance(uri=payload["uri"], data=payload["resource"])
-                    if "work_uri" in payload:
-                        db_work = (
-                            session.query(Work)
-                            .where(Work.uri == payload["work_uri"])
-                            .first()
+                    instance = (
+                        session.query(Instance)
+                        .where(Instance.uri == payload["uri"])
+                        .first()
+                    )
+                    if not instance:
+                        instance = Instance(
+                            uri=payload["uri"], data=payload["resource"]
                         )
-                        if db_work:
-                            instance.work = db_work
-                    session.add(instance)
+                        if "work_uri" in payload:
+                            db_work = (
+                                session.query(Work)
+                                .where(Work.uri == payload["work_uri"])
+                                .first()
+                            )
+                            if db_work:
+                                instance.work = db_work
+                        session.add(instance)
 
                 case "OtherResource":
-                    other_resource = session.query(OtherResource).where(
-                        OtherResource.uri == payload["uri"]
+                    other_resource = (
+                        session.query(OtherResource)
+                        .where(OtherResource.uri == payload["uri"])
+                        .first()
                     )
                     if not other_resource:
                         other_resource = OtherResource(
@@ -69,11 +79,14 @@ def store_bluecore_resources(**kwargs):
                         other_resource=other_resource,
                         bibframe_resource=bibframe_resource,
                     )
+
                     session.add(bf_other_resource)
 
                 case "Work":
-                    work = Work(uri=payload["uri"], data=payload["resource"])
-                    session.add(work)
+                    work = session.query(Work).where(Work.uri == payload["uri"]).first()
+                    if not work:
+                        work = Work(uri=payload["uri"], data=payload["resource"])
+                        session.add(work)
 
                 case _:
                     logger.error(
