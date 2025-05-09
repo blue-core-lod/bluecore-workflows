@@ -27,24 +27,45 @@ WTF_CSRF_TIME_LIMIT = None
 AUTH_ROLE_ADMIN = 'Admin'
 AUTH_TYPE = AUTH_OAUTH
 
+AUTH_USER_REGISTRATION = True
 AUTH_USER_REGISTRATION_ROLE = "Public"
 
 AUTH_ROLES_MAPPING = {
-    "airflow_admin": ["Admin"],
-    "airflow_op": ["Op"],
-    "airflow_user": ["User"],
+    "airflow_admin":  ["Admin"],
+    "airflow_op":     ["Op"],
+    "airflow_user":   ["User"],
     "airflow_viewer": ["Viewer"],
     "airflow_public": ["Public"],
 }
 
-PROVIDER_NAME = "keycloak"
-CLIENT_ID = os.getenv("AIRFLOW_KEYCLOAK_CLIENT_ID")
-CLIENT_SECRET = os.getenv("AIRFLOW_KEYCLOAK_CLIENT_SECRET")
+# Pull .env constants ==========================================================
+CLIENT_ID             = os.getenv("AIRFLOW_KEYCLOAK_CLIENT_ID")
+CLIENT_SECRET         = os.getenv("AIRFLOW_KEYCLOAK_CLIENT_SECRET")
+REALM                 = os.getenv("AIRFLOW_KEYCLOAK_REALM")
+KEYCLOAK_INTERNAL_URL = os.getenv("KEYCLOAK_INTERNAL_URL")
+KEYCLOAK_EXTERNAL_URL = os.getenv("KEYCLOAK_EXTERNAL_URL")
 
-OIDC_ISSURER = os.getenv("OIDC_ISSUER", "http://keycloak.3206bluecoreterraform.orb.local/keycloak/realms/bluecore")
-OIDC_BASE_URL = f"{OIDC_ISSURER}/protocol/openid-connect"
-OIDC_TOKEN_URL = f"{OIDC_BASE_URL}/token"
-OIDC_AUTH_URL = f"{OIDC_BASE_URL}/auth"
+# build the OIDC URLs ==========================================================
+PROVIDER_NAME          = "keycloak"
+OIDC_ISSUER_INTERNAL   = f"{KEYCLOAK_INTERNAL_URL}realms/{REALM}" # For airflow-to-keycloak communication (httpx, etc.)
+OIDC_ISSUER_EXTERNAL   = f"{KEYCLOAK_EXTERNAL_URL}realms/{REALM}" # For redirect_uri in browser
+OIDC_BASE_EXTERNAL_URL = f"{OIDC_ISSUER_EXTERNAL}/protocol/openid-connect"
+OIDC_BASE_INTERNAL_URL = f"{OIDC_ISSUER_INTERNAL}/protocol/openid-connect"
+OIDC_TOKEN_URL         = f"{OIDC_BASE_INTERNAL_URL}/token"
+OIDC_AUTH_URL          = f"{OIDC_BASE_EXTERNAL_URL}/auth"
+
+# Debug lines to ensure proper env variables are set and urls are correct
+print("")
+print("#######################################################################")
+print("OIDC_ISSUER_INTERNAL: ", OIDC_ISSUER_INTERNAL)
+print("OIDC_ISSUER_EXTERNAL: ", OIDC_ISSUER_EXTERNAL)
+print("OIDC_BASE_INTERNAL_URL: ", OIDC_BASE_INTERNAL_URL)
+print("OIDC_BASE_EXTERNAL_URL: ", OIDC_BASE_EXTERNAL_URL)
+print("OIDC_TOKEN_URL: ", OIDC_TOKEN_URL)
+print("OIDC_AUTH_URL: ", OIDC_AUTH_URL)
+print("CLIENT_SECRET: ", CLIENT_SECRET)
+print("#######################################################################")
+print("")
 
 OAUTH_PROVIDERS = [
     {
@@ -52,7 +73,7 @@ OAUTH_PROVIDERS = [
         "token_key": "access_token",
         "icon": "fa-sign-in",
         "remote_app": {
-            "api_base_url": f"{OIDC_BASE_URL}/",
+            "api_base_url": f"{OIDC_BASE_INTERNAL_URL}/",
             "access_token_url": OIDC_TOKEN_URL,
             "authorize_url": OIDC_AUTH_URL,
             "request_token_url": None,
@@ -65,13 +86,19 @@ OAUTH_PROVIDERS = [
     }        
 ]
 
-req = httpx.get(OIDC_ISSURER)
+req = httpx.get(OIDC_ISSUER_INTERNAL)
+
+# Debug line to ensure keycloak request successful: [✅ req status: <Response [200 OK]>]
+print("")
+print("#######################################################################")
+print("req status:", req)
+print("")
+
 key_der_base64 = req.json()["public_key"]
 key_def = b64decode(key_der_base64)
 public_key = serialization.load_der_public_key(key_def)
 
 class CustomSecurityManager(FabAirflowSecurityManagerOverride):
-
 
     def oauth_user_info(self, provider, response):
         user_info = {}
