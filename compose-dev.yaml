@@ -1,0 +1,182 @@
+version: '3'
+x-keycloak-env: &keycloak-env
+  ####################################
+  ## Keycloak Environment Variables ##
+  ####################################
+  # ----------------------------------
+  KC_DB: postgres
+  KC_DB_SCHEMA: public
+  KC_DB_URL_HOST: postgres
+  KC_DB_URL_PORT: 5432
+  KC_DB_URL_DATABASE: keycloak
+  KC_DB_USERNAME: airflow
+  KC_DB_PASSWORD: airflow
+  KEYCLOAK_ADMIN: admin
+  KEYCLOAK_ADMIN_PASSWORD: admin
+  # ----------------------------------
+  KC_HOSTNAME_STRICT: "false"
+  KEYCLOAK_REALM: 'bluecore'
+  KEYCLOAK_INTERNAL_URL: 'http://keycloak:8080/keycloak/'
+  KEYCLOAK_EXTERNAL_URL: 'http://localhost:8081/keycloak/'
+  AIRFLOW_KEYCLOAK_REALM: 'bluecore'
+  AIRFLOW_KEYCLOAK_CLIENT_ID: 'bluecore_workflows'
+  AIRFLOW_KEYCLOAK_CLIENT_SECRET: 'KIu8gWa8rtjlT0Zl7zkNzsObFZGJ2IsJ' # Replace with your actual secret (Need to be set in Keycloak)
+  # ----------------------------------
+  KC_HEALTH_ENABLED: 'true' # allows health check to work in docker
+  KC_PROXY_HEADERS: 'xforwarded'
+  KC_PROXY: 'edge'
+  KC_HTTP_ENABLED: 'true'
+  KC_HTTP_RELATIVE_PATH: '/keycloak/'
+  KC_LOG_LEVEL: 'INFO'
+
+x-airflow-common:
+  &airflow-common
+  build: .
+  environment:
+    &airflow-common-env
+    <<: *keycloak-env
+    AIRFLOW__CORE__EXECUTOR: CeleryExecutor
+    AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
+    AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
+    AIRFLOW__CORE__FERNET_KEY: ''
+    AIRFLOW__CORE__DAGS_FOLDER: '/opt/airflow/ils_middleware/dags'
+    AIRFLOW__CORE__DAGS_ARE_PAUSED_AT_CREATION: 'true'
+    AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
+    AIRFLOW__WEBSERVER__SHOW_TRIGGER_FORM_IF_NO_PARAMS: 'true'
+    AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
+    AIRFLOW_VAR_MARC_S3_BUCKET: 'sinopia-marc-development'
+    AIRFLOW_VAR_RDF2MARC_LAMBDA: 'sinopia-rdf2marc-development'
+    AIRFLOW_VAR_SINOPIA_ENV: ${AIRFLOW_VAR_SINOPIA_ENV:-dev}
+    AIRFLOW_VAR_SQS_URL: 'http://localstack:4566/000000000000/'
+    AIRFLOW_VAR_SYMPHONY_APP_ID: 'SINOPIA_DEV'
+    AIRFLOW_VAR_STANFORD_SYMPHONY_LOGIN: 'USERNAME'
+    AIRFLOW_VAR_STANFORD_SYMPHONY_PASSWORD: 'PASSWORD'
+    AIRFLOW_VAR_STANFORD_SYMPHONY_AUTH_URL: 'https://okapi-folio.dev.sul.stanford.edu/authn/login'
+    AIRFLOW_VAR_STANFORD_FOLIO_LOGIN: 'USERNAME'
+    AIRFLOW_VAR_STANFORD_FOLIO_PASSWORD: 'PASSWORD'
+    AIRFLOW_VAR_STANFORD_FOLIO_AUTH_URL: 'https://okapi-folio.dev.sul.stanford.edu/authn/login'
+    LOGLEVEL: ${LOGLEVEL:-DEBUG}
+    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+  volumes:
+    - ./ils_middleware:/opt/airflow/ils_middleware
+    - ./logs:/opt/airflow/logs
+    - ./plugins:/opt/airflow/plugins
+    - ./uploads:/opt/airflow/uploads
+  user: "${AIRFLOW_UID:-50000}:${AIRFLOW_GID:-0}"
+  depends_on:
+    redis:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: airflow
+      POSTGRES_PASSWORD: airflow
+      POSTGRES_MULTIPLE_DB: airflow, keycloak
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+      - ./scripts/init-multi-postgres-dbs.sh:/docker-entrypoint-initdb.d/init-multi-postgres-dbs.sh
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "airflow"]
+      interval: 5s
+      retries: 5
+    restart: always
+
+  redis:
+    image: redis:latest
+    ports:
+      - 6379:6379
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 30s
+      retries: 50
+    restart: always
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.2
+    command: start-dev
+    environment:
+      <<: *keycloak-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8081:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<> /dev/tcp/127.0.0.1/9000; echo -e 'GET /health/ready HTTP/1.1\\r\\nhost: http://localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3; if [ $? -eq 0 ]; then echo 'Healthcheck Successful'; exit 0; else echo 'Healthcheck Failed'; exit 1; fi;"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+    restart: always
+
+  airflow-webserver:
+    <<: *airflow-common
+    command: webserver
+    ports:
+      - 8080:8080
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    restart: always
+
+  airflow-scheduler:
+    <<: *airflow-common
+    command: scheduler
+    healthcheck:
+      test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+
+  airflow-worker:
+    <<: *airflow-common
+    command: celery worker
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - 'celery --app airflow.executors.celery_executor.app inspect ping -d "celery@$${HOSTNAME}"'
+      interval: 10s
+      timeout: 10s
+      retries: 5
+    restart: always
+
+  airflow-init:
+    <<: *airflow-common
+    command: version
+    environment:
+      <<: *airflow-common-env
+      _AIRFLOW_DB_UPGRADE: 'true'
+      _AIRFLOW_WWW_USER_CREATE: 'true'
+      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
+      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+
+  localstack:
+    image: localstack/localstack
+    ports:
+      - "4566:4566"
+    environment:
+      - SERVICES=sqs
+      - AWS_DEFAULT_REGION=us-west-2
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - DEBUG=1
+
+volumes:
+  postgres-db-volume:
