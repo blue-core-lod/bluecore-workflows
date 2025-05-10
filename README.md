@@ -67,14 +67,16 @@ To add any new DAGs to `blue-core-lod/bluecore-workflows:latest` image, you can 
 while commenting out the previous line `image: ${AIRFLOW_IMAGE_NAME:-blue-core-lod/bluecore-workflows:latest}`.
 
 ## 📦 Dependency Management and Packaging
-We are using [uv][UV] to manage dependency updates.
-
-Once you have uv installed, you can install the other project dependencies
-by running:
+We are using [uv][UV] to manage dependency updates.\
+Once you have uv installed, you can install the other project dependencies by running:
 ```bash
+    # 📝 Note: This does not work with Mac OS (Apple Silicone) due to dependency errors compiling with C++
     uv sync
 ```
-
+📝 **Note**: In local development to avoid dependency errors using Mac OS (Apple Silicone), you can run: 
+```bash
+  uv pip install ".[dev]"
+```
 
 ## 🧪 Automated Tests
 The [pytest][PYTEST] framework is used to run the tests.  Tests can be invoked manually by calling `uv run pytest` (which will save an xml formatted [coverage report][PYTESTCOV], as well as printing the coverage report to the terminal).
@@ -93,6 +95,7 @@ the command-line. Configuration options are in the `setup.cfg` file, under the f
 ## 🧹 Code formatting
 Code can be auto-formatted using [ruff][RUFF].
 To have Black apply formatting: `uv run ruff format .`
+⚠️ Note: in local development use `ruff format .` to avoid dependency errors
 
 [AF]: https://airflow.apache.org/
 [BLACK]: https://black.readthedocs.io/
