@@ -30,6 +30,16 @@ AUTH_TYPE = AUTH_OAUTH
 AUTH_USER_REGISTRATION = True
 AUTH_USER_REGISTRATION_ROLE = "Public"
 
+# ==============================================================================
+# Defines Keycloak roles mapped to Airflow access roles.
+# ------------------------------------------------------------------------------
+# Each Keycloak role listed here must be created in the corresponding realm
+# and assigned to users. When a user is assigned one of these Keycloak roles,
+# they will inherit the mapped Airflow role.
+#
+# Example: Assigning the "airflow_admin" role to a user in Keycloak grants
+# them "Admin" access in Airflow.
+# ==============================================================================
 AUTH_ROLES_MAPPING = {
     "airflow_admin": ["Admin"],
     "airflow_op": ["Op"],
@@ -45,14 +55,18 @@ REALM = os.getenv("AIRFLOW_KEYCLOAK_REALM")
 KEYCLOAK_INTERNAL_URL = os.getenv("KEYCLOAK_INTERNAL_URL")
 KEYCLOAK_EXTERNAL_URL = os.getenv("KEYCLOAK_EXTERNAL_URL")
 
-# build the OIDC URLs ==========================================================
-PROVIDER_NAME = "keycloak"
-OIDC_ISSUER_INTERNAL = f"{KEYCLOAK_INTERNAL_URL}realms/{REALM}"  # For airflow-to-keycloak communication (httpx, etc.)
+# Build URLs ===================================================================
+### External URLs (for outside docker environment) ###
 OIDC_ISSUER_EXTERNAL = (
     f"{KEYCLOAK_EXTERNAL_URL}realms/{REALM}"  # For redirect_uri in browser
 )
 OIDC_BASE_EXTERNAL_URL = f"{OIDC_ISSUER_EXTERNAL}/protocol/openid-connect"
+
+### Internal URLs (for inside docker environment) ###
+OIDC_ISSUER_INTERNAL = f"{KEYCLOAK_INTERNAL_URL}realms/{REALM}"  # For airflow-to-keycloak communication (httpx, etc.)
 OIDC_BASE_INTERNAL_URL = f"{OIDC_ISSUER_INTERNAL}/protocol/openid-connect"
+
+### Authorization URLs ###
 OIDC_TOKEN_URL = f"{OIDC_BASE_INTERNAL_URL}/token"
 OIDC_AUTH_URL = f"{OIDC_BASE_EXTERNAL_URL}/auth"
 
@@ -69,6 +83,7 @@ print("CLIENT_SECRET: ", CLIENT_SECRET)
 print("#######################################################################")
 print("")
 
+PROVIDER_NAME = "keycloak"
 OAUTH_PROVIDERS = [
     {
         "name": PROVIDER_NAME,
