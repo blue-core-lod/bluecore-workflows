@@ -5,29 +5,29 @@ that interact with institutional integrated library systems (ILS) and/or
 library services platform (LSP). Currently there are Directed Acyclic Graphs (DAG)
 for Stanford and Cornell Sinopia-to-ILS/LSP workflows. Alma users with the Linked Data API enabled can use the Alma DAG for connecting Sinopia to Alma.
 
-## Running Locally with Docker
+## 🐳 Running Locally with Docker
 Based on the documentation, [Running Airflow in Docker](https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html).
 
-> **NOTE** Make sure there is enough RAM available locally for the
+> 📝 **NOTE** Make sure there is enough RAM available locally for the
 > docker daemon, we recommend at least 5GB.
 
-1. Clone repository `git clone https://github.com/blue-core-lod/bluecore-workflows`
-1. If it's commented out, uncomment the line `- ./dags:/opt/airflow/dags` in docker-compose.yaml (under `volumes`, under `x-airflow-common`).
-1. Run `docker compose up airflow-init` to initialize the Airflow
-1. Bring up airflow, `docker compose up` to run the containers in the foreground,
+1. Clone repository: `git clone https://github.com/blue-core-lod/bluecore-workflows`
+2. If it's commented out, uncomment the line `- ./dags:/opt/airflow/dags` in docker-compose.yaml (under `volumes`, under `x-airflow-common`).
+3. Run `docker compose up airflow-init` to initialize the Airflow
+4. Bring up airflow, `docker compose up` to run the containers in the foreground,
    add `docker compose up -d` to run as a daemon.
-1. Access Airflow locally at http://localhost:8080
+5. Access Airflow locally at http://localhost:8080
 
-### Setup the SQS queue in localstack for local development
+### 📨 Setup the SQS queue in localstack for local development
 
+```bash 
+   AWS_ACCESS_KEY_ID=999999 AWS_SECRET_ACCESS_KEY=1231 aws sqs \
+       --endpoint-url=http://localhost:4566 create-queue \
+       --region us-west-2 \
+       --queue-name all-institutions
 ```
-AWS_ACCESS_KEY_ID=999999 AWS_SECRET_ACCESS_KEY=1231 aws sqs \
-    --endpoint-url=http://localhost:4566 create-queue \
-    --region us-west-2 \
-    --queue-name all-institutions
-```
 
-### Setup the local AWS connection for SQS
+### 🔗  Setup the local AWS connection for SQS
 
 1. From the `Admin > Connections` menu
 2. Click the "+"
@@ -38,25 +38,25 @@ AWS_ACCESS_KEY_ID=999999 AWS_SECRET_ACCESS_KEY=1231 aws sqs \
     * Password: 1231
     * Extra: `{"host": "http://localstack:4566", "region_name": "us-west-2"}`
 
-### Send a message to the SQS queue
+### 📤 Send a message to the SQS queue
 
 In order to test a dag locally, a message must be sent to the above queue:
-```
-AWS_ACCESS_KEY_ID=999999 AWS_SECRET_ACCESS_KEY=1231 aws sqs \
-    send-message \
-    --endpoint-url=http://localhost:4566 \
-    --queue-url https://localhost:4566/000000000000/all-institutions \
-    --message-body file://tests/fixtures/sqs/test-message.json
+```bash
+   AWS_ACCESS_KEY_ID=999999 AWS_SECRET_ACCESS_KEY=1231 aws sqs \
+       send-message \
+       --endpoint-url=http://localhost:4566 \
+       --queue-url https://localhost:4566/000000000000/all-institutions \
+       --message-body file://tests/fixtures/sqs/test-message.json
 ```
 
-Note: the test message content in `tests/fixtures/sqs/test-message.json` contains an email address that you can update to your own.
+📝 Note: the test message content in `tests/fixtures/sqs/test-message.json` contains an email address that you can update to your own.
 
-## Editing existing DAGs
+## ✏️ Editing existing DAGs
 The `dags/stanford.py` contains Stanford's Symphony and FOLIO workflows from
 Sinopia editor user initiated process. The `dags/cornell.py` DAG is for Cornell's
 FOLIO workflow. Editing either of these code files will change the DAG.
 
-## Adding a new DAG
+## 🆕 Adding a new DAG
 In the `dags` subdirectory, add a python module for the DAG. Running Airflow
 locally through Docker (see above), the DAG should appear in the list of DAGs
 or display any errors in the DAG.
@@ -66,33 +66,32 @@ To add any new DAGs to `blue-core-lod/bluecore-workflows:latest` image, you can 
 * if commented out, uncomment the `build: .` line (under `x-airflow-common`) in `docker-compose.yaml`
 while commenting out the previous line `image: ${AIRFLOW_IMAGE_NAME:-blue-core-lod/bluecore-workflows:latest}`.
 
-## Dependency Management and Packaging
+## 📦 Dependency Management and Packaging
 We are using [uv][UV] to manage dependency updates.
 
 Once you have uv installed, you can install the other project dependencies
-by running `uv sync`
+by running:
+```bash
+    uv sync
+```
 
-## Automated Tests
 
+## 🧪 Automated Tests
 The [pytest][PYTEST] framework is used to run the tests.  Tests can be invoked manually by calling `uv run pytest` (which will save an xml formatted [coverage report][PYTESTCOV], as well as printing the coverage report to the terminal).
 
-## Building Python Package
+## 🛠️ Building Python Package
 If you plan on building a local Docker image, be sure to build the Python
 installation wheel first by running `uv build`.
 
-## Typechecking
-
+## 🔍 Typechecking
 The [mypy][MYPY] static type checker is used to find type errors (parameter passing, assignment, return, etc of incompatible value types).  CI runs `uv run mypy --ignore-missing-imports .` (as not all imports have type info available).
 
-## Linting
-
+## 🔎 Linting
 The [flake8][FLK8] Python code linter can be manually run by invoking `uv run flake8` from
 the command-line. Configuration options are in the `setup.cfg` file, under the flake8 section.
 
-## Code formatting
-
+## 🧹 Code formatting
 Code can be auto-formatted using [ruff][RUFF].
-
 To have Black apply formatting: `uv run ruff format .`
 
 [AF]: https://airflow.apache.org/
