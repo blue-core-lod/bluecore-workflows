@@ -25,6 +25,9 @@ jobs:
       - name: Install uv
         run: pip3 install uv
 
+      - name: Install dev dependencies
+        run: uv pip install ".[dev]"
+  
       - name: Type Checking
         run: uv run mypy .
 
