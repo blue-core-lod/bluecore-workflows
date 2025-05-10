@@ -3,8 +3,8 @@ x-keycloak-env: &keycloak-env
   ####################################
   ## Keycloak Environment Variables ##
   ####################################
-  # ----------------------------------
   KC_DB: postgres
+  KC_IMPORT: /opt/keycloak/data/import/realm.json
   KC_DB_SCHEMA: public
   KC_DB_URL_HOST: postgres
   KC_DB_URL_PORT: 5432
@@ -99,7 +99,7 @@ services:
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.1.2
-    command: start-dev
+    command: start-dev  --import-realm
     environment:
       <<: *keycloak-env
     depends_on:
@@ -107,6 +107,8 @@ services:
         condition: service_healthy
     ports:
       - "8081:8080"
+    volumes:
+      - ./keycloak-export/bluecore-realm.json:/opt/keycloak/data/import/realm.json
     healthcheck:
       test: ["CMD-SHELL", "exec 3<> /dev/tcp/127.0.0.1/9000; echo -e 'GET /health/ready HTTP/1.1\\r\\nhost: http://localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3; if [ $? -eq 0 ]; then echo 'Healthcheck Successful'; exit 0; else echo 'Healthcheck Failed'; exit 1; fi;"]
       interval: 10s
