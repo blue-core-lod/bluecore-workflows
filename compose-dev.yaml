@@ -4,7 +4,6 @@ x-keycloak-env: &keycloak-env
   ## Keycloak Environment Variables ##
   ####################################
   KC_DB: postgres
-  KC_IMPORT: /opt/keycloak/data/import/realm.json
   KC_DB_SCHEMA: public
   KC_DB_URL_HOST: postgres
   KC_DB_URL_PORT: 5432
@@ -109,6 +108,7 @@ services:
       - "8081:8080"
     volumes:
       - ./keycloak-export/bluecore-realm.json:/opt/keycloak/data/import/realm.json
+      - ./keycloak-export/:/opt/keycloak/data/export
     healthcheck:
       test: ["CMD-SHELL", "exec 3<> /dev/tcp/127.0.0.1/9000; echo -e 'GET /health/ready HTTP/1.1\\r\\nhost: http://localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3; if [ $? -eq 0 ]; then echo 'Healthcheck Successful'; exit 0; else echo 'Healthcheck Failed'; exit 1; fi;"]
       interval: 10s
@@ -136,6 +136,9 @@ services:
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
       interval: 10s
@@ -146,6 +149,9 @@ services:
   airflow-worker:
     <<: *airflow-common
     command: celery worker
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -174,6 +180,9 @@ services:
     image: localstack/localstack
     ports:
       - "4566:4566"
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       - SERVICES=sqs
       - AWS_DEFAULT_REGION=us-west-2
