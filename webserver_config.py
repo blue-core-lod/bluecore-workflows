@@ -71,17 +71,20 @@ OIDC_TOKEN_URL = f"{OIDC_BASE_INTERNAL_URL}/token"
 OIDC_AUTH_URL = f"{OIDC_BASE_EXTERNAL_URL}/auth"
 
 # Debug lines to ensure proper env variables are set and urls are correct
-print("")
-print("#######################################################################")
-print("OIDC_ISSUER_INTERNAL: ", OIDC_ISSUER_INTERNAL)
-print("OIDC_ISSUER_EXTERNAL: ", OIDC_ISSUER_EXTERNAL)
-print("OIDC_BASE_INTERNAL_URL: ", OIDC_BASE_INTERNAL_URL)
-print("OIDC_BASE_EXTERNAL_URL: ", OIDC_BASE_EXTERNAL_URL)
-print("OIDC_TOKEN_URL: ", OIDC_TOKEN_URL)
-print("OIDC_AUTH_URL: ", OIDC_AUTH_URL)
-print("CLIENT_SECRET: ", CLIENT_SECRET)
-print("#######################################################################")
-print("")
+RESET = "\033[0m"
+BOLD = "\033[1m"
+MAGENTA = "\033[95m"
+print()
+print(f"{MAGENTA}{'#' * 71}{RESET}")
+print(f"{BOLD}{MAGENTA}OIDC_ISSUER_INTERNAL:{RESET} {OIDC_ISSUER_INTERNAL}")
+print(f"{BOLD}{MAGENTA}OIDC_ISSUER_EXTERNAL:{RESET} {OIDC_ISSUER_EXTERNAL}")
+print(f"{BOLD}{MAGENTA}OIDC_BASE_INTERNAL_URL:{RESET} {OIDC_BASE_INTERNAL_URL}")
+print(f"{BOLD}{MAGENTA}OIDC_BASE_EXTERNAL_URL:{RESET} {OIDC_BASE_EXTERNAL_URL}")
+print(f"{BOLD}{MAGENTA}OIDC_TOKEN_URL:{RESET} {OIDC_TOKEN_URL}")
+print(f"{BOLD}{MAGENTA}OIDC_AUTH_URL:{RESET} {OIDC_AUTH_URL}")
+print(f"{BOLD}{MAGENTA}CLIENT_SECRET:{RESET} {CLIENT_SECRET}")
+print(f"{MAGENTA}{'#' * 71}{RESET}")
+print()
 
 PROVIDER_NAME = "keycloak"
 OAUTH_PROVIDERS = [
@@ -104,10 +107,11 @@ OAUTH_PROVIDERS = [
 req = httpx.get(OIDC_ISSUER_INTERNAL)
 
 # Debug line to ensure keycloak request successful: [✅ req status: <Response [200 OK]>]
-print("")
-print("#######################################################################")
-print("req status:", req)
-print("")
+print()
+print(f"{MAGENTA}{'#' * 71}{RESET}")
+print(f"{BOLD}{MAGENTA}req status:{RESET} {req}")
+print(f"{MAGENTA}{'#' * 71}{RESET}")
+print()
 
 key_der_base64 = req.json()["public_key"]
 key_def = b64decode(key_der_base64)
