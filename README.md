@@ -77,8 +77,9 @@ In order to test a dag locally, a message must be sent to the above queue:
        --message-body file://tests/fixtures/sqs/test-message.json
 ```
 
-📝 Note: the test message content in `tests/fixtures/sqs/test-message.json`
-contains an email address that you can update to your own.
+> 📝 Note: the test message content in `tests/fixtures/sqs/test-message.json`
+> contains an email address that you can update to your own.
+
 ---
 
 ## ✏️ Editing existing DAGs
@@ -104,7 +105,7 @@ Once you have uv installed, you can install the other project dependencies by ru
     # 📝 Note: This does not work with Mac OS (Apple Silicone) due to dependency errors compiling with C++
     uv sync
 ```
-📝 **Note**: In local development to avoid dependency errors using Mac OS (Apple Silicone), you can run: 
+> 📝 **Note**: In local development to avoid dependency errors using Mac OS (Apple Silicone), you can run: 
 ```bash
   uv pip install ".[dev]"
 ```
@@ -127,7 +128,7 @@ the command-line. Configuration options are in the `setup.cfg` file, under the f
 ## 🧹 Code formatting
 Code can be auto-formatted using [ruff][RUFF].
 To have Black apply formatting: `uv run ruff format .`
-⚠️ Note: in local development use `ruff format .` to avoid dependency errors
+>⚠️ Note: in local development use `ruff format .` to avoid dependency errors
 
 [AF]: https://airflow.apache.org/
 [BLACK]: https://black.readthedocs.io/
