@@ -4,6 +4,7 @@ Minimal viable product (MVP) for using [Apache Airflow][AF] to manage Blue Core 
 that interact with institutional integrated library systems (ILS) and/or
 library services platform (LSP). Currently there are Directed Acyclic Graphs (DAG)
 for Stanford and Cornell Sinopia-to-ILS/LSP workflows. Alma users with the Linked Data API enabled can use the Alma DAG for connecting Sinopia to Alma.
+---
 
 ## 🐳 Running Locally with Docker
 Based on the documentation, [Running Airflow in Docker](https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html).
@@ -16,6 +17,7 @@ Based on the documentation, [Running Airflow in Docker](https://airflow.apache.o
 3. Run `./scripts/start-dev-server.sh` to start development docker environment
 5. Access Airflow locally at http://localhost:8080
 6. Access Keycloak locally at http://localhost:8081
+---
 
 ## 🔐 Keycloak local development and credentials
 Keycloak will automatically import realm config located at: `keycloak-export/bluecore-realm.json` \
@@ -41,6 +43,8 @@ To export any changes to the bluecore realm config, you can use the following co
    ./scripts/export-keycloak-realm.sh
 ````
 This will export the realm config to the `keycloak-export/bluecore-realm.json` file.
+
+---
 
 ### 📨 Setup the SQS queue in localstack for local development
 
@@ -73,7 +77,9 @@ In order to test a dag locally, a message must be sent to the above queue:
        --message-body file://tests/fixtures/sqs/test-message.json
 ```
 
-📝 Note: the test message content in `tests/fixtures/sqs/test-message.json` contains an email address that you can update to your own.
+📝 Note: the test message content in `tests/fixtures/sqs/test-message.json`
+contains an email address that you can update to your own.
+---
 
 ## ✏️ Editing existing DAGs
 The `dags/stanford.py` contains Stanford's Symphony and FOLIO workflows from
@@ -89,6 +95,7 @@ To add any new DAGs to `blue-core-lod/bluecore-workflows:latest` image, you can 
 * build the image locally with `docker build -t blue-core-lod/bluecore-workflows:latest .` or,
 * if commented out, uncomment the `build: .` line (under `x-airflow-common`) in `docker-compose.yaml`
 while commenting out the previous line `image: ${AIRFLOW_IMAGE_NAME:-blue-core-lod/bluecore-workflows:latest}`.
+---
 
 ## 📦 Dependency Management and Packaging
 We are using [uv][UV] to manage dependency updates.\
@@ -101,6 +108,7 @@ Once you have uv installed, you can install the other project dependencies by ru
 ```bash
   uv pip install ".[dev]"
 ```
+---
 
 ## 🧪 Automated Tests
 The [pytest][PYTEST] framework is used to run the tests.  Tests can be invoked manually by calling `uv run pytest` (which will save an xml formatted [coverage report][PYTESTCOV], as well as printing the coverage report to the terminal).
