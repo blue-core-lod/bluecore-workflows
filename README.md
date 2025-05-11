@@ -9,7 +9,7 @@ for Stanford and Cornell Sinopia-to-ILS/LSP workflows. Alma users with the Linke
 ## 🐳 Running Locally with Docker
 Based on the documentation, [Running Airflow in Docker](https://airflow.apache.org/docs/apache-airflow/stable/start/docker.html).
 
-> 📝 **NOTE** Make sure there is enough RAM available locally for the
+>⚠️ **NOTE**: Make sure there is enough RAM available locally for the
 > docker daemon, we recommend at least 5GB.
 
 1. Clone repository: `git clone https://github.com/blue-core-lod/bluecore-workflows`
@@ -29,7 +29,7 @@ This realm config contains the following:
 > - Username: `developer` #admin account
 > - password: `123456`
 > 
-> 📝 Note: Other account names that can be used are: `dev_op`,`dev_public`,`dev_user`, and `dev_viewer` with the same password. 
+>⚠️ **Note**: Other account names that can be used are: `dev_op`,`dev_public`,`dev_user`, and `dev_viewer` with the same password. 
 > These accounts reflect the roles associated in their name.
 ### 🔑 Logging into Keycloak master realm
 You can also create a new realm and client in Keycloak by going to:
@@ -77,7 +77,7 @@ In order to test a dag locally, a message must be sent to the above queue:
        --message-body file://tests/fixtures/sqs/test-message.json
 ```
 
-> 📝 Note: the test message content in `tests/fixtures/sqs/test-message.json`
+>⚠️ **Note**: the test message content in `tests/fixtures/sqs/test-message.json`
 > contains an email address that you can update to your own.
 
 ---
@@ -105,7 +105,7 @@ Once you have uv installed, you can install the other project dependencies by ru
     # 📝 Note: This does not work with Mac OS (Apple Silicone) due to dependency errors compiling with C++
     uv sync
 ```
-> 📝 **Note**: In local development to avoid dependency errors using Mac OS (Apple Silicone), you can run: 
+>⚠️ **Note**: In local development to avoid dependency errors using Mac OS (Apple Silicone), you can run: 
 ```bash
   uv pip install ".[dev]"
 ```
@@ -128,7 +128,7 @@ the command-line. Configuration options are in the `setup.cfg` file, under the f
 ## 🧹 Code formatting
 Code can be auto-formatted using [ruff][RUFF].
 To have Black apply formatting: `uv run ruff format .`
->⚠️ Note: in local development use `ruff format .` to avoid dependency errors
+>⚠️ **Note**: in local development use `ruff format .` to avoid dependency errors
 
 [AF]: https://airflow.apache.org/
 [BLACK]: https://black.readthedocs.io/
