@@ -15,9 +15,4 @@ docker compose -f compose-dev.yaml up airflow-init
 echo -e "${BLUE}===========================================================${NC}"
 echo -e "${BLUE}🐳 Starting docker compose -f compose-dev.yaml up ${NC}"
 echo -e "${BLUE}===========================================================${NC}"
-#docker compose -f compose-dev.yaml up
 docker compose -f compose-dev.yaml up postgres redis keycloak airflow-webserver airflow-scheduler airflow-worker localstack
-
-#docker compose -f compose-dev.yaml up postgres redis keycloak
-#docker compose -f compose-dev.yaml run --rm airflow-init
-#docker compose -f compose-dev.yaml up postgres redis keycloak airflow-webserver airflow-scheduler airflow-worker localstack
