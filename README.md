@@ -17,8 +17,8 @@ Based on the documentation, [Running Airflow in Docker](https://airflow.apache.o
 1. Clone repository: `git clone https://github.com/blue-core-lod/bluecore-workflows`
 2. If it's commented out, uncomment the line `- ./dags:/opt/airflow/dags` in docker-compose.yaml (under `volumes`, under `x-airflow-common`).
 3. Run `./scripts/start-dev-server.sh` to start development docker environment
-5. Access Airflow locally at http://localhost:8080
-6. Access Keycloak locally at http://localhost:8081
+4. Access Airflow locally at http://localhost:8080
+5. Access Keycloak locally at http://localhost:8081
 ---
 
 ## 🔐 Keycloak local development and credentials
