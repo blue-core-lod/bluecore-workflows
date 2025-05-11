@@ -263,6 +263,14 @@
         "attributes" : { }
       } ],
       "bluecore_workflows" : [ {
+        "id" : "0525e7a7-f287-4270-b8e1-4e765530be18",
+        "name" : "airflow_op",
+        "description" : "Op permissions",
+        "composite" : false,
+        "clientRole" : true,
+        "containerId" : "42a30c61-4264-491c-9f62-a5b73485ec85",
+        "attributes" : { }
+      }, {
         "id" : "eaca3924-c4fa-4394-a4d7-14552e8fac2e",
         "name" : "update",
         "description" : "",
@@ -274,6 +282,30 @@
         "id" : "8a2d1f37-4d88-41c9-8694-4ab78bca2b54",
         "name" : "airflow_admin",
         "description" : "",
+        "composite" : false,
+        "clientRole" : true,
+        "containerId" : "42a30c61-4264-491c-9f62-a5b73485ec85",
+        "attributes" : { }
+      }, {
+        "id" : "c888752b-30a2-4241-8711-26e9c4e72e50",
+        "name" : "airflow_viewer",
+        "description" : "Viewer permissions",
+        "composite" : false,
+        "clientRole" : true,
+        "containerId" : "42a30c61-4264-491c-9f62-a5b73485ec85",
+        "attributes" : { }
+      }, {
+        "id" : "6d43d813-1610-4368-b74c-cd5e356879db",
+        "name" : "airflow_user",
+        "description" : "User permissions",
+        "composite" : false,
+        "clientRole" : true,
+        "containerId" : "42a30c61-4264-491c-9f62-a5b73485ec85",
+        "attributes" : { }
+      }, {
+        "id" : "6e85ccd8-b314-418c-9714-e54589c962fb",
+        "name" : "airflow_public",
+        "description" : "Pubic permissions",
         "composite" : false,
         "clientRole" : true,
         "containerId" : "42a30c61-4264-491c-9f62-a5b73485ec85",
@@ -440,6 +472,110 @@
     "realmRoles" : [ "create", "update" ],
     "clientRoles" : {
       "bluecore_workflows" : [ "update", "airflow_admin", "create" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  }, {
+    "id" : "dceb2a20-74a0-480d-96fa-e92c0a06ffec",
+    "username" : "dev_op",
+    "firstName" : "dev",
+    "lastName" : "op",
+    "email" : "dev_op@bluecore.edu",
+    "emailVerified" : true,
+    "createdTimestamp" : 1746926159620,
+    "enabled" : true,
+    "totp" : false,
+    "credentials" : [ {
+      "id" : "54428d66-02e1-4e75-bbf0-83e848faa487",
+      "type" : "password",
+      "userLabel" : "My password",
+      "createdDate" : 1746926336258,
+      "secretData" : "{\"value\":\"sP30MoZjaCJhhgBvsqitKw4fhErI29k3SpKcv61SFWI=\",\"salt\":\"6vTTyObSeYuNV7iJK0iCHw==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":5,\"algorithm\":\"argon2\",\"additionalParameters\":{\"hashLength\":[\"32\"],\"memory\":[\"7168\"],\"type\":[\"id\"],\"version\":[\"1.3\"],\"parallelism\":[\"1\"]}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-bluecore" ],
+    "clientRoles" : {
+      "bluecore_workflows" : [ "airflow_op" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  }, {
+    "id" : "dc33ec60-68e0-468e-bf23-3c41522832b4",
+    "username" : "dev_public",
+    "firstName" : "dev",
+    "lastName" : "public",
+    "email" : "dev_public@bluecore.edu",
+    "emailVerified" : true,
+    "createdTimestamp" : 1746926529473,
+    "enabled" : true,
+    "totp" : false,
+    "credentials" : [ {
+      "id" : "0725e74c-b248-4da5-b362-0150a374c5d4",
+      "type" : "password",
+      "userLabel" : "My password",
+      "createdDate" : 1746926561741,
+      "secretData" : "{\"value\":\"JdsaMgRxaGejVeR7AsEyuuI1lSD/Xm5KOkzRJ4H8wS0=\",\"salt\":\"EQg6yKw6nCbr104LxXHtUw==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":5,\"algorithm\":\"argon2\",\"additionalParameters\":{\"hashLength\":[\"32\"],\"memory\":[\"7168\"],\"type\":[\"id\"],\"version\":[\"1.3\"],\"parallelism\":[\"1\"]}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-bluecore" ],
+    "clientRoles" : {
+      "bluecore_workflows" : [ "airflow_public" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  }, {
+    "id" : "a7c542ab-7b25-4148-8917-b8bb0198da8b",
+    "username" : "dev_user",
+    "firstName" : "dev",
+    "lastName" : "user",
+    "email" : "dev_user@bluecore.edu",
+    "emailVerified" : true,
+    "createdTimestamp" : 1746926440735,
+    "enabled" : true,
+    "totp" : false,
+    "credentials" : [ {
+      "id" : "b7d83078-ae36-4802-8ad6-123171209e8f",
+      "type" : "password",
+      "userLabel" : "My password",
+      "createdDate" : 1746926596404,
+      "secretData" : "{\"value\":\"hkejPyJknD07+KHaoFORh0hhIetuduJYXxEmmZSS3AM=\",\"salt\":\"O1S6yEKQEutwgkyOh6lHdw==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":5,\"algorithm\":\"argon2\",\"additionalParameters\":{\"hashLength\":[\"32\"],\"memory\":[\"7168\"],\"type\":[\"id\"],\"version\":[\"1.3\"],\"parallelism\":[\"1\"]}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-bluecore" ],
+    "clientRoles" : {
+      "bluecore_workflows" : [ "airflow_user" ]
+    },
+    "notBefore" : 0,
+    "groups" : [ ]
+  }, {
+    "id" : "f12592c6-973e-4fc0-8547-87816eddc559",
+    "username" : "dev_viewer",
+    "firstName" : "dev",
+    "lastName" : "viewer",
+    "email" : "dev_viewer@bluecore.edu",
+    "emailVerified" : true,
+    "createdTimestamp" : 1746926486945,
+    "enabled" : true,
+    "totp" : false,
+    "credentials" : [ {
+      "id" : "73231013-d210-4d46-bf77-f01c52e417ea",
+      "type" : "password",
+      "userLabel" : "My password",
+      "createdDate" : 1746926613337,
+      "secretData" : "{\"value\":\"2pFCZqyDVdBdrV4L0TJQM9Nybe0irxTNWJcQAt123m0=\",\"salt\":\"h4+P35X1JrN2/lPBedci9Q==\",\"additionalParameters\":{}}",
+      "credentialData" : "{\"hashIterations\":5,\"algorithm\":\"argon2\",\"additionalParameters\":{\"hashLength\":[\"32\"],\"memory\":[\"7168\"],\"type\":[\"id\"],\"version\":[\"1.3\"],\"parallelism\":[\"1\"]}}"
+    } ],
+    "disableableCredentialTypes" : [ ],
+    "requiredActions" : [ ],
+    "realmRoles" : [ "default-roles-bluecore" ],
+    "clientRoles" : {
+      "bluecore_workflows" : [ "airflow_viewer" ]
     },
     "notBefore" : 0,
     "groups" : [ ]
@@ -1372,7 +1508,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-sha256-pairwise-sub-mapper", "oidc-usermodel-attribute-mapper", "oidc-usermodel-property-mapper", "saml-role-list-mapper", "oidc-full-name-mapper", "oidc-address-mapper", "saml-user-property-mapper", "saml-user-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-usermodel-property-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-usermodel-attribute-mapper", "saml-user-attribute-mapper", "oidc-full-name-mapper", "oidc-address-mapper", "saml-user-property-mapper", "saml-role-list-mapper" ]
       }
     }, {
       "id" : "4a3137ea-778d-437c-ab89-cea18d91032a",
@@ -1423,7 +1559,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "saml-role-list-mapper", "oidc-usermodel-property-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-address-mapper", "oidc-full-name-mapper", "saml-user-property-mapper", "saml-user-attribute-mapper", "oidc-usermodel-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-full-name-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-role-list-mapper", "saml-user-attribute-mapper", "oidc-address-mapper", "oidc-usermodel-attribute-mapper", "oidc-usermodel-property-mapper", "saml-user-property-mapper" ]
       }
     }, {
       "id" : "d2f2ccdf-b76c-4973-89c2-b852171a9d85",
