@@ -24,9 +24,11 @@ when the Keycloak container starts.
 This realm config contains the following:
 > - Realm: `bluecore`
 > - Client: `bluecore_workflows`
-> - Username: `developer`
+> - Username: `developer` #admin account
 > - password: `123456`
-
+> 
+> 📝 Note: Other account names that can be used are: `dev_op`,`dev_public`,`dev_user`, and `dev_viewer` with the same password. 
+> These accounts reflect the roles associated in their name.
 ### 🔑 Logging into Keycloak master realm
 You can also create a new realm and client in Keycloak by going to:
 > - http://localhost:8081 
