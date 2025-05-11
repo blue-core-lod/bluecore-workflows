@@ -13,10 +13,32 @@ Based on the documentation, [Running Airflow in Docker](https://airflow.apache.o
 
 1. Clone repository: `git clone https://github.com/blue-core-lod/bluecore-workflows`
 2. If it's commented out, uncomment the line `- ./dags:/opt/airflow/dags` in docker-compose.yaml (under `volumes`, under `x-airflow-common`).
-3. Run `docker compose up airflow-init` to initialize the Airflow
-4. Bring up airflow, `docker compose up` to run the containers in the foreground,
-   add `docker compose up -d` to run as a daemon.
+3. Run `./scripts/start-dev-server.sh` to start development docker environment
 5. Access Airflow locally at http://localhost:8080
+6. Access Keycloak locally at http://localhost:8081
+
+## 🔐 Keycloak local development and credentials
+Keycloak will automatically import realm config located at: `keycloak-export/bluecore-realm.json` \
+when the Keycloak container starts. 
+### 🔑 Logging into Airflow using Keycloak with developer credentials
+This realm config contains the following:
+> - Realm: `bluecore`
+> - Client: `bluecore_workflows`
+> - Username: `developer`
+> - password: `123456`
+
+### 🔑 Logging into Keycloak master realm
+You can also create a new realm and client in Keycloak by going to:
+> - http://localhost:8081 
+> - username: `admin` 
+> - password: `admin`
+
+###  💾 Exporting Keycloak realm configs
+To export any changes to the bluecore realm config, you can use the following command:
+```bash
+   ./scripts/export-keycloak-realm.sh
+````
+This will export the realm config to the `keycloak-export/bluecore-realm.json` file.
 
 ### 📨 Setup the SQS queue in localstack for local development
 
