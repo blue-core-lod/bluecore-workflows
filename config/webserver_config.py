@@ -104,6 +104,7 @@ OAUTH_PROVIDERS = [
     }
 ]
 
+
 def load_keycloak_public_key():
     req = httpx.get(OIDC_ISSUER_INTERNAL)
     key_der_base64 = req.json()["public_key"]
@@ -115,8 +116,10 @@ def load_keycloak_public_key():
     print()
     return serialization.load_der_public_key(key_def)
 
+
 def get_public_key():
     return load_keycloak_public_key()
+
 
 class CustomSecurityManager(FabAirflowSecurityManagerOverride):
     def oauth_user_info(self, provider, response):
@@ -127,7 +130,7 @@ class CustomSecurityManager(FabAirflowSecurityManagerOverride):
                 token,
                 get_public_key(),
                 algorithms=["HS256", "RS256"],
-                audience=CLIENT_ID
+                audience=CLIENT_ID,
             )
             roles = decoded_jwt["resource_access"][CLIENT_ID]["roles"]
             if not roles:

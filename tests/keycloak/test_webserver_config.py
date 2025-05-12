@@ -17,16 +17,18 @@ MOCK_JWT = jwt.encode(
         "email": f"{USERNAME}@example.com",
         "given_name": "Test",
         "family_name": "User",
-        "resource_access": {
-            CLIENT_ID: {"roles": ["airflow_admin", "airflow_user"]}
-        },
+        "resource_access": {CLIENT_ID: {"roles": ["airflow_admin", "airflow_user"]}},
     },
     key="mocked-public-key",
     algorithm="HS256",
 )
 
+
 @pytest.mark.integration
-@patch("config.webserver_config.jwt.decode", return_value=jwt.decode(MOCK_JWT, "mocked-public-key", algorithms=["HS256"]))
+@patch(
+    "config.webserver_config.jwt.decode",
+    return_value=jwt.decode(MOCK_JWT, "mocked-public-key", algorithms=["HS256"]),
+)
 def test_keycloak_token_flow_and_jwt_decoding(mock_jwt_decode, httpx_mock, monkeypatch):
     # Set the environment variables BEFORE importing the config
     monkeypatch.setenv("KEYCLOAK_INTERNAL_URL", "http://localhost:8081/keycloak/")
@@ -36,7 +38,9 @@ def test_keycloak_token_flow_and_jwt_decoding(mock_jwt_decode, httpx_mock, monke
     monkeypatch.setenv("AIRFLOW_KEYCLOAK_REALM", "bluecore")
 
     # Create a temporary public key (use only for testing)
-    test_public_key = rsa.generate_private_key(public_exponent=65537, key_size=2048).public_key()
+    test_public_key = rsa.generate_private_key(
+        public_exponent=65537, key_size=2048
+    ).public_key()
 
     # Convert to DER and then base64 for mocking the Keycloak JSON response
     public_key_der = test_public_key.public_bytes(
