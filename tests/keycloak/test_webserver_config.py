@@ -66,6 +66,7 @@ def test_keycloak_token_flow_and_jwt_decoding(mock_jwt_decode, httpx_mock, monke
 
     # Reload module so URLs pick up monkeypatched env
     import importlib
+
     importlib.reload(wsc)
 
     # Exercise load/get
