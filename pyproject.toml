@@ -29,6 +29,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "pytest-mock",
+    "pytest-httpx",
     "types-mock",
     "requests-mock",
     "ruff>=0.9.7",
