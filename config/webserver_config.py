@@ -104,19 +104,19 @@ OAUTH_PROVIDERS = [
     }
 ]
 
-req = httpx.get(OIDC_ISSUER_INTERNAL)
+def load_keycloak_public_key():
+    req = httpx.get(OIDC_ISSUER_INTERNAL)
+    key_der_base64 = req.json()["public_key"]
+    key_def = b64decode(key_der_base64)
+    print()
+    print(f"{MAGENTA}{'#' * 71}{RESET}")
+    print(f"{BOLD}{MAGENTA}req status:{RESET} {req}")
+    print(f"{MAGENTA}{'#' * 71}{RESET}")
+    print()
+    return serialization.load_der_public_key(key_def)
 
-# Debug line to ensure keycloak request successful: [✅ req status: <Response [200 OK]>]
-print()
-print(f"{MAGENTA}{'#' * 71}{RESET}")
-print(f"{BOLD}{MAGENTA}req status:{RESET} {req}")
-print(f"{MAGENTA}{'#' * 71}{RESET}")
-print()
-
-key_der_base64 = req.json()["public_key"]
-key_def = b64decode(key_der_base64)
-public_key = serialization.load_der_public_key(key_def)
-
+def get_public_key():
+    return load_keycloak_public_key()
 
 class CustomSecurityManager(FabAirflowSecurityManagerOverride):
     def oauth_user_info(self, provider, response):
@@ -124,7 +124,10 @@ class CustomSecurityManager(FabAirflowSecurityManagerOverride):
         if provider == PROVIDER_NAME:
             token = response.get("access_token")
             decoded_jwt = jwt.decode(
-                token, public_key, algorithms=["HS256", "RS256"], audience=CLIENT_ID
+                token,
+                get_public_key(),
+                algorithms=["HS256", "RS256"],
+                audience=CLIENT_ID
             )
             roles = decoded_jwt["resource_access"][CLIENT_ID]["roles"]
             if not roles:
