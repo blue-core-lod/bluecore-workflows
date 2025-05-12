@@ -104,13 +104,11 @@ while commenting out the previous line `image: ${AIRFLOW_IMAGE_NAME:-blue-core-l
 We are using [uv][UV] to manage dependency updates.\
 Once you have uv installed, you can install the other project dependencies by running:
 ```bash
-    # 📝 Note: This does not work with Mac OS (Apple silicon) due to dependency errors compiling with C++
+    # 📝 Note: This does not work initially with MacOS (Apple silicon) due to dependency errors compiling with C++
     uv sync
 ```
->⚠️ **Note**: In local development to avoid dependency errors using Mac OS (Apple silicon), you can run: 
-```bash
-  uv pip install ".[dev]"
-```
+>⚠️ **Note**: In local development to avoid dependency errors using MacOS (Apple silicon), follow the: **[📝 Apple Silicon Dependency Install Guide](https://github.com/blue-core-lod/bluecore_info/wiki/bluecore-workflows-apple-silicon-install)**
+> 
 ---
 
 ## 🧪 Automated Tests
@@ -130,7 +128,6 @@ the command-line. Configuration options are in the `setup.cfg` file, under the f
 ## 🧹 Code formatting
 Code can be auto-formatted using [ruff][RUFF].
 To have Black apply formatting: `uv run ruff format .`
->⚠️ **Note**: in local development use `ruff format .` to avoid dependency errors
 
 [AF]: https://airflow.apache.org/
 [BLACK]: https://black.readthedocs.io/
