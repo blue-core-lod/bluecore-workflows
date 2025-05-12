@@ -104,10 +104,10 @@ while commenting out the previous line `image: ${AIRFLOW_IMAGE_NAME:-blue-core-l
 We are using [uv][UV] to manage dependency updates.\
 Once you have uv installed, you can install the other project dependencies by running:
 ```bash
-    # 📝 Note: This does not work with Mac OS (Apple Silicone) due to dependency errors compiling with C++
+    # 📝 Note: This does not work with Mac OS (Apple silicon) due to dependency errors compiling with C++
     uv sync
 ```
->⚠️ **Note**: In local development to avoid dependency errors using Mac OS (Apple Silicone), you can run: 
+>⚠️ **Note**: In local development to avoid dependency errors using Mac OS (Apple silicon), you can run: 
 ```bash
   uv pip install ".[dev]"
 ```
