@@ -1,56 +1,39 @@
-# Licensed to the Apache Software Foundation (ASF) under one
-# or more contributor license agreements.  See the NOTICE file
-# distributed with this work for additional information
-# regarding copyright ownership.  The ASF licenses this file
-# to you under the Apache License, Version 2.0 (the
-# "License"); you may not use this file except in compliance
-# with the License.  You may obtain a copy of the License at
-#
-#   http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing,
-# software distributed under the License is distributed on an
-# "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-# KIND, either express or implied.  See the License for the
-# specific language governing permissions and limitations
-# under the License.
-#
-
-# Basic Airflow cluster configuration for CeleryExecutor with Redis and PostgreSQL.
-#
-# WARNING: This configuration is for local development. Do not use it in a production deployment.
-#
-# This configuration supports basic configuration using environment variables or an .env file
-# The following variables are supported:
-#
-# AIRFLOW_IMAGE_NAME           - Docker image name used to run Airflow.
-#                                Default: apache/airflow:master-python3.8
-# AIRFLOW_UID                  - User ID in Airflow containers
-#                                Default: 50000
-# AIRFLOW_GID                  - Group ID in Airflow containers
-#                                Default: 0
-#
-# Those configurations are useful mostly in case of standalone testing/running Airflow in test/try-out mode
-#
-# _AIRFLOW_WWW_USER_USERNAME   - Username for the administrator account (if requested).
-#                                Default: airflow
-# _AIRFLOW_WWW_USER_PASSWORD   - Password for the administrator account (if requested).
-#                                Default: airflow
-# _PIP_ADDITIONAL_REQUIREMENTS - Additional PIP requirements to add when starting all containers.
-#                                Default: ''
-#
-# Feel free to modify this file to suit your needs.
----
 version: '3'
+x-keycloak-env: &keycloak-env
+  ####################################
+  ## Keycloak Environment Variables ##
+  ####################################
+  KC_DB: postgres
+  KC_DB_SCHEMA: public
+  KC_DB_URL_HOST: postgres
+  KC_DB_URL_PORT: 5432
+  KC_DB_URL_DATABASE: keycloak
+  KC_DB_USERNAME: airflow
+  KC_DB_PASSWORD: airflow
+  KEYCLOAK_ADMIN: admin
+  KEYCLOAK_ADMIN_PASSWORD: admin
+  # ----------------------------------
+  KC_HOSTNAME_STRICT: "false"
+  KEYCLOAK_REALM: 'bluecore'
+  KEYCLOAK_INTERNAL_URL: 'http://keycloak:8080/keycloak/'
+  KEYCLOAK_EXTERNAL_URL: 'http://localhost:8081/keycloak/'
+  AIRFLOW_KEYCLOAK_REALM: 'bluecore'
+  AIRFLOW_KEYCLOAK_CLIENT_ID: 'bluecore_workflows'
+  AIRFLOW_KEYCLOAK_CLIENT_SECRET: 'KIu8gWa8rtjlT0Zl7zkNzsObFZGJ2IsJ' # Replace with your actual secret (Need to be set in Keycloak)
+  # ----------------------------------
+  KC_HEALTH_ENABLED: 'true' # allows health check to work in docker
+  KC_PROXY_HEADERS: 'xforwarded'
+  KC_PROXY: 'edge'
+  KC_HTTP_ENABLED: 'true'
+  KC_HTTP_RELATIVE_PATH: '/keycloak/'
+  KC_LOG_LEVEL: 'INFO'
+
 x-airflow-common:
   &airflow-common
-  # In order to add custom dependencies or upgrade provider packages you can use your extended image.
-  # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
-  # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
-  # image: ${AIRFLOW_IMAGE_NAME:-ld4p/ils-middleware:latest}
   build: .
   environment:
     &airflow-common-env
+    <<: *keycloak-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
     AIRFLOW__CORE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
@@ -65,8 +48,6 @@ x-airflow-common:
     AIRFLOW_VAR_RDF2MARC_LAMBDA: 'sinopia-rdf2marc-development'
     AIRFLOW_VAR_SINOPIA_ENV: ${AIRFLOW_VAR_SINOPIA_ENV:-dev}
     AIRFLOW_VAR_SQS_URL: 'http://localstack:4566/000000000000/'
-    AIRFLOW_KEYCLOAK_CLIENT_ID: 'bluecore_workflows'
-    AIRFLOW_KEYCLOAK_CLIENT_SECRET: 'YHaasdfadsfe34q34' # Placeholder
     AIRFLOW_VAR_SYMPHONY_APP_ID: 'SINOPIA_DEV'
     AIRFLOW_VAR_STANFORD_SYMPHONY_LOGIN: 'USERNAME'
     AIRFLOW_VAR_STANFORD_SYMPHONY_PASSWORD: 'PASSWORD'
@@ -90,13 +71,14 @@ x-airflow-common:
 
 services:
   postgres:
-    image: postgres:13
+    image: postgres:16
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow
-      POSTGRES_DB: airflow
+      POSTGRES_MULTIPLE_DB: airflow, keycloak
     volumes:
       - postgres-db-volume:/var/lib/postgresql/data
+      - ./scripts/init-multi-postgres-dbs.sh:/docker-entrypoint-initdb.d/init-multi-postgres-dbs.sh
     healthcheck:
       test: ["CMD", "pg_isready", "-U", "airflow"]
       interval: 5s
@@ -114,6 +96,26 @@ services:
       retries: 50
     restart: always
 
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.2
+    command: start-dev  --import-realm
+    environment:
+      <<: *keycloak-env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8081:8080"
+    volumes:
+      - ./keycloak-export/bluecore-realm.json:/opt/keycloak/data/import/realm.json
+      - ./keycloak-export/:/opt/keycloak/data/export
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<> /dev/tcp/127.0.0.1/9000; echo -e 'GET /health/ready HTTP/1.1\\r\\nhost: http://localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3; if [ $? -eq 0 ]; then echo 'Healthcheck Successful'; exit 0; else echo 'Healthcheck Failed'; exit 1; fi;"]
+      interval: 10s
+      timeout: 10s
+      retries: 20
+    restart: always
+
   airflow-webserver:
     <<: *airflow-common
     command: webserver
@@ -124,11 +126,19 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
     restart: always
 
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", 'airflow jobs check --job-type SchedulerJob --hostname "$${HOSTNAME}"']
       interval: 10s
@@ -139,6 +149,9 @@ services:
   airflow-worker:
     <<: *airflow-common
     command: celery worker
+    depends_on:
+      postgres:
+        condition: service_healthy
     healthcheck:
       test:
         - "CMD-SHELL"
@@ -157,12 +170,19 @@ services:
       _AIRFLOW_WWW_USER_CREATE: 'true'
       _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
       _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
-
+    depends_on:
+      keycloak:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
 
   localstack:
     image: localstack/localstack
     ports:
       - "4566:4566"
+    depends_on:
+      postgres:
+        condition: service_healthy
     environment:
       - SERVICES=sqs
       - AWS_DEFAULT_REGION=us-west-2

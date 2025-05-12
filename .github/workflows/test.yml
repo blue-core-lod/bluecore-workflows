@@ -25,6 +25,12 @@ jobs:
       - name: Install uv
         run: pip3 install uv
 
+      - name: Create virtualenv
+        run: uv venv
+  
+      - name: Install dev dependencies
+        run: uv sync
+  
       - name: Type Checking
         run: uv run mypy .
 

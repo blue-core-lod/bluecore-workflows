@@ -1,6 +1,6 @@
 [project]
 name = "bluecore-workflows"
-version = "0.1.0"
+version = "0.1.1"
 description = "Blue Core Workflows using Apache Airflow"
 readme = "README.md"
 authors = [{ name = "Jeremy Nelson", email = "jpnelson@stanford.edu"}]
@@ -21,7 +21,7 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "boto3",
     "bluecore-models>=0.4.1",
-] 
+]
 
 [dependency-groups]
 dev = [
@@ -29,6 +29,7 @@ dev = [
     "pytest",
     "pytest-cov",
     "pytest-mock",
+    "pytest-httpx",
     "types-mock",
     "requests-mock",
     "ruff>=0.9.7",
