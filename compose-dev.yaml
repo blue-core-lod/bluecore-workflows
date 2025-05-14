@@ -17,7 +17,6 @@ x-keycloak-env: &keycloak-env
   KEYCLOAK_REALM: 'bluecore'
   KEYCLOAK_INTERNAL_URL: 'http://keycloak:8080/keycloak/'
   KEYCLOAK_EXTERNAL_URL: 'http://localhost:8081/keycloak/'
-  AIRFLOW_KEYCLOAK_REALM: 'bluecore'
   AIRFLOW_KEYCLOAK_CLIENT_ID: 'bluecore_workflows'
   AIRFLOW_KEYCLOAK_CLIENT_SECRET: 'KIu8gWa8rtjlT0Zl7zkNzsObFZGJ2IsJ' # Replace with your actual secret (Need to be set in Keycloak)
   # ----------------------------------
