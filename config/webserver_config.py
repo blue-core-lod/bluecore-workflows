@@ -51,7 +51,7 @@ AUTH_ROLES_MAPPING = {
 # Pull .env constants ==========================================================
 CLIENT_ID = os.getenv("AIRFLOW_KEYCLOAK_CLIENT_ID")
 CLIENT_SECRET = os.getenv("AIRFLOW_KEYCLOAK_CLIENT_SECRET")
-REALM = os.getenv("AIRFLOW_KEYCLOAK_REALM")
+REALM = os.getenv("KEYCLOAK_REALM")
 KEYCLOAK_INTERNAL_URL = os.getenv("KEYCLOAK_INTERNAL_URL")
 KEYCLOAK_EXTERNAL_URL = os.getenv("KEYCLOAK_EXTERNAL_URL")
 

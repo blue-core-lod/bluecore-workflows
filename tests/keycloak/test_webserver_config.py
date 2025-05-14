@@ -43,7 +43,7 @@ def test_keycloak_token_flow_and_jwt_decoding(mock_jwt_decode, httpx_mock, monke
     monkeypatch.setenv("KEYCLOAK_EXTERNAL_URL", "http://localhost:8081/keycloak/")
     monkeypatch.setenv("AIRFLOW_KEYCLOAK_CLIENT_ID", CLIENT_ID)
     monkeypatch.setenv("AIRFLOW_KEYCLOAK_CLIENT_SECRET", "mocked_client_secret")
-    monkeypatch.setenv("AIRFLOW_KEYCLOAK_REALM", "bluecore")
+    monkeypatch.setenv("KEYCLOAK_REALM", "bluecore")
 
     # Build a test public key, DER → Base64
     test_public_key = rsa.generate_private_key(
