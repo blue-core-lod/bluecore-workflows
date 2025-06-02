@@ -30,17 +30,19 @@ def _contributors(**kwargs) -> tuple:
 
     lookup_contrib_id = {}
     for row in folio_client.contributor_types:
-        lookup_contrib_id[row["name"]] = row["id"]
+        lookup_contrib_id[row["name"].casefold()] = row["id"]
 
     lookup_contrib_name_id = {}
     for row in folio_client.contrib_name_types:
-        lookup_contrib_name_id[row["name"]] = row["id"]
+        lookup_contrib_name_id[row["name"].casefold()] = row["id"]
 
     contributors = record.get("contributors", [])
     for row in values:
         contributor = {
-            "contributorNameTypeId": lookup_contrib_name_id[contrib_name_type],
-            "contributorTypeId": lookup_contrib_id[row[1]],
+            "contributorNameTypeId": lookup_contrib_name_id[
+                contrib_name_type.casefold()
+            ],
+            "contributorTypeId": lookup_contrib_id[row[1].casefold()],
             "contributorTypeText": row[1],
             "name": row[0],
             "primary": is_primary,
