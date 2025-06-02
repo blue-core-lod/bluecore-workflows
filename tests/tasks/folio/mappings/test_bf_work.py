@@ -15,7 +15,7 @@ def test_contributor_author_person(test_graph: rdflib.Graph):
     contributors = [row for row in test_graph.query(sparql)]
 
     assert str(contributors[0][0]).startswith("Ramzanali Fazel, Shirin")
-    assert str(contributors[0][1]).startswith("Author")
+    assert str(contributors[0][1]).startswith("author")
 
 
 @typing.no_type_check
@@ -54,10 +54,10 @@ def test_primary_contributor(test_graph: rdflib.Graph):
     primary_contributors = [row for row in test_graph.query(sparql)]
 
     assert str(primary_contributors[0][0]).startswith("Brioni, Simone")
-    assert str(primary_contributors[0][1]).startswith("Author")
+    assert str(primary_contributors[0][1]).startswith("author")
 
     assert str(primary_contributors[1][0]).startswith("Blow, C. Joe")
-    assert str(primary_contributors[1][1]).startswith("Author")
+    assert str(primary_contributors[1][1]).startswith("author")
 
 
 @typing.no_type_check
