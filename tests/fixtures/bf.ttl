@@ -139,5 +139,5 @@ bf:Work rdfs:label "http://id.loc.gov/ontologies/bibframe/Work" .
 
 <https://purl.stanford.edu/mf283yt5578> rdfs:label "Stanford Digital Repository"@eng .
 
-<http://id.loc.gov/vocabulary/relators/aut> rdfs:label "Author" .
+<http://id.loc.gov/vocabulary/relators/aut> rdfs:label "author" .
 
