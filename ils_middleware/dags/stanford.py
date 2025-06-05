@@ -2,8 +2,8 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.models import Variable
-from airflow.operators.empty import EmptyOperator
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
+from airflow.providers.standard.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
 from ils_middleware.tasks.amazon.sqs import parse_messages
@@ -38,7 +38,6 @@ default_args = {
     "retries": 1,
     "retry_delay": timedelta(minutes=5),
     "provider": None,
-    "provide_context": True,
     "on_failure_callback": task_failure_callback,
 }
 

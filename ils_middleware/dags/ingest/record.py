@@ -5,7 +5,7 @@ import logging
 from datetime import datetime
 
 from airflow.decorators import dag, task
-from airflow.operators.python import get_current_context
+from airflow.sdk import get_current_context
 
 from ils_middleware.tasks.amazon.bluecore_records_s3 import get_file
 from ils_middleware.tasks.bluecore.batch import is_zip, parse_file_to_graph
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 
 @dag(
-    schedule_interval=None,
+    schedule=None,
     start_date=datetime(2025, 2, 20),
     catchup=False,
     tags=["ingest", "record"],

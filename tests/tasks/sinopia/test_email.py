@@ -8,7 +8,7 @@ from airflow import DAG
 
 from airflow.providers.amazon.aws.hooks.ses import SesHook
 from airflow.models.taskinstance import TaskInstance
-from airflow.operators.dummy import DummyOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
 
 from ils_middleware.tasks.sinopia.email import (
     send_notification_emails,
@@ -40,7 +40,7 @@ def test_task():
     test_dag = DAG(
         "test_dag", default_args={"owner": "airflow", "start_date": start_date}
     )
-    return DummyOperator(task_id="test", dag=test_dag)
+    return EmptyOperator(task_id="test", dag=test_dag)
 
 
 def test_send_notification_emails(mocker: MockerFixture):
