@@ -1,4 +1,4 @@
-FROM apache/airflow:2.10.5-python3.12
+FROM apache/airflow:3.0.2-python3.12
 
 USER root
 RUN apt-get -y update && apt-get -y install git gcc g++

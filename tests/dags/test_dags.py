@@ -3,6 +3,7 @@ import pytest
 
 from airflow import models
 from airflow.utils.dag_cycle_tester import check_cycle
+from airflow.sdk.definitions.dag import DAG
 
 DAG_PATHS = [
     p
@@ -25,7 +26,7 @@ def mock_variable(monkeypatch):
 def test_dag_integrity(dag_path, mock_variable):
     module = _import_file(dag_path.name, dag_path)
 
-    dag_objects = [var for var in vars(module).values() if isinstance(var, models.DAG)]
+    dag_objects = [var for var in vars(module).values() if isinstance(var, DAG)]
     assert dag_objects
 
     # For every DAG object, test for cycles

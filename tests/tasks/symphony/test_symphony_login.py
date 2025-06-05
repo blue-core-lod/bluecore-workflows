@@ -3,7 +3,7 @@
 import pytest
 import requests  # type: ignore
 
-from airflow.hooks.base_hook import BaseHook
+from airflow.hooks.base import BaseHook
 from pytest_mock import MockerFixture
 
 from ils_middleware.tasks.symphony.login import SymphonyLogin

@@ -4,8 +4,7 @@ from datetime import datetime, timedelta
 
 from airflow import DAG
 from airflow.models import Variable
-from airflow.operators.dummy import DummyOperator
-from airflow.operators.python import PythonOperator
+from airflow.providers.standard.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
 from ils_middleware.tasks.amazon.sqs import parse_messages
@@ -20,6 +19,7 @@ from ils_middleware.tasks.sinopia.email import (
     send_update_success_emails,
 )
 from ils_middleware.tasks.general.init import message_from_context
+from airflow.providers.standard.operators.empty import EmptyOperator
 
 
 def task_failure_callback(ctx_dict) -> None:
@@ -125,10 +125,10 @@ with DAG(
         python_callable=send_update_success_emails,
     )
 
-    # Dummy Operators
-    messages_received = DummyOperator(task_id="messages_received", dag=dag)
-    processing_complete = DummyOperator(task_id="processing_complete", dag=dag)
-    processed_sinopia = DummyOperator(
+    # Empty Operators
+    messages_received = EmptyOperator(task_id="messages_received", dag=dag)
+    processing_complete = EmptyOperator(task_id="processing_complete", dag=dag)
+    processed_sinopia = EmptyOperator(
         task_id="processed_sinopia", dag=dag, trigger_rule="none_failed"
     )
 

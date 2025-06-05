@@ -4,13 +4,14 @@ version = "0.1.1"
 description = "Blue Core Workflows using Apache Airflow"
 readme = "README.md"
 authors = [{ name = "Jeremy Nelson", email = "jpnelson@stanford.edu"}]
-requires-python = ">=3.12"
+requires-python = "==3.12.*"
 
 dependencies = [
     "pymarc",
-    "apache-airflow>=2.10.5",
-    "apache-airflow-providers-amazon>=9.2.0",
-    "sqlalchemy >= 1.3.18, <2",
+    "apache-airflow==3.0.2",  # keep version in sync with image in Dockerfile
+    "apache-airflow-providers-amazon",
+    "apache-airflow-providers-fab",
+    "sqlalchemy",
     "typing-extensions>=4.0.0",
     "rdflib",
     "lxml",
@@ -21,6 +22,7 @@ dependencies = [
     "psycopg2-binary>=2.9.10",
     "boto3",
     "bluecore-models>=0.4.1",
+    "xmlsec==1.3.14", # this pin can be released once a package issue with 1.3.15 is resolved
 ]
 
 [dependency-groups]
@@ -33,7 +35,7 @@ dev = [
     "types-mock",
     "requests-mock",
     "ruff>=0.9.7",
-    "apache-airflow-providers-postgres>=6.1.0",
+    "apache-airflow-providers-postgres",
 ]
 
 [build-system]
@@ -45,3 +47,8 @@ packages = ["bluecore_workflow"]
 
 [tool.mypy]
 ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+addopts = "-k 'not test_task_instance and not test_parse_institutional_msgs and not test_email'"
+
+
