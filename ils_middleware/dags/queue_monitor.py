@@ -4,7 +4,7 @@ import logging
 from datetime import datetime, timedelta
 
 from airflow.decorators import dag, task
-from airflow.operators.trigger_dagrun import TriggerDagRunOperator
+from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 
 from ils_middleware.dags.alma import institutions
 from ils_middleware.tasks.amazon.sqs import SubscribeOperator
@@ -37,7 +37,7 @@ def _trigger_dags(**kwargs):
 
 @dag(
     start_date=datetime(2024, 1, 15),
-    schedule_interval=timedelta(minutes=5),
+    schedule=timedelta(minutes=5),
     catchup=False,
 )
 def monitor_institutions_messages():

@@ -1,4 +1,5 @@
-import os
+# disabled for now, until #39 is resolved
+
 import pytest
 import jwt
 from unittest.mock import patch

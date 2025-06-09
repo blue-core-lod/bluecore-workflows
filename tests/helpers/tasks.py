@@ -6,7 +6,7 @@ from datetime import datetime
 from pytest_mock import MockerFixture
 
 from airflow import DAG
-from airflow.operators.dummy import DummyOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.models.taskinstance import TaskInstance
 
 CATKEY = "320011"
@@ -21,7 +21,7 @@ MARC_JSON_NO_CAT_KEY = {"leader": "11222999   adf", "fields": [{"tag": "245"}]}
 
 
 def test_task():
-    return DummyOperator(
+    return EmptyOperator(
         task_id="test_task",
         dag=DAG(
             "test_dag",
