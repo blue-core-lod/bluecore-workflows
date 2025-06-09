@@ -10,6 +10,7 @@ dependencies = [
     "pymarc",
     "apache-airflow",
     "apache-airflow-providers-amazon",
+    "apache-airflow-providers-fab",
     "sqlalchemy",
     "typing-extensions>=4.0.0",
     "rdflib",

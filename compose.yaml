@@ -59,7 +59,7 @@ x-keycloak-env: &keycloak-env
   KEYCLOAK_ADMIN: admin
   KEYCLOAK_ADMIN_PASSWORD: admin
   # ----------------------------------
-  KC_HOSTNAME_STRICT: "false"
+  KC_HOSTNAME_STRICT: 'false'
   KEYCLOAK_REALM: 'bluecore'
   KEYCLOAK_INTERNAL_URL: 'http://keycloak:8080/keycloak/'
   KEYCLOAK_EXTERNAL_URL: 'http://localhost:8081/keycloak/'
@@ -196,6 +196,8 @@ services:
     restart: always
     depends_on:
       <<: *airflow-common-depends-on
+      keycloak:
+        condition: service_healthy
       airflow-init:
         condition: service_completed_successfully
 
