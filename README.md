@@ -16,7 +16,7 @@ Based on the documentation, [Running Airflow in Docker](https://airflow.apache.o
 
 1. Clone repository: `git clone https://github.com/blue-core-lod/bluecore-workflows`
 2. If it's commented out, uncomment the line `- ./dags:/opt/airflow/dags` in docker-compose.yaml (under `volumes`, under `x-airflow-common`).
-3. Run `./scripts/start-dev-server.sh` to start development docker environment
+3. Run `docker compose up` to start development docker environment
 4. Access Airflow locally at http://localhost:8080
 5. Access Keycloak locally at http://localhost:8081
 ---
@@ -27,7 +27,7 @@ when the Keycloak container starts.
 ### 🔑 Logging into Airflow using Keycloak with developer credentials
 This realm config contains the following:
 > - Realm: `bluecore`
-> - Client: `bluecore_workflows`
+> - Client: `bluecore_api`
 > - Username: `developer` #admin account
 > - password: `123456`
 > 
@@ -45,42 +45,6 @@ To export any changes to the bluecore realm config, you can use the following co
    ./scripts/export-keycloak-realm.sh
 ````
 This will export the realm config to the `keycloak-export/bluecore-realm.json` file.
-
----
-
-### 📨 Setup the SQS queue in localstack for local development
-
-```bash 
-   AWS_ACCESS_KEY_ID=999999 AWS_SECRET_ACCESS_KEY=1231 aws sqs \
-       --endpoint-url=http://localhost:4566 create-queue \
-       --region us-west-2 \
-       --queue-name all-institutions
-```
-
-### 🔗  Setup the local AWS connection for SQS
-
-1. From the `Admin > Connections` menu
-2. Click the "+"
-3. Add an Amazon Web Services connection with the following settings:
-
-    * Connection Id: aws_sqs_connection
-    * Login: 999999
-    * Password: 1231
-    * Extra: `{"host": "http://localstack:4566", "region_name": "us-west-2"}`
-
-### 📤 Send a message to the SQS queue
-
-In order to test a dag locally, a message must be sent to the above queue:
-```bash
-   AWS_ACCESS_KEY_ID=999999 AWS_SECRET_ACCESS_KEY=1231 aws sqs \
-       send-message \
-       --endpoint-url=http://localhost:4566 \
-       --queue-url https://localhost:4566/000000000000/all-institutions \
-       --message-body file://tests/fixtures/sqs/test-message.json
-```
-
->⚠️ **Note**: the test message content in `tests/fixtures/sqs/test-message.json`
-> contains an email address that you can update to your own.
 
 ---
 

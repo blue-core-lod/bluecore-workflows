@@ -1,7 +1,10 @@
 #!/bin/bash
 set -e
 
-databases=("keycloak")
+databases=(
+    keycloak
+    bluecore
+)
 
 for db in "${databases[@]}"; do
   echo "Creating database $db"

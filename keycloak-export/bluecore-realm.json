@@ -331,6 +331,7 @@
         "containerId" : "add916fd-7160-49b9-8363-9f18d1d71f7d",
         "attributes" : { }
       } ],
+      "bluecore_api" : [ ],
       "account" : [ {
         "id" : "43db9377-5076-408d-894c-75b48b652e5e",
         "name" : "manage-consent",
@@ -692,9 +693,49 @@
     "defaultClientScopes" : [ "web-origins", "acr", "roles", "profile", "basic", "email" ],
     "optionalClientScopes" : [ "address", "phone", "offline_access", "organization", "microprofile-jwt" ]
   }, {
+    "id" : "46668364-93ca-416e-98d7-687a202d96b6",
+    "clientId" : "bluecore_api",
+    "name" : "Bluecore API",
+    "description" : "For API",
+    "rootUrl" : "",
+    "adminUrl" : "",
+    "baseUrl" : "",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "alwaysDisplayInConsole" : false,
+    "clientAuthenticatorType" : "client-secret",
+    "redirectUris" : [ "http://localhost:8080/auth/oauth-authorized/keycloak", "http://localhost/api/oauth-authorized/keycloak", "http://localhost:8080/oauth-authorized/keycloak" ],
+    "webOrigins" : [ "/*" ],
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "consentRequired" : false,
+    "standardFlowEnabled" : true,
+    "implicitFlowEnabled" : false,
+    "directAccessGrantsEnabled" : true,
+    "serviceAccountsEnabled" : false,
+    "publicClient" : true,
+    "frontchannelLogout" : true,
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "realm_client" : "false",
+      "oidc.ciba.grant.enabled" : "false",
+      "client.secret.creation.time" : "1747168703",
+      "backchannel.logout.session.required" : "true",
+      "frontchannel.logout.session.required" : "true",
+      "post.logout.redirect.uris" : "+",
+      "display.on.consent.screen" : "false",
+      "oauth2.device.authorization.grant.enabled" : "false",
+      "backchannel.logout.revoke.offline.tokens" : "false"
+    },
+    "authenticationFlowBindingOverrides" : { },
+    "fullScopeAllowed" : true,
+    "nodeReRegistrationTimeout" : -1,
+    "defaultClientScopes" : [ "web-origins", "acr", "roles", "profile", "basic", "email" ],
+    "optionalClientScopes" : [ "address", "phone", "offline_access", "organization", "microprofile-jwt" ]
+  }, {
     "id" : "42a30c61-4264-491c-9f62-a5b73485ec85",
     "clientId" : "bluecore_workflows",
-    "name" : "bluecore_workflows",
+    "name" : "Bluecore Workflows",
     "description" : "For Airflow",
     "rootUrl" : "",
     "adminUrl" : "",
@@ -704,7 +745,7 @@
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
     "secret" : "KIu8gWa8rtjlT0Zl7zkNzsObFZGJ2IsJ",
-    "redirectUris" : [ "http://localhost:8080/oauth-authorized/keycloak" ],
+    "redirectUris" : [ "http://localhost:8080/auth/oauth-authorized/keycloak", "http://localhost/workflows/oauth-authorized/keycloak" ],
     "webOrigins" : [ "/*" ],
     "notBefore" : 0,
     "bearerOnly" : false,
@@ -722,7 +763,6 @@
       "client.secret.creation.time" : "1746805333",
       "backchannel.logout.session.required" : "true",
       "frontchannel.logout.session.required" : "true",
-      "post.logout.redirect.uris" : "+",
       "display.on.consent.screen" : "false",
       "oauth2.device.authorization.grant.enabled" : "false",
       "backchannel.logout.revoke.offline.tokens" : "false"
@@ -1508,7 +1548,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-address-mapper", "saml-user-property-mapper", "saml-role-list-mapper", "oidc-usermodel-attribute-mapper", "oidc-usermodel-property-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-full-name-mapper", "saml-user-attribute-mapper" ]
+        "allowed-protocol-mapper-types" : [ "oidc-address-mapper", "saml-role-list-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-user-attribute-mapper", "oidc-usermodel-attribute-mapper", "oidc-usermodel-property-mapper", "saml-user-property-mapper", "oidc-full-name-mapper" ]
       }
     }, {
       "id" : "4a3137ea-778d-437c-ab89-cea18d91032a",
@@ -1559,7 +1599,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "oidc-address-mapper", "saml-user-attribute-mapper", "saml-user-property-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-usermodel-property-mapper", "oidc-full-name-mapper", "oidc-usermodel-attribute-mapper", "saml-role-list-mapper" ]
+        "allowed-protocol-mapper-types" : [ "saml-role-list-mapper", "saml-user-property-mapper", "oidc-usermodel-attribute-mapper", "oidc-address-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-user-attribute-mapper", "oidc-full-name-mapper", "oidc-usermodel-property-mapper" ]
       }
     }, {
       "id" : "d2f2ccdf-b76c-4973-89c2-b852171a9d85",

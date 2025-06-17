@@ -7,15 +7,11 @@ import httpx
 import jwt
 
 from cryptography.hazmat.primitives import serialization
-from tokenize import Exponent
 
 from airflow.providers.fab.auth_manager.security_manager.override import (
     AUTH_OAUTH,
     FabAirflowSecurityManagerOverride,
 )
-
-from flask_appbuilder import expose
-from flask_appbuilder.security.views import AuthOAuthView
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 

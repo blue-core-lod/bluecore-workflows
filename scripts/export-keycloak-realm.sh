@@ -13,8 +13,7 @@ echo -e "${BLUE}🔄 Starting export of 'bluecore' Keycloak realm...${NC}"
 echo -e "${BLUE}Target path: keycloak-export/bluecore-realm.json${NC}"
 echo -e "${BLUE}===========================================================${NC}"
 
-docker compose -f compose-dev.yaml run --rm keycloak \
-  export --dir=/opt/keycloak/data/export --realm=bluecore --users=realm_file
+docker compose run --rm keycloak export --dir=/opt/keycloak/data/export --realm=bluecore --users=realm_file
 
 if [ $? -eq 0 ]; then
   echo -e "${GREEN}===========================================================${NC}"

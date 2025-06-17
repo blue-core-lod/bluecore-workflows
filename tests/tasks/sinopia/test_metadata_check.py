@@ -11,7 +11,7 @@ from pytest_mock import MockerFixture
 
 from airflow import DAG
 from airflow.models.taskinstance import TaskInstance
-from airflow.operators.dummy import DummyOperator
+from airflow.providers.standard.operators.empty import EmptyOperator
 
 from ils_middleware.tasks.sinopia.metadata_check import (
     existing_metadata_check,
@@ -20,15 +20,15 @@ from ils_middleware.tasks.sinopia.metadata_check import (
 )
 
 
-def test_task():
+def sample_task():
     start_date = datetime.datetime(2021, 10, 28)
     test_dag = DAG(
         "test_dag", default_args={"owner": "airflow", "start_date": start_date}
     )
-    return DummyOperator(task_id="test", dag=test_dag)
+    return EmptyOperator(task_id="test", dag=test_dag)
 
 
-task_instance = TaskInstance(test_task())
+task_instance = TaskInstance(sample_task())
 mock_push_store: dict = {}
 
 admin_metadata = [

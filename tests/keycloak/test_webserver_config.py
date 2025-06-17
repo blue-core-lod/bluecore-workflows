@@ -1,4 +1,5 @@
-import os
+# disabled for now, until #39 is resolved
+
 import pytest
 import jwt
 from unittest.mock import patch
@@ -8,7 +9,7 @@ import base64
 
 import config.webserver_config as wsc
 
-CLIENT_ID = "bluecore_workflows"
+CLIENT_ID = "bluecore_api"
 USERNAME = "test_user"
 PROVIDER = wsc.PROVIDER_NAME
 
