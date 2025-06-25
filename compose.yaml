@@ -61,11 +61,12 @@ x-keycloak-env: &keycloak-env
   # ----------------------------------
   KC_HOSTNAME_STRICT: 'false'
   KEYCLOAK_REALM: 'bluecore'
-  KEYCLOAK_URL: 'http://localhost:8081/keycloak/'
   KEYCLOAK_INTERNAL_URL: 'http://keycloak:8080/keycloak/'
   KEYCLOAK_EXTERNAL_URL: 'http://localhost:8081/keycloak/'
   AIRFLOW_KEYCLOAK_CLIENT_ID: 'bluecore_workflows'
   AIRFLOW_KEYCLOAK_CLIENT_SECRET: 'KIu8gWa8rtjlT0Zl7zkNzsObFZGJ2IsJ'
+  AIRFLOW_EXTERNAL_URL: "http://localhost:8080"
+  AIRFLOW_INTERNAL_URL: "http://airflow-apiserver:8080"
   # ----------------------------------
   KC_HEALTH_ENABLED: 'true' # allows health check to work in docker
   KC_PROXY_HEADERS: 'xforwarded'
