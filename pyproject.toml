@@ -8,7 +8,7 @@ requires-python = "==3.12.*"
 
 dependencies = [
     "pymarc",
-    "apache-airflow==3.0.2",  # keep version in sync with image in Dockerfile
+    "apache-airflow==3.0.2", # keep version in sync with image in Dockerfile
     "apache-airflow-providers-amazon",
     "apache-airflow-providers-fab",
     "sqlalchemy",
@@ -21,7 +21,7 @@ dependencies = [
     "pendulum",
     "psycopg2-binary>=2.9.10",
     "boto3",
-    "bluecore-models>=0.4.1",
+    "bluecore-models>=0.6.2",
     "xmlsec==1.3.14", # this pin can be released once a package issue with 1.3.15 is resolved
 ]
 

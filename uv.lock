@@ -483,16 +483,17 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.6.1"
+version = "0.6.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
     { name = "psycopg2-binary" },
+    { name = "pyld" },
     { name = "rdflib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/af/78/ff2acd0ec98a64292b5798be831bb1d89826437586d2f9ca2386a8c5f94c/bluecore_models-0.6.1.tar.gz", hash = "sha256:794f7f26bd44ac2b40bfe6dad48d32e284b5b6a7a599d42ba9710ce89a890fed", size = 34846 }
+sdist = { url = "https://files.pythonhosted.org/packages/d0/49/cdbf2e499ff7d6e0e14e1d1c6741be79186edcc7e564bbda3708783020d7/bluecore_models-0.6.2.tar.gz", hash = "sha256:6f8ea0bcf9cf6fbd0dae4be808080ee3abfe04f2e01bb1d786587ce9551d2a86", size = 40976 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/97/bc/9d0881e459b93c8756d0cb7f12c90fe89aff2298749f3407ebf63cc7aa06/bluecore_models-0.6.1-py3-none-any.whl", hash = "sha256:00b8a5893bebc618f1d4dbca7df0d01a985300f20e1984eb8ff6b3d72b8f217f", size = 11018 },
+    { url = "https://files.pythonhosted.org/packages/d8/d9/90e226ebb5e79d96371ba8bf729e55dfd225e4169dfec769c69d6e0133b7/bluecore_models-0.6.2-py3-none-any.whl", hash = "sha256:60526c78916842010a2769379090035de2dfb1f03c34ade26c148df2c6330f6f", size = 11286 },
 ]
 
 [[package]]
@@ -536,7 +537,7 @@ requires-dist = [
     { name = "apache-airflow", specifier = "==3.0.2" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-fab" },
-    { name = "bluecore-models", specifier = ">=0.4.1" },
+    { name = "bluecore-models", specifier = ">=0.6.2" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
@@ -599,6 +600,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/1d/69/0b5c1259e12fbcf5c2abe5934b5c0c1294ec0f845e2b4b2a51a91d79a4fb/cachelib-0.13.0.tar.gz", hash = "sha256:209d8996e3c57595bee274ff97116d1d73c4980b2fd9a34c7846cd07fd2e1a48", size = 34418 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/9b/42/960fc9896ddeb301716fdd554bab7941c35fb90a1dc7260b77df3366f87f/cachelib-0.13.0-py3-none-any.whl", hash = "sha256:8c8019e53b6302967d4e8329a504acf75e7bc46130291d30188a6e4e58162516", size = 20914 },
+]
+
+[[package]]
+name = "cachetools"
+version = "6.1.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8a/89/817ad5d0411f136c484d535952aef74af9b25e0d99e90cdffbe121e6d628/cachetools-6.1.0.tar.gz", hash = "sha256:b4c4f404392848db3ce7aac34950d17be4d864da4b8b66911008e430bc544587", size = 30714 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/00/f0/2ef431fe4141f5e334759d73e81120492b23b2824336883a91ac04ba710b/cachetools-6.1.0-py3-none-any.whl", hash = "sha256:1c7bb3cf9193deaf3508b7c5f2a79986c13ea38965c5adcff1f84519cf39163e", size = 11189 },
 ]
 
 [[package]]
@@ -1073,6 +1083,16 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a7/97/e1b570844b68ab7c9b90572191ae1cdae2856b741f1d143106f08da94da5/folioclient-0.70.2.tar.gz", hash = "sha256:f28987efabad8974c7a5f55fa81aa3bd61f694c0e86fb9b1ca09046f97f7e8bd", size = 17701 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/d3/c2/fd065fba69c373235e313ba22188f1aaf6c8365d2c1962048038835b7987/folioclient-0.70.2-py3-none-any.whl", hash = "sha256:c98560639c56c1755ff35acae64cb4299455bcccfc4b770cd036acfb6c7e6586", size = 16790 },
+]
+
+[[package]]
+name = "frozendict"
+version = "2.4.6"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bb/59/19eb300ba28e7547538bdf603f1c6c34793240a90e1a7b61b65d8517e35e/frozendict-2.4.6.tar.gz", hash = "sha256:df7cd16470fbd26fc4969a208efadc46319334eb97def1ddf48919b351192b8e", size = 316416 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/04/13/d9839089b900fa7b479cce495d62110cddc4bd5630a04d8469916c0e79c5/frozendict-2.4.6-py311-none-any.whl", hash = "sha256:d065db6a44db2e2375c23eac816f1a022feb2fa98cbb50df44a9e83700accbea", size = 16148 },
+    { url = "https://files.pythonhosted.org/packages/ba/d0/d482c39cee2ab2978a892558cf130681d4574ea208e162da8958b31e9250/frozendict-2.4.6-py312-none-any.whl", hash = "sha256:49344abe90fb75f0f9fdefe6d4ef6d4894e640fadab71f11009d52ad97f370b9", size = 16146 },
 ]
 
 [[package]]
@@ -1979,6 +1999,20 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/e7/46/bd74733ff231675599650d3e47f361794b22ef3e3770998dda30d3b63726/pyjwt-2.10.1.tar.gz", hash = "sha256:3cc5772eb20009233caf06e9d8a0577824723b44e6648ee0a2aedb6cf9381953", size = 87785 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/61/ad/689f02752eeec26aed679477e80e632ef1b682313be70793d798c1d5fc8f/PyJWT-2.10.1-py3-none-any.whl", hash = "sha256:dcdd193e30abefd5debf142f9adfcdd2b58004e644f25406ffaebd50bd98dacb", size = 22997 },
+]
+
+[[package]]
+name = "pyld"
+version = "2.0.4"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "cachetools" },
+    { name = "frozendict" },
+    { name = "lxml" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/50/0b/d97dddcc079d4961aa38bec1ad444b8a3e39ea0fd5627682cac25d452c82/PyLD-2.0.4.tar.gz", hash = "sha256:311e350f0dbc964311c79c28e86f84e195a81d06fef5a6f6ac2a4f6391ceeacc", size = 70976 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/44/cd/80760be197a4bd08e7c136ef4bcb4a2c63fc799d8d91f4c177b21183135e/PyLD-2.0.4-py3-none-any.whl", hash = "sha256:6dab9905644616df33f8755489fc9b354ed7d832d387b7d1974b4fbd3b8d2a89", size = 70868 },
 ]
 
 [[package]]
