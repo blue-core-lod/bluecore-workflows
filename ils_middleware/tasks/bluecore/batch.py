@@ -1,4 +1,5 @@
 import logging
+import os
 import pathlib
 
 import rdflib
@@ -8,7 +9,10 @@ from bluecore_models.utils.graph import (
     generate_entity_graph,
     generate_other_resources,
     init_graph,
+    handle_external_subject,
 )
+
+BLUECORE_URL = os.environ.get("BLUECORE_URL", "https://bcld.info/")
 
 logger = logging.getLogger(__name__)
 
@@ -18,9 +22,11 @@ def _add_other_resources(**kwargs):
     Adds Other Resources from the entity graph to the resource list
     """
     file_graph: rdflib.Graph = kwargs["file_graph"]
-    entity_graph: rdflib.Graph = kwargs["entity_graph"]
-    entity: rdflib.URIRef = kwargs["entity"]
+    entity_graph: str = kwargs["entity_graph"]
+    entity: str = kwargs["entity"]
     resources: list = kwargs["resources"]
+    entity_graph = rdflib.Graph().parse(data=entity_graph, format="json-ld")
+    entity = rdflib.URIRef(entity)
     other_resources = generate_other_resources(file_graph, entity_graph)
     for resource in other_resources:
         resources.append(
@@ -53,29 +59,39 @@ def parse_file_to_graph(file_str: str) -> list:
             logger.info(f"Work {work} is a blank node, not processing")
             continue
         work_graph = generate_entity_graph(file_graph, work)
+        updated_payload = handle_external_subject(
+            data=work_graph.serialize(format="json-ld"),
+            type="works",
+            bluecore_base_url=BLUECORE_URL,
+        )
         works.add(str(work))
         resources.append(
             {
                 "class": "Work",
-                "uri": str(work),
-                "resource": work_graph.serialize(format="json-ld"),
+                "uri": updated_payload["uri"],
+                "resource": updated_payload["data"],
             }
         )
         _add_other_resources(
             resources=resources,
             file_graph=file_graph,
-            entity_graph=work_graph,
-            entity=work,
+            entity_graph=updated_payload["data"],
+            entity=updated_payload["uri"],
         )
     for instance in file_graph.subjects(predicate=rdflib.RDF.type, object=BF.Instance):
         if isinstance(instance, rdflib.BNode):
             logger.info(f"Instance {instance} is a blank node, not processing")
             continue
         instance_graph = generate_entity_graph(file_graph, instance)
+        updated_payload = handle_external_subject(
+            data=instance_graph.serialize(format="json-ld"),
+            type="instances",
+            bluecore_base_url=BLUECORE_URL,
+        )
         instance_payload = {
             "class": "Instance",
-            "uri": str(instance),
-            "resource": instance_graph.serialize(format="json-ld"),
+            "uri": updated_payload["uri"],
+            "resource": updated_payload["data"],
         }
         instance_of_work = instance_graph.value(
             subject=instance, predicate=BF.instanceOf
@@ -86,7 +102,7 @@ def parse_file_to_graph(file_str: str) -> list:
         _add_other_resources(
             resources=resources,
             file_graph=file_graph,
-            entity_graph=instance_graph,
-            entity=instance,
+            entity_graph=updated_payload["data"],
+            entity=updated_payload["uri"],
         )
     return resources

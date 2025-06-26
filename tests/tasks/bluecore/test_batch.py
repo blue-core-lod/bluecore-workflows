@@ -23,7 +23,7 @@ def test_parse_file_to_graph(test_graph, tmp_path):
     assert resources[0]["class"].startswith("Work")
     # TODO when we have BlueCore URL schema, should replace Sinopia fixture URLs with BlueCore URLs
     assert resources[0]["uri"].startswith(
-        "https://api.stage.sinopia.io/resource/c96d8b55-e0ac-48a5-9a9b-b0684758c99e"
+        "https://bcld.info/works"
     )
     assert resources[1]["bibframe_resource_uri"] == str(resources[0]["uri"])
     assert resources[13]["class"].startswith("Instance")
@@ -31,11 +31,10 @@ def test_parse_file_to_graph(test_graph, tmp_path):
 
     instance_graph = rdflib.Graph()
     instance_graph.parse(data=resources[13]["resource"], format="json-ld")
+    instance = instance_graph.value(predicate=rdflib.RDF.type, object=BF.Instance)
 
     dimensions = instance_graph.value(
-        subject=rdflib.URIRef(
-            "https://api.stage.sinopia.io/resource/b0319047-acd0-4f30-bd8b-98e6c1bac6b0"
-        ),
+        subject=instance,
         predicate=BF.dimensions,
     )
 
