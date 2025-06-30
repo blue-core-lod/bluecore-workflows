@@ -6,8 +6,7 @@ USER airflow
 
 ENV PYTHONPATH "${PYTHONPATH}:/opt/airflow/"
 
-COPY --chown=airflow:root README.md uv.lock pyproject.toml /opt/airflow/
-COPY --chown=airflow:root ./config/webserver_config.py /opt/airflow/config/
+COPY --chown=airflow:root README.md uv.lock pyproject.toml ./config/webserver_config.py /opt/airflow/
 COPY --chown=airflow:root ./ils_middleware /opt/airflow/ils_middleware
 
 RUN uv build
