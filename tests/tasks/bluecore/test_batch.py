@@ -23,6 +23,8 @@ def test_parse_file_to_graph(test_graph, tmp_path):
     assert resources[0]["class"].startswith("Work")
     # TODO when we have BlueCore URL schema, should replace Sinopia fixture URLs with BlueCore URLs
     assert resources[0]["uri"].startswith("https://bcld.info/works")
+    expected_uuid = resources[0]["uri"].split("/")[-1]
+    assert resources[0]["uuid"] == expected_uuid
     assert resources[1]["bibframe_resource_uri"] == str(resources[0]["uri"])
     assert resources[13]["class"].startswith("Instance")
     assert resources[14]["bibframe_resource_uri"] == str(resources[13]["uri"])
