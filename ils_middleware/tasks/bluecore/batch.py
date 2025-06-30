@@ -1,8 +1,9 @@
+import json
 import logging
 import os
 import pathlib
-
 import rdflib
+from typing import Any, Dict, List, Set
 
 from bluecore_models.utils.graph import (
     BF,
@@ -22,22 +23,24 @@ def _add_other_resources(**kwargs):
     Adds Other Resources from the entity graph to the resource list
     """
     file_graph: rdflib.Graph = kwargs["file_graph"]
-    entity_graph: str = kwargs["entity_graph"]
+    entity_graph_dict: Dict[str, Any] = kwargs["entity_graph"]
     entity: str = kwargs["entity"]
-    resources: list = kwargs["resources"]
-    entity_graph = rdflib.Graph().parse(data=entity_graph, format="json-ld")
+    resources: List[Dict[str, Any]] = kwargs["resources"]
+    entity_graph_str = json.dumps(entity_graph_dict)
+    entity_graph: rdflib.Graph = rdflib.Graph().parse(data=entity_graph_str, format="json-ld")
     entity = rdflib.URIRef(entity)
-    other_resources = generate_other_resources(file_graph, entity_graph)
+    other_resources: List[Dict[str, str]] = generate_other_resources(file_graph, entity_graph)
     for resource in other_resources:
+        # This data for other_resources is not framed.
+        new_resource: Dict[str, Any] = json.loads(resource["graph"])
         resources.append(
             {
                 "class": "OtherResource",
                 "uri": resource["uri"],
-                "resource": resource["graph"],
+                "resource": new_resource,
                 "bibframe_resource_uri": str(entity),
             }
         )
-
 
 def is_zip(file_name: str) -> bool:
     """Determines if file is a zip file"""
@@ -46,20 +49,20 @@ def is_zip(file_name: str) -> bool:
     return False
 
 
-def parse_file_to_graph(file_str: str) -> list:
+def parse_file_to_graph(file_str: str) -> List[Dict[str, Any]]:
     file_path = pathlib.Path(file_str)
     if not file_path.exists():
         raise ValueError(f"{file_path} does not exist or Airflow cannot read")
-    resources = []
+    resources: List[Dict[str, Any]] = []
     file_graph = init_graph()
     file_graph.parse(data=file_path.read_text(), format="json-ld")
-    works = set()
+    works: Set[str] = set()
     for work in file_graph.subjects(predicate=rdflib.RDF.type, object=BF.Work):
         if isinstance(work, rdflib.BNode):
             logger.info(f"Work {work} is a blank node, not processing")
             continue
         work_graph = generate_entity_graph(file_graph, work)
-        updated_payload = handle_external_subject(
+        updated_payload: Dict[str, Any] = handle_external_subject(
             data=work_graph.serialize(format="json-ld"),
             type="works",
             bluecore_base_url=BLUECORE_URL,
@@ -69,6 +72,7 @@ def parse_file_to_graph(file_str: str) -> list:
             {
                 "class": "Work",
                 "uri": updated_payload["uri"],
+                "uuid": updated_payload["uuid"],
                 "resource": updated_payload["data"],
             }
         )
@@ -83,14 +87,15 @@ def parse_file_to_graph(file_str: str) -> list:
             logger.info(f"Instance {instance} is a blank node, not processing")
             continue
         instance_graph = generate_entity_graph(file_graph, instance)
-        updated_payload = handle_external_subject(
+        updated_payload: Dict[str, Any] = handle_external_subject(
             data=instance_graph.serialize(format="json-ld"),
             type="instances",
             bluecore_base_url=BLUECORE_URL,
         )
-        instance_payload = {
+        instance_payload: Dict[str, Any] = {
             "class": "Instance",
             "uri": updated_payload["uri"],
+            "uuid": updated_payload["uuid"],
             "resource": updated_payload["data"],
         }
         instance_of_work = instance_graph.value(
