@@ -92,7 +92,7 @@ def parse_file_to_graph(file_str: str) -> List[Dict[str, Any]]:
             logger.info(f"Instance {instance} is a blank node, not processing")
             continue
         instance_graph = generate_entity_graph(file_graph, instance)
-        updated_payload: Dict[str, Any] = handle_external_subject(
+        updated_payload = handle_external_subject(
             data=instance_graph.serialize(format="json-ld"),
             type="instances",
             bluecore_base_url=BLUECORE_URL,
