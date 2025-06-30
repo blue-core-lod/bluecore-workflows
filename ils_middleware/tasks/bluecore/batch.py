@@ -27,9 +27,13 @@ def _add_other_resources(**kwargs):
     entity: str = kwargs["entity"]
     resources: List[Dict[str, Any]] = kwargs["resources"]
     entity_graph_str = json.dumps(entity_graph_dict)
-    entity_graph: rdflib.Graph = rdflib.Graph().parse(data=entity_graph_str, format="json-ld")
+    entity_graph: rdflib.Graph = rdflib.Graph().parse(
+        data=entity_graph_str, format="json-ld"
+    )
     entity = rdflib.URIRef(entity)
-    other_resources: List[Dict[str, str]] = generate_other_resources(file_graph, entity_graph)
+    other_resources: List[Dict[str, str]] = generate_other_resources(
+        file_graph, entity_graph
+    )
     for resource in other_resources:
         # This data for other_resources is not framed.
         new_resource: Dict[str, Any] = json.loads(resource["graph"])
@@ -41,6 +45,7 @@ def _add_other_resources(**kwargs):
                 "bibframe_resource_uri": str(entity),
             }
         )
+
 
 def is_zip(file_name: str) -> bool:
     """Determines if file is a zip file"""

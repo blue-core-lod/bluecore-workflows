@@ -47,7 +47,9 @@ def store_bluecore_resources(**kwargs):
                     )
                     if not instance:
                         instance = Instance(
-                            uri=payload["uri"], data=payload["resource"], uuid=payload["uuid"]
+                            uri=payload["uri"],
+                            data=payload["resource"],
+                            uuid=payload["uuid"],
                         )
                         if "work_uri" in payload:
                             db_work = (
@@ -85,7 +87,11 @@ def store_bluecore_resources(**kwargs):
                 case "Work":
                     work = session.query(Work).where(Work.uri == payload["uri"]).first()
                     if not work:
-                        work = Work(uri=payload["uri"], data=payload["resource"], uuid=payload["uuid"])
+                        work = Work(
+                            uri=payload["uri"],
+                            data=payload["resource"],
+                            uuid=payload["uuid"],
+                        )
                         session.add(work)
 
                 case _:
