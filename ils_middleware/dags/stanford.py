@@ -18,7 +18,7 @@ from ils_middleware.tasks.folio.build import build_records
 from ils_middleware.tasks.folio.graph import construct_graph
 from ils_middleware.tasks.folio.map import FOLIO_FIELDS, map_to_folio
 from ils_middleware.tasks.folio.new import post_folio_records
-from ils_middleware.tasks.general.init import message_from_context
+from ils_middleware.tasks.general import message_from_context
 
 
 def task_failure_callback(ctx_dict) -> None:

@@ -18,7 +18,7 @@ from ils_middleware.tasks.sinopia.email import (
     notify_and_log,
     send_update_success_emails,
 )
-from ils_middleware.tasks.general.init import message_from_context
+from ils_middleware.tasks.general import message_from_context
 from airflow.providers.standard.operators.empty import EmptyOperator
 
 
