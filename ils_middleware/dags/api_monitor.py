@@ -11,10 +11,6 @@ from airflow.sdk import get_current_context
 
 from ils_middleware.dags.alma import institutions
 
-from ils_middleware.tasks.general import (
-    get_resource,
-)
-
 logger = logging.getLogger(__name__)
 
 
@@ -56,18 +52,12 @@ def monitor_institutions_messages():
         params = context.get("params")
         if params is None:
             raise ValueError("No parameters found in context")
-        resource_payload = get_resource(params["resource"])
-
         return {
             "messages": [
                 {
-                    "resource": {
-                        "uri": resource_payload["uri"],
-                        "rdf": resource_payload["data"],
-                    },
+                    "resource": params["resource"],
                     "group": params["group"],
                     "user": params["user"],
-                    "id": resource_payload["uuid"],
                 }
             ]
         }

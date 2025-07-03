@@ -1,6 +1,6 @@
 import pytest
 
-from ils_middleware.tasks.general.init import message_from_context
+from ils_middleware.tasks.general import message_from_context
 
 
 def test_message_from_context():
