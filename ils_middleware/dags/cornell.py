@@ -7,7 +7,6 @@ from airflow.models import Variable
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-from ils_middleware.tasks.amazon.sqs import parse_messages
 from ils_middleware.tasks.folio.build import build_records
 from ils_middleware.tasks.folio.graph import construct_graph
 from ils_middleware.tasks.folio.map import FOLIO_FIELDS, map_to_folio
@@ -18,7 +17,10 @@ from ils_middleware.tasks.sinopia.email import (
     notify_and_log,
     send_update_success_emails,
 )
-from ils_middleware.tasks.general import message_from_context
+from ils_middleware.tasks.general import (
+    message_from_context,
+    parse_messages
+)
 from airflow.providers.standard.operators.empty import EmptyOperator
 
 
