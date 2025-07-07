@@ -5,7 +5,7 @@ from airflow.sdk import get_current_context
 
 def get_user(username: str) -> dict:
     """Retrieves user email and groups from Keycloak"""
-    user = {}
+    user: dict = {}
 
     return user
 
@@ -15,7 +15,7 @@ def get_resource(resource_uri: str) -> dict:
     result = httpx.get(resource_uri)
     result.raise_for_status()
     return result.json()
-    
+
 
 def message_from_context(**kwargs):
     """
@@ -45,18 +45,20 @@ def parse_messages(**kwargs) -> str:
     resources_with_errors = []
 
     resource_payload = get_resource(message["resource"])
-    resource_uri = resource_payload['uri']
+    resource_uri = resource_payload["uri"]
     user_payload = get_user(message["user"])
     if message["group"] not in user_payload["groups"]:
-        raise ValueError(f"Cannot export: user {message["user"]} not in group {message['group']}")
+        raise ValueError(
+            f"Cannot export: user {message['user']} not in group {message['group']}"
+        )
     try:
         task_instance.xcom_push(
-            key=resource_payload['uuid'],
+            key=resource_payload["uuid"],
             value={
-                "email": user_payload['email'],
+                "email": user_payload["email"],
                 "group": message["group"],
                 "resource_uri": resource_uri,
-                "resource": resource_payload['data'],
+                "resource": resource_payload["data"],
             },
         )
         resources.append(resource_uri)

@@ -21,10 +21,7 @@ from ils_middleware.tasks.sinopia.email import (
 from ils_middleware.tasks.sinopia.login import sinopia_login
 from ils_middleware.tasks.alma.post_bfwork import NewWorktoAlma
 from ils_middleware.tasks.alma.post_bfinstance import NewInstancetoAlma
-from ils_middleware.tasks.general import (
-    parse_messages,
-    message_from_context
-)
+from ils_middleware.tasks.general import parse_messages, message_from_context
 
 
 def task_failure_callback(ctx_dict) -> None:
