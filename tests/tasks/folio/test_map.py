@@ -80,4 +80,4 @@ def test_folio_work(mock_task_instance, test_graph: rdflib.Graph):  # noqa: F811
     ].startswith("Brioni, Simone")
 
     # First Contributor Role
-    assert contributors_list[1].startswith("Author")
+    assert contributors_list[1].startswith("author")
