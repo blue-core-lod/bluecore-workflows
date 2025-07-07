@@ -2,12 +2,13 @@ import httpx
 
 from airflow.sdk import get_current_context
 
+from ils_middleware.tasks.keycloak import get_bluecore_members
+
 
 def get_user(username: str) -> dict:
     """Retrieves user email and groups from Keycloak"""
-    user: dict = {}
-
-    return user
+    bluecore_members = get_bluecore_members()
+    return bluecore_members[username]
 
 
 def get_resource(resource_uri: str) -> dict:
