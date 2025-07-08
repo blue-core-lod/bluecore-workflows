@@ -18,13 +18,13 @@ def send_notification_emails(**kwargs) -> None:
 
 def send_update_success_emails(**kwargs) -> None:
     task_instance = kwargs["task_instance"]
-    resources = task_instance.xcom_pull(key="resources", task_ids="sqs-message-parse")
+    resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
 
     ses_hook = SesHook(aws_conn_id="aws_ses_connection")
     for resource_uri in resources:
         resource_uuid = resource_uri.split("/")[-1]
         message = task_instance.xcom_pull(
-            key=resource_uuid, task_ids="sqs-message-parse"
+            key=resource_uuid, task_ids="api-message-parse"
         )
         email_attributes = _email_on_success_attributes(message)
         ses_hook.send_email(**email_attributes)
@@ -36,7 +36,7 @@ def send_task_failure_notifications(**kwargs) -> None:
     ses_hook = SesHook(aws_conn_id="aws_ses_connection")
     task_instance = kwargs["task_instance"]
     bad_resources = task_instance.xcom_pull(
-        key="bad_resources", task_ids="sqs-message-parse"
+        key="bad_resources", task_ids="api-message-parse"
     )
 
     for resource_uri in bad_resources or []:
@@ -52,7 +52,7 @@ def send_task_failure_notifications(**kwargs) -> None:
     for resource_uri in failed_resources or []:
         resource_uuid = resource_uri.split("/")[-1]
         message = task_instance.xcom_pull(
-            key=resource_uuid, task_ids="sqs-message-parse"
+            key=resource_uuid, task_ids="api-message-parse"
         )
         email_attributes = _email_on_failure_attributes(message)
         ses_hook.send_email(**email_attributes)

@@ -342,7 +342,7 @@ def build_records(**kwargs):
         connection.password,
     )
 
-    resources = task_instance.xcom_pull(key="resources", task_ids="sqs-message-parse")
+    resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
 
     for resource_uri in resources:
         inventory_rec = _inventory_record(

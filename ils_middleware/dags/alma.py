@@ -70,6 +70,7 @@ for institution in institutions:
             task_id="api-message-parse",
             python_callable=parse_messages,
             dag=dag,
+            op_kwargs={"message": "{{ ti.xcom_pull('get-message-from-context') }}"},
         )
 
         with TaskGroup(group_id="process_alma", dag=dag) as alma_task_group:

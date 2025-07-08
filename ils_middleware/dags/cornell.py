@@ -54,8 +54,9 @@ with DAG(
     )
 
     process_message = PythonOperator(
-        task_id="sqs-message-parse",
+        task_id="api-message-parse",
         python_callable=parse_messages,
+        op_kwargs={"message": "{{ ti.xcom_pull('get-message-from-context') }}"},
     )
 
     bf_graphs = PythonOperator(task_id="bf-graph", python_callable=construct_graph)

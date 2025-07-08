@@ -36,7 +36,7 @@ def _get_fields(field):
 def to_symphony_json(**kwargs):
     """Converst pymarc MARC json to Symphony JSON varient."""
     task_instance = kwargs.get("task_instance")
-    resources = task_instance.xcom_pull(key="resources", task_ids="sqs-message-parse")
+    resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
 
     for instance_uri in resources:
         instance_uuid = instance_uri.split("/")[-1]

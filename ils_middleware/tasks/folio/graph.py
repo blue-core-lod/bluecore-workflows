@@ -27,12 +27,12 @@ def _build_graph(json_ld: list, work_uri: str) -> rdflib.Graph:
 def construct_graph(**kwargs):
     task_instance = kwargs["task_instance"]
 
-    resources = task_instance.xcom_pull(key="resources", task_ids="sqs-message-parse")
+    resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
 
     for instance_uri in resources:
         instance_uuid = instance_uri.split("/")[-1]
         resource = task_instance.xcom_pull(
-            key=instance_uuid, task_ids="sqs-message-parse"
+            key=instance_uuid, task_ids="api-message-parse"
         ).get("resource")
         work_refs = resource.get("bfWorkRefs")
         if len(work_refs) < 1:

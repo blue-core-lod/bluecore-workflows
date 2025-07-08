@@ -1,8 +1,11 @@
+import logging
 import httpx
 
 from airflow.sdk import get_current_context
 
 from ils_middleware.tasks.keycloak import get_bluecore_members
+
+logger = logging.getLogger(__name__)
 
 
 def get_user(username: str) -> dict:
@@ -18,16 +21,16 @@ def get_resource(resource_uri: str) -> dict:
     return result.json()
 
 
-def message_from_context(**kwargs):
+def message_from_context(**kwargs) -> dict:
     """
-    Retrieves messages from context
+    Retrieves API payload as a message from context
     """
     context = kwargs.get("context")
 
     if context is None:
         context = get_current_context()
 
-    params = context.get("params")
+    params = context.get("params", {})
 
     message = params.get("message")
 
@@ -48,7 +51,8 @@ def parse_messages(**kwargs) -> str:
     resource_payload = get_resource(message["resource"])
     resource_uri = resource_payload["uri"]
     user_payload = get_user(message["user"])
-    if message["group"] not in user_payload["groups"]:
+    logger.info(f"User is {user_payload}")
+    if message["group"].casefold() not in user_payload["groups"]:
         raise ValueError(
             f"Cannot export: user {message['user']} not in group {message['group']}"
         )

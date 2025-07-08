@@ -14,26 +14,26 @@ from ils_middleware.dags.alma import institutions
 logger = logging.getLogger(__name__)
 
 
-def _parse_institutional_msgs(messages: list) -> list:
-    institutional_messages = []
+def _check_available_institutions(payload: dict) -> dict:
+    """
+    Parses incoming payload to check if group exists
+    """
     all_institutions = institutions + ["stanford", "cornell"]
-    for message in messages:
-        if message["group"].casefold() in all_institutions:
-            institutional_messages.append(message)
-    return institutional_messages
+    if not payload["group"].casefold() in all_institutions:
+        raise ValueError(f"{payload['group']} isn't available for export")
+    return payload
 
 
 def _trigger_dags(**kwargs):
-    messages = kwargs.get("messages")
-    for message in messages:
-        logger.info(f"Trigger DAG for {message['group']}")
-        # Assumes the DAG name is the same as the group
-        group = message["group"].casefold()
-        TriggerDagRunOperator(
-            task_id=f"{group}-dag-run",
-            trigger_dag_id=group,
-            conf={"message": message},
-        ).execute(kwargs)
+    payload: dict = kwargs["payload"]
+    logger.info(f"Trigger DAG for {payload['group']}")
+    # Assumes the DAG name is the same as the group
+    group = payload["group"].casefold()
+    TriggerDagRunOperator(
+        task_id=f"{group}-dag-run",
+        trigger_dag_id=group,
+        conf={"message": payload},
+    ).execute(kwargs)
 
 
 @dag(
@@ -41,39 +41,35 @@ def _trigger_dags(**kwargs):
     schedule=timedelta(minutes=5),
     catchup=False,
 )
-def monitor_institutions_messages():
+def monitor_institutions_exports():
     """
     ### Triggers Institutional DAGs based on incoming API call
     """
 
     @task
-    def incoming_api_call(*args, **kwargs):
+    def incoming_api_call():
         context = get_current_context()
         params = context.get("params")
         if params is None:
             raise ValueError("No parameters found in context")
         return {
-            "messages": [
-                {
-                    "resource": params["resource"],
-                    "group": params["group"],
-                    "user": params["user"],
-                }
-            ]
+            "resource": params["resource"],
+            "group": params["group"],
+            "user": params["user"],
         }
 
     @task
-    def parse_messages(messages: list) -> list:
-        return _parse_institutional_msgs(messages)
+    def parse_messages(messages: dict) -> dict:
+        return _check_available_institutions(messages)
 
     @task
     def trigger_institutional_dags(**kwargs):
         _trigger_dags(**kwargs)
 
-    messages = incoming_api_call()
-    group_messages = parse_messages(messages)
+    payload = incoming_api_call()
+    checked_messages = parse_messages(payload)
 
-    trigger_institutional_dags(messages=group_messages)
+    trigger_institutional_dags(payload=checked_messages)
 
 
-monitor_export_messages = monitor_institutions_messages()
+monitor_export_api_messages = monitor_institutions_exports()

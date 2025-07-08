@@ -31,7 +31,7 @@ def NewInstancetoAlma(**kwargs):
     uri_region, alma_api_key = get_env_vars(institution)
     s3_hook = S3Hook(aws_conn_id="aws_lambda_connection")
     task_instance = kwargs.get("task_instance")
-    resources = task_instance.xcom_pull(key="resources", task_ids="sqs-message-parse")
+    resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
 
     for instance_uri in resources:
         urlparse(instance_uri).path

@@ -91,7 +91,7 @@ def post_folio_records(**kwargs):
     if len(task_groups) > 0:
         task_id = f"{task_groups}.{task_id}"
 
-    resources = task_instance.xcom_pull(key="resources", task_ids="sqs-message-parse")
+    resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
 
     inventory_records = []
     for instance_uri in resources:

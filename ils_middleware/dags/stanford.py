@@ -49,14 +49,16 @@ with DAG(
     catchup=False,
     schedule=None,
     on_failure_callback=dag_failure_callback,
+    render_template_as_native_obj=True,
 ) as dag:
     get_messages = PythonOperator(
         task_id="get-message-from-context", python_callable=message_from_context
     )
 
     process_message = PythonOperator(
-        task_id="sqs-message-parse",
+        task_id="api-message-parse",
         python_callable=parse_messages,
+        op_kwargs={"message": "{{ ti.xcom_pull('get-message-from-context') }}"},
     )
 
     with TaskGroup(group_id="process_folio") as folio_task_group:

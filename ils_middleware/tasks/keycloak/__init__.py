@@ -1,14 +1,18 @@
 import os
+
 import httpx
 
-BLUECORE_URL = os.environ.get("BLUECORE_URL", "https://bcld.info/")
+
+KEYCLOAK_EXTERNAL_URL = os.environ.get(
+    "KEYCLOAK_INTERNAL_URL", "http://localhost/keycloak"
+).rstrip("/")
 ADMIN_USERNAME = os.environ.get("KEYCLOAK_ADMIN", "admin")
 ADMIN_PASSWORD = os.environ.get("KEYCLOAK_ADMIN_PASSWORD", "admin")
 
 
 def get_admin_token() -> str:
     token_response = httpx.post(
-        f"{BLUECORE_URL}/keycloak/realms/master/protocol/openid-connect/token",
+        f"{KEYCLOAK_EXTERNAL_URL}/realms/master/protocol/openid-connect/token",
         data={
             "grant_type": "password",
             "username": ADMIN_USERNAME,
@@ -23,7 +27,7 @@ def get_admin_token() -> str:
 def get_bluecore_members() -> dict:
     members: dict = {}
     all_groups_response = httpx.get(
-        f"{BLUECORE_URL}/keycloak/admin/realms/bluecore/groups",
+        f"{KEYCLOAK_EXTERNAL_URL}/admin/realms/bluecore/groups",
         headers={"Authorization": f"Bearer {get_admin_token()}"},
     )
     all_groups_response.raise_for_status()
@@ -31,7 +35,7 @@ def get_bluecore_members() -> dict:
         group_id = group["id"]
         group_name = group["name"]
         members_request = httpx.get(
-            f"{BLUECORE_URL}/keycloak/admin/realms/bluecore/groups/{group_id}/members",
+            f"{KEYCLOAK_EXTERNAL_URL}/admin/realms/bluecore/groups/{group_id}/members",
             headers={"Authorization": f"Bearer {get_admin_token()}"},
         )
         for member in members_request.json():

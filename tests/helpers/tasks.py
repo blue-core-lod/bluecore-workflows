@@ -291,7 +291,7 @@ def mock_task_instance(monkeypatch, tmp_path):
             return json.loads(mock_message()[0]["Body"])
         elif key == "messages":
             return mock_message()
-        elif key in mock_resources and task_ids == "sqs-message-parse":
+        elif key in mock_resources and task_ids == "api-message-parse":
             return {
                 "email": mock_resource_attributes[key]["email"],
                 "group": mock_resource_attributes[key]["group"],
