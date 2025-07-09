@@ -6,7 +6,6 @@ from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-from ils_middleware.tasks.amazon.sqs import parse_messages
 
 from ils_middleware.tasks.sinopia.local_metadata import new_local_admin_metadata
 from ils_middleware.tasks.sinopia.email import (
@@ -18,7 +17,7 @@ from ils_middleware.tasks.folio.build import build_records
 from ils_middleware.tasks.folio.graph import construct_graph
 from ils_middleware.tasks.folio.map import FOLIO_FIELDS, map_to_folio
 from ils_middleware.tasks.folio.new import post_folio_records
-from ils_middleware.tasks.general.init import message_from_context
+from ils_middleware.tasks.general import message_from_context, parse_messages
 
 
 def task_failure_callback(ctx_dict) -> None:
@@ -50,14 +49,16 @@ with DAG(
     catchup=False,
     schedule=None,
     on_failure_callback=dag_failure_callback,
+    render_template_as_native_obj=True,
 ) as dag:
     get_messages = PythonOperator(
         task_id="get-message-from-context", python_callable=message_from_context
     )
 
     process_message = PythonOperator(
-        task_id="sqs-message-parse",
+        task_id="api-message-parse",
         python_callable=parse_messages,
+        op_kwargs={"message": "{{ ti.xcom_pull('get-message-from-context') }}"},
     )
 
     with TaskGroup(group_id="process_folio") as folio_task_group:

@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 def get_from_s3(**kwargs):
     s3_hook = S3Hook(aws_conn_id="aws_lambda_connection")
     task_instance = kwargs.get("task_instance")
-    resources = task_instance.xcom_pull(key="resources", task_ids="sqs-message-parse")
+    resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
     conversion_failures = task_instance.xcom_pull(
         key="conversion_failures", task_ids="process_symphony.rdf2marc"
     )
@@ -35,7 +35,7 @@ def get_from_s3(**kwargs):
 def send_to_s3(**kwargs):
     s3_hook = S3Hook(aws_conn_id="aws_lambda_connection")
     task_instance = kwargs.get("task_instance")
-    resources = task_instance.xcom_pull(key="resources", task_ids="sqs-message-parse")
+    resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
     conversion_failures = task_instance.xcom_pull(
         key="conversion_failures", task_ids="process_symphony.rdf2marc"
     )

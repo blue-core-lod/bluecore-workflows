@@ -113,7 +113,7 @@ def map_to_folio(**kwargs):
     template = BF_TO_FOLIO_MAP[folio_field].get("template")
     uri_type = f"bf_{BF_TO_FOLIO_MAP[folio_field].get('uri')}"
 
-    resources = task_instance.xcom_pull(key="resources", task_ids="sqs-message-parse")
+    resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
     for instance_uri in resources:
         values = _build_and_query_graph(
             uri_type=uri_type,

@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 def Rdf2Marc(**kwargs):
     """Runs rdf2marc on a BF Instance URL"""
     task_instance = kwargs.get("task_instance")
-    resources = task_instance.xcom_pull(key="resources", task_ids="sqs-message-parse")
+    resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
 
     conversion_failures = {}
 

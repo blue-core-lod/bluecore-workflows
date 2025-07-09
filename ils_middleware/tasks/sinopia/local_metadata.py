@@ -90,7 +90,7 @@ def create_admin_metadata(**kwargs) -> str:
 def new_local_admin_metadata(*args, **kwargs):
     "Add Identifier to Sinopia localAdminMetadata."
     task_instance = kwargs["task_instance"]
-    resources = task_instance.xcom_pull(key="resources", task_ids="sqs-message-parse")
+    resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
 
     jwt = kwargs.get("jwt")
     ils_tasks = kwargs.get("ils_tasks")
@@ -102,7 +102,7 @@ def new_local_admin_metadata(*args, **kwargs):
     for resource_uri in resources:
         resource_uuid = resource_uri.split("/")[-1]
         message = task_instance.xcom_pull(
-            key=resource_uuid, task_ids="sqs-message-parse"
+            key=resource_uuid, task_ids="api-message-parse"
         )
         resource = message.get("resource")
         group = resource.get("group")

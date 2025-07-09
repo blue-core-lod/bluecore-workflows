@@ -85,7 +85,7 @@ def existing_metadata_check(*args, **kwargs):
     """Queries Sinopia API for related resources of an instance."""
     task_instance = kwargs["task_instance"]
     resource_uris = task_instance.xcom_pull(
-        key="resources", task_ids="sqs-message-parse"
+        key="resources", task_ids="api-message-parse"
     )
 
     resource_refs = _retrieve_all_resource_refs(resource_uris)

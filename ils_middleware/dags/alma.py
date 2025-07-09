@@ -12,7 +12,7 @@ from ils_middleware.tasks.amazon.alma_work_s3 import (
 from ils_middleware.tasks.amazon.alma_instance_s3 import (
     send_instance_to_alma_s3,
 )
-from ils_middleware.tasks.amazon.sqs import parse_messages
+
 from ils_middleware.tasks.sinopia.local_metadata import new_local_admin_metadata
 from ils_middleware.tasks.sinopia.email import (
     notify_and_log,
@@ -21,7 +21,7 @@ from ils_middleware.tasks.sinopia.email import (
 from ils_middleware.tasks.sinopia.login import sinopia_login
 from ils_middleware.tasks.alma.post_bfwork import NewWorktoAlma
 from ils_middleware.tasks.alma.post_bfinstance import NewInstancetoAlma
-from ils_middleware.tasks.general.init import message_from_context
+from ils_middleware.tasks.general import parse_messages, message_from_context
 
 
 def task_failure_callback(ctx_dict) -> None:
@@ -67,9 +67,10 @@ for institution in institutions:
         )
 
         process_message = PythonOperator(
-            task_id="sqs-message-parse",
+            task_id="api-message-parse",
             python_callable=parse_messages,
             dag=dag,
+            op_kwargs={"message": "{{ ti.xcom_pull('get-message-from-context') }}"},
         )
 
         with TaskGroup(group_id="process_alma", dag=dag) as alma_task_group:

@@ -226,7 +226,7 @@ def test_send_work_to_alma_s3(
     send_work_to_alma_s3(task_instance=mock_task_instance)
 
     mock_task_instance.xcom_pull.assert_called_once_with(
-        key="resources", task_ids="sqs-message-parse"
+        key="resources", task_ids="api-message-parse"
     )
     mock_graph_instance.parse.assert_any_call(
         URIRef("https://example.com/resource/instance_uri")
