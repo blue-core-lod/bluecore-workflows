@@ -47,6 +47,14 @@ def _add_other_resources(**kwargs):
         )
 
 
+def delete_upload(upload: str):
+    """
+    Deletes upload file
+    """
+    upload_path = pathlib.Path(upload)
+    upload_path.unlink()
+
+
 def is_zip(file_name: str) -> bool:
     """Determines if file is a zip file"""
     if file_name.endswith(".zip") or file_name.endswith(".gz"):
