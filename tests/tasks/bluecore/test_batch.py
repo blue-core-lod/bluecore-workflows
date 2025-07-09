@@ -1,9 +1,24 @@
 import pytest
 import rdflib
 
-from ils_middleware.tasks.bluecore.batch import is_zip, parse_file_to_graph
+from ils_middleware.tasks.bluecore.batch import (
+    delete_upload,
+    is_zip,
+    parse_file_to_graph,
+)
 
 BF = rdflib.Namespace("http://id.loc.gov/ontologies/bibframe/")
+
+
+def test_delete_upload(tmp_path):
+    upload_path = tmp_path / "bf-record.jsonld"
+    upload_path.touch()
+
+    assert upload_path.exists()
+
+    delete_upload(str(upload_path))
+
+    assert not upload_path.exists()
 
 
 def test_is_zip():

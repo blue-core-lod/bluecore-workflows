@@ -8,7 +8,11 @@ from airflow.decorators import dag, task
 from airflow.sdk import get_current_context
 
 from ils_middleware.tasks.amazon.bluecore_records_s3 import get_file
-from ils_middleware.tasks.bluecore.batch import is_zip, parse_file_to_graph
+from ils_middleware.tasks.bluecore.batch import (
+    delete_upload,
+    is_zip,
+    parse_file_to_graph,
+)
 from ils_middleware.tasks.bluecore.storage import (
     get_bluecore_db,
     store_bluecore_resources,
@@ -62,6 +66,10 @@ def resource_loader():
     def bluecore_db_info(**kwargs) -> str:
         return get_bluecore_db()
 
+    @task
+    def delete_file_path(file_path: str):
+        delete_upload(file_path)
+
     file_path = ingest()
     next_task = choose_processing(file=file_path)
     records = process(file=file_path)
@@ -71,7 +79,9 @@ def resource_loader():
     next_task >> [records, process_zip_task]
     process_zip_task >> records
 
-    store_bluecore_resources(records=records, bluecore_db=bluecore_db)
+    store_bluecore_resources(
+        records=records, bluecore_db=bluecore_db
+    ) >> delete_file_path(file_path)
 
 
 resource_loader()
