@@ -69,7 +69,7 @@ def parse_file_to_graph(file_str: str) -> List[Dict[str, Any]]:
     resources: List[Dict[str, Any]] = []
     file_graph = init_graph()
     file_graph.parse(data=file_path.read_text(), format="json-ld")
-    works: Set[str] = set()
+    works: dict = {}
     for work in file_graph.subjects(predicate=rdflib.RDF.type, object=BF.Work):
         if isinstance(work, rdflib.BNode):
             logger.info(f"Work {work} is a blank node, not processing")
@@ -80,7 +80,7 @@ def parse_file_to_graph(file_str: str) -> List[Dict[str, Any]]:
             type="works",
             bluecore_base_url=BLUECORE_URL,
         )
-        works.add(str(work))
+        works[str(work)] = updated_payload["uri"]
         resources.append(
             {
                 "class": "Work",
@@ -115,7 +115,7 @@ def parse_file_to_graph(file_str: str) -> List[Dict[str, Any]]:
             subject=instance, predicate=BF.instanceOf
         )
         if instance_of_work is not None and str(instance_of_work) in works:
-            instance_payload["work_uri"] = str(instance_of_work)
+            instance_payload["work_uri"] = works.get(str(instance_of_work))
         resources.append(instance_payload)
         _add_other_resources(
             resources=resources,
