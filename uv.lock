@@ -497,7 +497,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-workflows"
-version = "0.3.0"
+version = "0.4.0"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
@@ -536,7 +536,7 @@ requires-dist = [
     { name = "apache-airflow", specifier = "==3.0.2" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-fab" },
-    { name = "bluecore-models", specifier = ">=0.8.1" },
+    { name = "bluecore-models" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
