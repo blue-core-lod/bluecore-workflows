@@ -45,7 +45,7 @@ def test_parse_file_to_graph(test_graph, tmp_path):
     assert resources[14]["bibframe_resource_uri"] == str(resources[13]["uri"])
 
     instance_graph = rdflib.Graph()
-    instance_graph.parse(data=resources[13]["resource"], format="json-ld")
+    instance_graph.parse(data=resources[13]["resource"][0], format="json-ld")
     instance = instance_graph.value(predicate=rdflib.RDF.type, object=BF.Instance)
 
     dimensions = instance_graph.value(
