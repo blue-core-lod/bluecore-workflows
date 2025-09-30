@@ -27,6 +27,7 @@ def store_bluecore_resources(**kwargs):
         versions.keycloak_user_id during ORM events triggered by inserts/updates.
         """
         from bluecore_models.models.version import CURRENT_USER_ID
+
         uid = kwargs.get("user_uid")
         CURRENT_USER_ID.set(uid)
         print("Using CURRENT_USER_ID: ", uid)
