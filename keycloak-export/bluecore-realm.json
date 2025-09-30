@@ -705,7 +705,7 @@
     "alwaysDisplayInConsole" : false,
     "clientAuthenticatorType" : "client-secret",
     "redirectUris" : [ "http://localhost:4444/marva/*", "http://localhost:8080/auth/oauth-authorized/keycloak", "http://localhost/api/oauth-authorized/keycloak", "http://localhost:8080/oauth-authorized/keycloak" ],
-    "webOrigins" : [ "http:..localhost:4444", "/*" ],
+    "webOrigins" : [ "http://localhost:4444", "/*" ],
     "notBefore" : 0,
     "bearerOnly" : false,
     "consentRequired" : false,
