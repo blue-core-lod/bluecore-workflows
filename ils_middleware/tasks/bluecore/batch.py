@@ -3,7 +3,7 @@ import logging
 import os
 import pathlib
 import rdflib
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List
 
 from bluecore_models.utils.graph import (
     BF,

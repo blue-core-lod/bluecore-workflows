@@ -1,7 +1,7 @@
 import pytest
 
-from ils_middleware.tasks.general import httpx, message_from_context, parse_messages
-from tests.keycloak.server_mocks import mock_keycloak  # type: ignore
+from ils_middleware.tasks.general import message_from_context, parse_messages
+from tests.keycloak.server_mocks import mock_keycloak  # type: ignore # noqa: F401
 
 
 def test_message_from_context():
@@ -22,7 +22,7 @@ def test_message_from_context_no_message():
         message_from_context(context=mock_context)
 
 
-def test_parse_messages(mocker, mock_keycloak):
+def test_parse_messages(mocker, mock_keycloak):  # noqa: F811
     mock_task_instance = mocker
     xcoms = []
     mock_task_instance.xcom_push = lambda key, value: xcoms.append(
@@ -43,7 +43,7 @@ def test_parse_messages(mocker, mock_keycloak):
     assert xcoms[2]["value"] == []
 
 
-def test_parse_messages_user_not_in_group(mocker, mock_keycloak):
+def test_parse_messages_user_not_in_group(mocker, mock_keycloak):  # noqa: F811
     mock_task_instance = mocker
     message = {
         "user": "dev_user",
