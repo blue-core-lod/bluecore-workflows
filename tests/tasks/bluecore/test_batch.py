@@ -23,15 +23,20 @@ def test_delete_upload(tmp_path):
     assert upload_file.exists()
     assert upload_file2.exists()
 
-    # It should delete the parent directory only if it's empty
+    # It should delete the parent directory only if it's empty and remove_empty_parent is True
     delete_upload(str(upload_file))
     assert upload_path.exists()
     assert not upload_file.exists()
 
-    # Now delete the second file, which should remove the parent directory, too
+    # It should keep the parent directory as remove_empty_parent is not set
     delete_upload(str(upload_file2))
-    assert not upload_path.exists()
+    assert upload_path.exists()
     assert not upload_file2.exists()
+
+    # Delete the second file again with the remove_empty_parent flag set to True
+    upload_file2.touch()
+    delete_upload(str(upload_file2), remove_empty_parent=True)
+    assert not upload_path.exists()
 
 
 def test_is_zip():
