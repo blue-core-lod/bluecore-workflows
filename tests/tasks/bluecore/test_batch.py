@@ -1,3 +1,4 @@
+import os
 import pytest
 import rdflib
 
@@ -11,14 +12,26 @@ BF = rdflib.Namespace("http://id.loc.gov/ontologies/bibframe/")
 
 
 def test_delete_upload(tmp_path):
-    upload_path = tmp_path / "bf-record.jsonld"
-    upload_path.touch()
+    upload_path = tmp_path / "sub_dir"
+    os.mkdir(upload_path)
+    upload_file = upload_path / "bf-record.jsonld"
+    upload_file.touch()
+    upload_file2 = upload_path / "bf-record2.jsonld"
+    upload_file2.touch()
 
     assert upload_path.exists()
+    assert upload_file.exists()
+    assert upload_file2.exists()
 
-    delete_upload(str(upload_path))
+    # It should delete the parent directory only if it's empty
+    delete_upload(str(upload_file))
+    assert upload_path.exists()
+    assert not upload_file.exists()
 
+    # Now delete the second file, which should remove the parent directory, too
+    delete_upload(str(upload_file2))
     assert not upload_path.exists()
+    assert not upload_file2.exists()
 
 
 def test_is_zip():

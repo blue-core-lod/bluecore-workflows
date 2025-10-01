@@ -53,6 +53,9 @@ def delete_upload(upload: str):
     """
     upload_path = pathlib.Path(upload)
     upload_path.unlink()
+    parent_dir = upload_path.parent
+    if parent_dir.exists() and not any(parent_dir.iterdir()):
+        parent_dir.rmdir()
 
 
 def is_zip(file_name: str) -> bool:
