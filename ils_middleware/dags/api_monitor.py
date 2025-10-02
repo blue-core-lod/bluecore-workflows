@@ -1,7 +1,4 @@
-import json
 import logging
-
-import httpx
 
 from datetime import datetime, timedelta
 
@@ -19,7 +16,7 @@ def _check_available_institutions(payload: dict) -> dict:
     Parses incoming payload to check if group exists
     """
     all_institutions = institutions + ["stanford", "cornell"]
-    if not payload["group"].casefold() in all_institutions:
+    if payload["group"].casefold() not in all_institutions:
         raise ValueError(f"{payload['group']} isn't available for export")
     return payload
 
