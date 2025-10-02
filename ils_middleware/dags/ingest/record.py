@@ -1,6 +1,7 @@
 """Record Loader Workflow for a single file."""
 
 import logging
+import os
 
 from datetime import datetime
 
@@ -8,6 +9,7 @@ from airflow.decorators import dag, task
 from airflow.sdk import get_current_context
 
 from ils_middleware.tasks.amazon.bluecore_records_s3 import get_file
+
 from ils_middleware.tasks.bluecore.batch import (
     delete_upload,
     is_zip,
@@ -68,7 +70,9 @@ def resource_loader():
 
     @task
     def delete_file_path(file_path: str):
-        delete_upload(file_path)
+        parent_dir = os.path.dirname(file_path)
+        remove_empty_parent = parent_dir != "uploads"
+        delete_upload(upload=file_path, remove_empty_parent=remove_empty_parent)
 
     file_path = ingest()
     next_task = choose_processing(file=file_path)
