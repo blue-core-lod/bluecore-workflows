@@ -16,11 +16,29 @@ def get_bluecore_db():
     system_site_packages=False,
 )
 def store_bluecore_resources(**kwargs):
+    import logging
+
+    logger = logging.getLogger(__name__)
+    if not logger.handlers:
+        logging.basicConfig(level=logging.INFO)
     """Stores Work or Instance in the Blue Core Database
 
     Note: Virtualenv is needed because bluecore.models uses SQLAlchemy 2.+
     and Airflow uses a 1.x version of SQLAlchemy
     """
+    try:
+        """
+        Set CURRENT_USER_ID from DAG-provided user_uid so #add_version can write
+        versions.keycloak_user_id during ORM events triggered by inserts/updates.
+        """
+        from bluecore_models.models.version import CURRENT_USER_ID
+
+        uid = kwargs.get("user_uid")
+        CURRENT_USER_ID.set(uid)
+        logger.info("Using CURRENT_USER_ID: %s", uid)
+    except Exception as e:
+        logger.error("Failed to set CURRENT_USER_ID: %s", e)
+
     from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
     from bluecore_models.models import (

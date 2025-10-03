@@ -44,6 +44,18 @@ def resource_loader():
         local_file_path = get_file(file=file_path)
         return local_file_path
 
+    @task()
+    def get_keycloak_user_uid() -> str | None:
+        """
+        Pull keycloak user uid from dag_run.conf
+        """
+        context = get_current_context()
+        dag_run = context.get("dag_run")
+        conf = (getattr(dag_run, "conf", None) or {}) if dag_run else {}
+        uid = conf.get("user_uid")
+        logger.info(f"user_uid from conf: {uid!r}")
+        return uid
+
     @task.branch(task_id="process_choice")
     def choose_processing(**kwargs) -> list:
         file_path = kwargs.get("file", "")
@@ -75,6 +87,7 @@ def resource_loader():
         delete_upload(upload=file_path, remove_empty_parent=remove_empty_parent)
 
     file_path = ingest()
+    user_uid = get_keycloak_user_uid()
     next_task = choose_processing(file=file_path)
     records = process(file=file_path)
     process_zip_task = process_zip(file=file_path)
@@ -84,7 +97,9 @@ def resource_loader():
     process_zip_task >> records
 
     store_bluecore_resources(
-        records=records, bluecore_db=bluecore_db
+        records=records,
+        bluecore_db=bluecore_db,
+        user_uid=user_uid,
     ) >> delete_file_path(file_path)
 
 

@@ -481,7 +481,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.9.2"
+version = "0.9.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -490,14 +490,14 @@ dependencies = [
     { name = "pymilvus", extra = ["model"] },
     { name = "rdflib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/17/2d/102e6552a6b0a1025b14110b7ff2d8e3ab5aac03ed739891597e357f7dce/bluecore_models-0.9.2.tar.gz", hash = "sha256:4653258a04f608e8107f14294389c98a2058b29adf524bfd110641d4369f1179", size = 79122, upload-time = "2025-07-29T13:23:09.614Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8f/9d/d66c87053b26dcc1b0f5b9316084771554b5a48e48c79a83759ee5857d18/bluecore_models-0.9.4.tar.gz", hash = "sha256:971e13be2d34fe8f831b3e6c8974a08705b1dbe1e3d976eb4874c022a8f29cfe", size = 83587, upload-time = "2025-09-30T18:27:27.21Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/64/97/72fb0a72160600c71be2cf0d17fadd25c0f49025e8aea7466c61ede22d73/bluecore_models-0.9.2-py3-none-any.whl", hash = "sha256:7362bd79028d553d648866155a108449d14ba226815dba40ff724b6d669d7277", size = 12908, upload-time = "2025-07-29T13:23:08.826Z" },
+    { url = "https://files.pythonhosted.org/packages/32/82/2559c34a6ffbd51f9a411c681de726d06c906f29cb3a19d578df12a55078/bluecore_models-0.9.4-py3-none-any.whl", hash = "sha256:cc7b57538f20f1db4ed72ef65a69d81a193df3199a51197e2d1a1d60070f5f9c", size = 13110, upload-time = "2025-09-30T18:27:26.095Z" },
 ]
 
 [[package]]
 name = "bluecore-workflows"
-version = "0.4.2"
+version = "0.4.3"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
