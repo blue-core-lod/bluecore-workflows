@@ -37,7 +37,7 @@ def store_bluecore_resources(**kwargs):
         CURRENT_USER_ID.set(uid)
         logger.info("Using CURRENT_USER_ID: %s", uid)
     except Exception as e:
-        logger.exception("Failed to set CURRENT_USER_ID")
+        logger.error("Failed to set CURRENT_USER_ID: %s", e)
 
     from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
