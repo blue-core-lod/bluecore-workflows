@@ -16,6 +16,10 @@ def get_bluecore_db():
     system_site_packages=False,
 )
 def store_bluecore_resources(**kwargs):
+    import logging
+    logger = logging.getLogger(__name__)
+    if not logger.handlers:
+        logging.basicConfig(level=logging.INFO)
     """Stores Work or Instance in the Blue Core Database
 
     Note: Virtualenv is needed because bluecore.models uses SQLAlchemy 2.+
@@ -30,9 +34,9 @@ def store_bluecore_resources(**kwargs):
 
         uid = kwargs.get("user_uid")
         CURRENT_USER_ID.set(uid)
-        print("Using CURRENT_USER_ID: ", uid)
+        logger.info("Using CURRENT_USER_ID: %s", uid)
     except Exception as e:
-        print("Failed to set CURRENT_USER_ID: ", e)
+        logger.exception("Failed to set CURRENT_USER_ID")
 
     from sqlalchemy import create_engine
     from sqlalchemy.orm import Session
