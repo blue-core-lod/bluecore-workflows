@@ -17,6 +17,7 @@ def get_bluecore_db():
 )
 def store_bluecore_resources(**kwargs):
     import logging
+
     logger = logging.getLogger(__name__)
     if not logger.handlers:
         logging.basicConfig(level=logging.INFO)
