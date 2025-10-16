@@ -61,7 +61,6 @@ def _trigger_dags(**kwargs):
 
 @dag(
     start_date=datetime(2024, 1, 15),
-    schedule=timedelta(minutes=5),
     catchup=False,
 )
 def monitor_institutions_exports():
