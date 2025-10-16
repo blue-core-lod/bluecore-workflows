@@ -47,3 +47,27 @@ def get_bluecore_members() -> dict:
                     "groups": [group_name.casefold()],
                 }
     return members
+
+
+def get_user_groups(username: str) -> list:
+    user_profile_result = httpx.get(
+        f"{KEYCLOAK_EXTERNAL_URL}/admin/realms/bluecore/users?username={username}",
+        headers={"Authorization": f"Bearer {get_admin_token()}"},
+    )
+
+    user_profiles = user_profile_result.json()
+    match len(user_profiles):
+        case 0:
+            raise ValueError(f"{username} not found")
+
+        case 1:
+            user_id = user_profiles[0]["id"]
+
+        case _:
+            raise ValueError(f"Multiple users found for username {username}")
+
+    user_groups = httpx.get(
+        f"{KEYCLOAK_EXTERNAL_URL}/admin/realms/bluecore/users/{user_id}/groups",
+        headers={"Authorization": f"Bearer {get_admin_token()}"},
+    )
+    return [group["name"].lower().replace(" ", "") for group in user_groups.json()]
