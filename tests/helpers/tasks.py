@@ -82,6 +82,11 @@ mock_resources = {
                 "http://id.loc.gov/ontologies/bibframe/date": [
                     {"@language": "eng", "@value": "2012"}
                 ],
+                "http://id.loc.gov/ontologies/bibframe/instanceOf": [
+                    {
+                        "@id": "https://api.development.sinopia.io/resource/6497a461-42dc-42bf-b433-5e47c73f7e89"
+                    }
+                ],
             },
         ],
         "templateId": "ld4p:RT:bf2:Monograph:Instance:Un-nested",
@@ -110,6 +115,11 @@ mock_resources = {
                 "http://id.loc.gov/ontologies/bibframe/date": [
                     {"@language": "eng", "@value": "2012"}
                 ],
+                "http://id.loc.gov/ontologies/bibframe/instanceOf": [
+                    {
+                        "@id": "https://api.development.sinopia.io/resource/6497a461-42dc-42bf-b433-5e47c73f7e89"
+                    }
+                ],
             },
         ],
         "templateId": "ld4p:RT:bf2:Monograph:Instance:Un-nested",
@@ -120,9 +130,6 @@ mock_resources = {
         ],
         "bfItemRefs": [],
         "bfInstanceRefs": [],
-        "bfWorkRefs": [
-            "https://api.development.sinopia.io/resource/6497a461-42dc-42bf-b433-5e47c73f7e89"
-        ],
         "id": "7b55e6f7-f91e-4c7a-bbcd-c074485ad18d",
         "uri": "https://api.development.sinopia.io/resource/7b55e6f7-f91e-4c7a-bbcd-c074485ad18d",
         "timestamp": "2021-10-29T20:30:58.821Z",
