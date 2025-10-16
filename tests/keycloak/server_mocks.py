@@ -18,6 +18,23 @@ def mock_keycloak(monkeypatch, mocker):
             payload = [{"username": "dev_op", "email": "dev_op@bluecore.edu"}]
         if args[0].endswith("3756b8126114/members"):
             payload = [{"username": "dev_user", "email": "dev_user@bluecore.edu"}]
+        if args[0].endswith("users?username=dev_op"):
+            payload = [
+                {
+                    "username": "dev_op",
+                    "email": "dev_op@bluecore.org",
+                    "id": "48bac4b4-a4f1-4008-9f16-7dc0b51fd85e",
+                }
+            ]
+        if args[0].endswith("users?username=poly_user"):
+            payload = [
+                {"username": "poly_user", "id": "8a1b50b7-6638-4cfc-9869-0d84b407598b"},
+                {"username": "poly_user", "id": "60db4f45-8e66-4a61-9269-493ac850f90a"},
+            ]
+        if args[0].endswith("users?username=aearhart"):
+            payload = []
+        if args[0].endswith("7dc0b51fd85e/groups"):
+            payload = [{"name": "UC Davis"}]
         # Used in general/test_init.py::test_parse_messages
         if args[0].endswith("7922d096-9b45-4235-be9a-a89d390bee83"):
             payload = {
