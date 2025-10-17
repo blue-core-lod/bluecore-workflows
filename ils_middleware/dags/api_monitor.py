@@ -1,14 +1,13 @@
 import logging
 
 from datetime import datetime
-from typing import Union
 
 from airflow.decorators import dag, task
 from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.sdk import get_current_context
 
 from ils_middleware.dags.alma import institutions
-from ils_middleware.tasks.keycloak import get_user_groups
+from ils_middleware.tasks.keycloak import get_user_profile
 
 logger = logging.getLogger(__name__)
 
@@ -21,42 +20,18 @@ def _check_available_institutions(group: str) -> bool:
     return group.casefold() in all_institutions
 
 
-def _get_user_group(user_id: str) -> str:
-    groups = get_user_groups(user_id)
-
-    error: Union[str, None] = None
-
-    match len(groups):
-        case 0:
-            error = f"{user_id} not in any groups"
-
-        case 1:
-            error = None
-
-        case _:
-            error = f"{user_id} can only be in one group for export"
-
-    if error:
-        raise ValueError(error)
-
-    group = groups[0]
-    if not _check_available_institutions(group):
-        raise ValueError(f"Group {group} not available for export")
-
-    return group
-
-
 def _trigger_dags(**kwargs):
     payload: dict = kwargs["payload"]
-    group: str = payload["group"]
 
-    logger.info(f"Trigger DAG for {group}")
-    # Assumes the DAG name is the same as the group
-    TriggerDagRunOperator(
-        task_id=f"{group}-dag-run",
-        trigger_dag_id=group,
-        conf={"message": payload},
-    ).execute(kwargs)
+    for group in payload["user"]["groups"]:
+        if _check_available_institutions(group):
+            logger.info(f"Trigger DAG for {group}")
+            # Assumes the DAG name is the same as the group
+            TriggerDagRunOperator(
+                task_id=f"{group}-dag-run",
+                trigger_dag_id=group,
+                conf={"message": payload},
+            ).execute(kwargs)
 
 
 @dag(
@@ -80,10 +55,9 @@ def monitor_institutions_exports():
         }
 
     @task
-    def retrieve_user_group(payload: dict) -> dict:
-        username = payload.get("user", "")
-        group = _get_user_group(username)
-        payload["group"] = group
+    def retrieve_user(payload: dict) -> dict:
+        user_uid = payload.get("user", "")
+        payload["user"] = get_user_profile(user_uid)
         return payload
 
     @task
@@ -91,9 +65,9 @@ def monitor_institutions_exports():
         _trigger_dags(**kwargs)
 
     payload = incoming_api_call()
-    payload_with_user_group = retrieve_user_group(payload)
+    payload_with_user = retrieve_user(payload)
 
-    trigger_institutional_dags(payload=payload_with_user_group)
+    trigger_institutional_dags(payload=payload_with_user)
 
 
 monitor_export_api_messages = monitor_institutions_exports()

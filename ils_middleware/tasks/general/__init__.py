@@ -3,15 +3,7 @@ import httpx
 
 from airflow.sdk import get_current_context
 
-from ils_middleware.tasks.keycloak import get_bluecore_members
-
 logger = logging.getLogger(__name__)
-
-
-def get_user(username: str) -> dict:
-    """Retrieves user email and groups from Keycloak"""
-    bluecore_members = get_bluecore_members()
-    return bluecore_members[username]
 
 
 def get_resource(resource_uri: str) -> dict:
@@ -50,17 +42,12 @@ def parse_messages(**kwargs) -> str:
 
     resource_payload = get_resource(message["resource"])
     resource_uri = resource_payload["uri"]
-    user_payload = get_user(message["user"])
-    logger.info(f"User is {user_payload}")
-    if message["group"].casefold() not in user_payload["groups"]:
-        raise ValueError(
-            f"Cannot export: user {message['user']} not in group {message['group']}"
-        )
+    user = message["user"]
     try:
         task_instance.xcom_push(
             key=resource_payload["uuid"],
             value={
-                "email": user_payload["email"],
+                "email": user["email"],
                 "group": message["group"],
                 "resource_uri": resource_uri,
                 "resource": resource_payload["data"],

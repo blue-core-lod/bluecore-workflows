@@ -49,25 +49,21 @@ def get_bluecore_members() -> dict:
     return members
 
 
-def get_user_groups(username: str) -> list:
-    user_profile_result = httpx.get(
-        f"{KEYCLOAK_EXTERNAL_URL}/admin/realms/bluecore/users?username={username}",
+def get_user_profile(user_uid: str) -> dict:
+    user_profile_request = httpx.get(
+        f"{KEYCLOAK_EXTERNAL_URL}/admin/realms/bluecore/users/{user_uid}",
         headers={"Authorization": f"Bearer {get_admin_token()}"},
     )
+    user_profile_request.raise_for_status()
 
-    user_profiles = user_profile_result.json()
-    match len(user_profiles):
-        case 0:
-            raise ValueError(f"{username} not found")
-
-        case 1:
-            user_id = user_profiles[0]["id"]
-
-        case _:
-            raise ValueError(f"Multiple users found for username {username}")
-
-    user_groups = httpx.get(
-        f"{KEYCLOAK_EXTERNAL_URL}/admin/realms/bluecore/users/{user_id}/groups",
+    user_profile = user_profile_request.json()
+    user_groups_request = httpx.get(
+        f"{KEYCLOAK_EXTERNAL_URL}/admin/realms/bluecore/users/{user_uid}/groups",
         headers={"Authorization": f"Bearer {get_admin_token()}"},
     )
-    return [group["name"].lower().replace(" ", "") for group in user_groups.json()]
+    user_groups_request.raise_for_status()
+    user_profile["groups"] = [
+        group["name"].lower().replace(" ", "") for group in user_groups_request.json()
+    ]
+
+    return user_profile
