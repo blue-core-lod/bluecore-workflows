@@ -30,7 +30,11 @@ def test_parse_messages(mocker, mock_keycloak):  # noqa: F811
     )
 
     message = {
-        "user": "dev_op",
+        "user": {
+            "username": "dev_op",
+            "email": "dev_op@bluecore.org",
+            "id": "48bac4b4-a4f1-4008-9f16-7dc0b51fd85e",
+        },
         "resource": "https://bcld.info/instance/7922d096-9b45-4235-be9a-a89d390bee83",
         "group": "stanford",
     }
@@ -41,16 +45,3 @@ def test_parse_messages(mocker, mock_keycloak):  # noqa: F811
     assert xcoms[0]["key"].endswith("7922d096-9b45-4235-be9a-a89d390bee83")
     assert xcoms[1]["value"][0].startswith("https://bcld.info/instance/7922d096")
     assert xcoms[2]["value"] == []
-
-
-def test_parse_messages_user_not_in_group(mocker, mock_keycloak):  # noqa: F811
-    mock_task_instance = mocker
-    message = {
-        "user": "dev_user",
-        "resource": "https://bcld.info/instance/7922d096-9b45-4235-be9a-a89d390bee83",
-        "group": "stanford",
-    }
-    with pytest.raises(
-        ValueError, match="Cannot export: user dev_user not in group stanford"
-    ):
-        parse_messages(task_instance=mock_task_instance, message=message)

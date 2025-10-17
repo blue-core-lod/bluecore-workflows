@@ -1,41 +1,41 @@
 import logging
 
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from airflow.decorators import dag, task
 from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.sdk import get_current_context
 
 from ils_middleware.dags.alma import institutions
+from ils_middleware.tasks.keycloak import get_user_profile
 
 logger = logging.getLogger(__name__)
 
 
-def _check_available_institutions(payload: dict) -> dict:
+def _check_available_institutions(group: str) -> bool:
     """
-    Parses incoming payload to check if group exists
+    Checks if group available for export
     """
     all_institutions = institutions + ["stanford", "cornell"]
-    if payload["group"].casefold() not in all_institutions:
-        raise ValueError(f"{payload['group']} isn't available for export")
-    return payload
+    return group.casefold() in all_institutions
 
 
 def _trigger_dags(**kwargs):
     payload: dict = kwargs["payload"]
-    logger.info(f"Trigger DAG for {payload['group']}")
-    # Assumes the DAG name is the same as the group
-    group = payload["group"].casefold()
-    TriggerDagRunOperator(
-        task_id=f"{group}-dag-run",
-        trigger_dag_id=group,
-        conf={"message": payload},
-    ).execute(kwargs)
+
+    for group in payload["user"]["groups"]:
+        if _check_available_institutions(group):
+            logger.info(f"Trigger DAG for {group}")
+            # Assumes the DAG name is the same as the group
+            TriggerDagRunOperator(
+                task_id=f"{group}-dag-run",
+                trigger_dag_id=group,
+                conf={"message": payload},
+            ).execute(kwargs)
 
 
 @dag(
     start_date=datetime(2024, 1, 15),
-    schedule=timedelta(minutes=5),
     catchup=False,
 )
 def monitor_institutions_exports():
@@ -51,22 +51,23 @@ def monitor_institutions_exports():
             raise ValueError("No parameters found in context")
         return {
             "resource": params["resource"],
-            "group": params["group"],
             "user": params["user"],
         }
 
     @task
-    def parse_messages(messages: dict) -> dict:
-        return _check_available_institutions(messages)
+    def retrieve_user(payload: dict) -> dict:
+        user_uid = payload.get("user", "")
+        payload["user"] = get_user_profile(user_uid)
+        return payload
 
     @task
     def trigger_institutional_dags(**kwargs):
         _trigger_dags(**kwargs)
 
     payload = incoming_api_call()
-    checked_messages = parse_messages(payload)
+    payload_with_user = retrieve_user(payload)
 
-    trigger_institutional_dags(payload=checked_messages)
+    trigger_institutional_dags(payload=payload_with_user)
 
 
 monitor_export_api_messages = monitor_institutions_exports()

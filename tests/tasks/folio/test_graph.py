@@ -81,6 +81,13 @@ def test_construct_graph(mock_requests, mock_task_instance):  # noqa: F811
     )
 
 
+def test_missing_instance_of_build_graph(mock_requests):
+    instance_uri = "https://dev.bcld.info/instance/da30d80a-9aad-48ed-b4a4-687e380d422b"
+
+    with pytest.raises(ValueError, match="missing bf:instanceOf"):
+        _build_graph([], instance_uri)
+
+
 @pytest.fixture
 def mock_bad_work_task_instance(monkeypatch):
     def mock_xcom_pull(*args, **kwargs):
@@ -94,15 +101,14 @@ def mock_bad_work_task_instance(monkeypatch):
     monkeypatch.setattr(TaskInstance, "xcom_pull", mock_xcom_pull)
 
 
-def test_missing_workref(mock_requests, mock_bad_work_task_instance):
-    with pytest.raises(
-        ValueError, match=f"Missing BF Work URI for BF Instance {instance_uri}"
-    ):
-        construct_graph(
-            task_instance=test_task_instance(),
-        )
-
-
 def test_missing_work_build_graph(mock_requests, mock_bad_work_task_instance):
+    instance_uri = "https://dev.bcld.info/instance/da30d80a-9aad-48ed-b4a4-687e380d422b"
+    instance_jsonld = [
+        {
+            "@type": ["http://id.loc.gov/ontologies/bibframe/Instance"],
+            "@id": instance_uri,
+            "http://id.loc.gov/ontologies/bibframe/instanceOf": [{"@id": work_uri}],
+        }
+    ]
     with pytest.raises(ValueError, match=f"Error retrieving {work_uri}"):
-        _build_graph([], work_uri)
+        _build_graph(instance_jsonld, instance_uri)

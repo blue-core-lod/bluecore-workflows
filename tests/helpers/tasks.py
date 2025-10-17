@@ -82,19 +82,15 @@ mock_resources = {
                 "http://id.loc.gov/ontologies/bibframe/date": [
                     {"@language": "eng", "@value": "2012"}
                 ],
+                "http://id.loc.gov/ontologies/bibframe/instanceOf": [
+                    {
+                        "@id": "https://api.development.sinopia.io/resource/6497a461-42dc-42bf-b433-5e47c73f7e89"
+                    }
+                ],
             },
         ],
         "templateId": "ld4p:RT:bf2:Monograph:Instance:Un-nested",
         "types": ["http://id.loc.gov/ontologies/bibframe/Instance"],
-        "bfAdminMetadataRefs": [
-            "https://api.development.sinopia.io/resource/7f775ec2-4fe8-48a6-9cb4-5b218f9960f1",
-            "https://api.development.sinopia.io/resource/bc9e9939-45b3-4122-9b6d-d800c130c576",
-        ],
-        "bfItemRefs": [],
-        "bfInstanceRefs": [],
-        "bfWorkRefs": [
-            "https://api.development.sinopia.io/resource/6497a461-42dc-42bf-b433-5e47c73f7e89"
-        ],
         "id": "7b55e6f7-f91e-4c7a-bbcd-c074485ad18d",
         "uri": "https://api.development.sinopia.io/resource/7b55e6f7-f91e-4c7a-bbcd-c074485ad18d",
         "timestamp": "2021-10-29T20:30:58.821Z",
@@ -110,19 +106,15 @@ mock_resources = {
                 "http://id.loc.gov/ontologies/bibframe/date": [
                     {"@language": "eng", "@value": "2012"}
                 ],
+                "http://id.loc.gov/ontologies/bibframe/instanceOf": [
+                    {
+                        "@id": "https://api.development.sinopia.io/resource/6497a461-42dc-42bf-b433-5e47c73f7e89"
+                    }
+                ],
             },
         ],
         "templateId": "ld4p:RT:bf2:Monograph:Instance:Un-nested",
         "types": ["http://id.loc.gov/ontologies/bibframe/Instance"],
-        "bfAdminMetadataRefs": [
-            "https://api.development.sinopia.io/resource/7f775ec2-4fe8-48a6-9cb4-5b218f9960f1",
-            "https://api.development.sinopia.io/resource/bc9e9939-45b3-4122-9b6d-d800c130c576",
-        ],
-        "bfItemRefs": [],
-        "bfInstanceRefs": [],
-        "bfWorkRefs": [
-            "https://api.development.sinopia.io/resource/6497a461-42dc-42bf-b433-5e47c73f7e89"
-        ],
         "id": "7b55e6f7-f91e-4c7a-bbcd-c074485ad18d",
         "uri": "https://api.development.sinopia.io/resource/7b55e6f7-f91e-4c7a-bbcd-c074485ad18d",
         "timestamp": "2021-10-29T20:30:58.821Z",
@@ -164,28 +156,6 @@ overlay_resources = [
 
 
 mock_push_store: dict = {}
-
-
-def mock_message():
-    return [
-        {
-            "Body": """{ "user": { "email": "dscully@stanford.edu" },
-                         "group": "stanford",
-                         "target": "ils",
-                         "resource": { "uri": "https://api.development.sinopia.io/resource/0000-1111-2222-3333" }}"""
-        },
-        {
-            "Body": """{ "user": { "email": "fmulder@stanford.edu" },
-                         "group": "yale",
-                         "target": "ils",
-                         "resource": { "uri": "https://api.development.sinopia.io/resource/4444-5555-6666-7777" }}"""
-        },
-        {
-            "Body": """{ "group": "yale",
-                         "target": "ils",
-                         "resource": { "uri": "https://api.development.sinopia.io/resource/8888-9999-0000-1111" }}"""
-        },
-    ]
 
 
 def marc_as_json():
@@ -287,10 +257,6 @@ def mock_task_instance(monkeypatch, tmp_path):
                 "https://api.development.sinopia.io/resource/0000-1111-2222-3333",
                 "https://api.development.sinopia.io/resource/4444-5555-6666-7777",
             ]
-        elif task_ids == "get-message-from-context":
-            return json.loads(mock_message()[0]["Body"])
-        elif key == "messages":
-            return mock_message()
         elif key in mock_resources and task_ids == "api-message-parse":
             return {
                 "email": mock_resource_attributes[key]["email"],

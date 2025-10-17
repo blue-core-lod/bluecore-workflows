@@ -47,3 +47,23 @@ def get_bluecore_members() -> dict:
                     "groups": [group_name.casefold()],
                 }
     return members
+
+
+def get_user_profile(user_uid: str) -> dict:
+    user_profile_request = httpx.get(
+        f"{KEYCLOAK_EXTERNAL_URL}/admin/realms/bluecore/users/{user_uid}",
+        headers={"Authorization": f"Bearer {get_admin_token()}"},
+    )
+    user_profile_request.raise_for_status()
+
+    user_profile = user_profile_request.json()
+    user_groups_request = httpx.get(
+        f"{KEYCLOAK_EXTERNAL_URL}/admin/realms/bluecore/users/{user_uid}/groups",
+        headers={"Authorization": f"Bearer {get_admin_token()}"},
+    )
+    user_groups_request.raise_for_status()
+    user_profile["groups"] = [
+        group["name"].lower().replace(" ", "") for group in user_groups_request.json()
+    ]
+
+    return user_profile

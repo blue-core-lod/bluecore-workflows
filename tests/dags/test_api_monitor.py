@@ -1,21 +1,15 @@
-import pytest
-
-
 def test_check_available_institutions(mocker):
     mocker.patch("airflow.models.Variable.get", return_value="test")
     from ils_middleware.dags.api_monitor import _check_available_institutions
 
-    institutional_messages = _check_available_institutions({"group": "stanford"})
-    assert len(institutional_messages) == 1
-    assert institutional_messages["group"] == "stanford"
+    assert _check_available_institutions("stanford")
 
 
 def test_check_available_institutions_unknown_group(mocker):
     mocker.patch("airflow.models.Variable.get", return_value="test")
     from ils_middleware.dags.api_monitor import _check_available_institutions
 
-    with pytest.raises(ValueError, match="cc isn't available for export"):
-        _check_available_institutions({"group": "cc"})
+    assert not _check_available_institutions("cc")
 
 
 def test_trigger_dags(mocker, caplog):
@@ -30,8 +24,18 @@ def test_trigger_dags(mocker, caplog):
         _trigger_dags,
     )
 
-    institutional_messages = _check_available_institutions({"group": "Stanford"})
-    _trigger_dags(payload=institutional_messages)
+    group = "stanford"
+    assert _check_available_institutions(group)
+
+    _trigger_dags(
+        payload={
+            "user": {
+                "groups": [
+                    group,
+                ]
+            }
+        }
+    )
 
     assert mock_trigger_operator.called
-    assert "Trigger DAG for Stanford" in caplog.text
+    assert "Trigger DAG for stanford" in caplog.text
