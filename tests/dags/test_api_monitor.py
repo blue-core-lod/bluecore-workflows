@@ -1,6 +1,3 @@
-import pytest  # noqa: F401 
-
-
 def test_check_available_institutions(mocker):
     mocker.patch("airflow.models.Variable.get", return_value="test")
     from ils_middleware.dags.api_monitor import _check_available_institutions
