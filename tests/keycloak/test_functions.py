@@ -1,6 +1,4 @@
-import pytest
-
-from ils_middleware.tasks.keycloak import get_bluecore_members, get_user_groups
+from ils_middleware.tasks.keycloak import get_bluecore_members, get_user_profile
 from tests.keycloak.server_mocks import mock_keycloak  # type: ignore #noqa: F401
 
 
@@ -11,17 +9,9 @@ def test_get_bluecore_members(mock_keycloak):  # noqa: F811
     assert user_membership["dev_user"]["groups"] == ["loc"]
 
 
-def test_get_user_groups(mock_keycloak):  # noqa: F811
-    groups = get_user_groups("dev_op")
+def test_get_user_profile(mock_keycloak):  # noqa: F811
+    user = get_user_profile("48bac4b4-a4f1-4008-9f16-7dc0b51fd85e")
 
-    assert groups == ["ucdavis"]
-
-
-def test_get_user_groups_multiple_users(mock_keycloak):  # noqa: F811
-    with pytest.raises(ValueError, match="Multiple users found for username poly_user"):
-        get_user_groups("poly_user")
-
-
-def test_get_user_groups_no_user(mock_keycloak):  # noqa: F811
-    with pytest.raises(ValueError, match="aearhart not found"):
-        get_user_groups("aearhart")
+    assert user["email"] == "dev_op@bluecore.org"
+    assert user["groups"] == ["ucdavis"]
+    assert user["username"] == "dev_op"
