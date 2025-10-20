@@ -10,15 +10,8 @@ from airflow.sdk import get_current_context
 
 from ils_middleware.tasks.amazon.bluecore_records_s3 import get_file
 
-from ils_middleware.tasks.bluecore.batch import (
-    delete_upload,
-    is_zip,
-    parse_file_to_graph,
-)
-from ils_middleware.tasks.bluecore.storage import (
-    get_bluecore_db,
-    store_bluecore_resources,
-)
+from ils_middleware.tasks.bluecore.batch import delete_upload
+from ils_middleware.tasks.bluecore.storage import get_bluecore_db, load_file
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +25,7 @@ logger = logging.getLogger(__name__)
 )
 def resource_loader():
     @task()
-    def ingest() -> str:
+    def get_file_path() -> str:
         context = get_current_context()
         params = context.get("params")
         if params is None:
@@ -56,29 +49,15 @@ def resource_loader():
         logger.info(f"user_uid from conf: {uid!r}")
         return uid
 
-    @task.branch(task_id="process_choice")
-    def choose_processing(**kwargs) -> list:
-        file_path = kwargs.get("file", "")
-        if is_zip(file_path):
-            return ["process_zip"]
-        return ["process"]
-
-    @task(trigger_rule="one_success")
-    def process(*args, **kwargs) -> list:
-        file_path = kwargs.get("file", "")
-        logger.info(f"Processing data {file_path}")
-        resources = parse_file_to_graph(file_path)
-        logger.info(f"{len(resources)} Resources to process")
-        return resources
-
-    @task
-    def process_zip(**kwargs):
-        # Placeholder to be implemented in a follow-up PR
-        logger.info("Process zip file")
-
     @task
     def bluecore_db_info(**kwargs) -> str:
         return get_bluecore_db()
+
+    @task
+    def load(file_path: str, user_uid: str, bluecore_db: str):
+        logger.info(f"loading {file_path} for user {user_uid} into db {bluecore_db}")
+        n = load_file(file_path, user_uid, bluecore_db)
+        logger.info(f"processed {n} triples")
 
     @task
     def delete_file_path(file_path: str):
@@ -86,21 +65,10 @@ def resource_loader():
         remove_empty_parent = parent_dir != "uploads"
         delete_upload(upload=file_path, remove_empty_parent=remove_empty_parent)
 
-    file_path = ingest()
+    file_path = get_file_path()
     user_uid = get_keycloak_user_uid()
-    next_task = choose_processing(file=file_path)
-    records = process(file=file_path)
-    process_zip_task = process_zip(file=file_path)
     bluecore_db = bluecore_db_info()
-
-    next_task >> [records, process_zip_task]
-    process_zip_task >> records
-
-    store_bluecore_resources(
-        records=records,
-        bluecore_db=bluecore_db,
-        user_uid=user_uid,
-    ) >> delete_file_path(file_path)
+    load(file_path, user_uid, bluecore_db) >> delete_file_path(file_path)
 
 
 resource_loader()

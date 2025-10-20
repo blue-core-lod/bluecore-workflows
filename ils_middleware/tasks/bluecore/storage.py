@@ -15,7 +15,7 @@ def get_bluecore_db():
     requirements=["bluecore-models"],
     system_site_packages=False,
 )
-def store_bluecore_resources(**kwargs):
+def load_file(file_path: str, user_uid: str, bluecore_db: str) -> int:
     import logging
 
     logger = logging.getLogger(__name__)
@@ -33,87 +33,23 @@ def store_bluecore_resources(**kwargs):
         """
         from bluecore_models.models.version import CURRENT_USER_ID
 
-        uid = kwargs.get("user_uid")
-        CURRENT_USER_ID.set(uid)
-        logger.info("Using CURRENT_USER_ID: %s", uid)
+        CURRENT_USER_ID.set(user_uid)
+        logger.info("Using CURRENT_USER_ID: %s", user_uid)
     except Exception as e:
         logger.error("Failed to set CURRENT_USER_ID: %s", e)
 
+    import rdflib
     from sqlalchemy import create_engine
-    from sqlalchemy.orm import Session
-    from bluecore_models.models import (
-        Instance,
-        Work,
-        OtherResource,
-        ResourceBase,
-        BibframeOtherResources,
-    )
+    from bluecore_models.bluecore_graph import save_graph
 
-    records = kwargs["records"]
-    bluecore_db_conn_string = kwargs["bluecore_db"]
+    # parse the RDF and give it to the BluecoreGraph
+    graph = rdflib.Graph()
+    graph.parse(file_path)
 
-    engine = create_engine(bluecore_db_conn_string)
+    # create the database engine
+    engine = create_engine(bluecore_db)
 
-    with Session(engine) as session:
-        for payload in records:
-            match payload["class"]:
-                case "Instance":
-                    instance = (
-                        session.query(Instance)
-                        .where(Instance.uri == payload["uri"])
-                        .first()
-                    )
-                    if not instance:
-                        instance = Instance(
-                            uri=payload["uri"],
-                            data=payload["resource"],
-                            uuid=payload["uuid"],
-                        )
-                        if "work_uri" in payload:
-                            db_work = (
-                                session.query(Work)
-                                .where(Work.uri == payload["work_uri"])
-                                .first()
-                            )
-                            if db_work:
-                                instance.work = db_work
-                        session.add(instance)
+    # save the graph and return the number of triples processed
+    bc_graph = save_graph(engine, graph)
+    return len(bc_graph)
 
-                case "OtherResource":
-                    other_resource = (
-                        session.query(OtherResource)
-                        .where(OtherResource.uri == payload["uri"])
-                        .first()
-                    )
-                    if not other_resource:
-                        other_resource = OtherResource(
-                            uri=payload["uri"], data=payload["resource"]
-                        )
-                        session.add(other_resource)
-                    bibframe_resource = (
-                        session.query(ResourceBase)
-                        .where(ResourceBase.uri == payload["bibframe_resource_uri"])
-                        .first()
-                    )
-                    bf_other_resource = BibframeOtherResources(
-                        other_resource=other_resource,
-                        bibframe_resource=bibframe_resource,
-                    )
-
-                    session.add(bf_other_resource)
-
-                case "Work":
-                    work = session.query(Work).where(Work.uri == payload["uri"]).first()
-                    if not work:
-                        work = Work(
-                            uri=payload["uri"],
-                            data=payload["resource"],
-                            uuid=payload["uuid"],
-                        )
-                        session.add(work)
-
-                case _:
-                    logger.error(
-                        f"Unknown class {payload['class']} for {payload['uri']}"
-                    )
-        session.commit()
