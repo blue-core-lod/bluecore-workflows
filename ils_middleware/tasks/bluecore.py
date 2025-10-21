@@ -36,10 +36,11 @@ def get_bluecore_db() -> str:
 
 # we need to run in a virtualenv so that we can use the latest
 # bluecore-models and sqlalchemy 2
+#
+# when testing bluecore-models it can be helpful to reference a branch here
+# e.g. "bluecore-models @ git+https://github.com/blue-core-lod/bluecore-models@my-branch"
 @task.virtualenv(
-    requirements=[
-        "bluecore-models @ git+https://github.com/blue-core-lod/bluecore-models@save-graph"
-    ],
+    requirements=["bluecore-models"],
     system_site_packages=False,
 )
 def load(file_path: str, user_uid: str, bluecore_db: str):
