@@ -105,6 +105,7 @@ x-airflow-common:
     AIRFLOW_VAR_STANFORD_FOLIO_LOGIN: 'USERNAME'
     AIRFLOW_VAR_STANFORD_FOLIO_PASSWORD: 'PASSWORD'
     AIRFLOW_VAR_STANFORD_FOLIO_AUTH_URL: 'https://okapi-folio.dev.sul.stanford.edu/authn/login'
+    AIRFLOW_VAR_BLUECORE_URL: 'http://localhost:3000/'
     AIRFLOW_CONN_BLUECORE_DB: 'postgresql+psycopg2://airflow:airflow@postgres:5432/bluecore'
     # yamllint disable rule:line-length
     # Use simple http server on scheduler for health checks
