@@ -1,9 +1,8 @@
 import os
 
-from ils_middleware.tasks.bluecore.batch import (
-    delete_upload,
-    is_zip,
-)
+import pytest
+
+from ils_middleware.tasks.bluecore import delete_upload, is_zip, get_bluecore_db
 
 
 def test_delete_upload(tmp_path):
@@ -38,3 +37,25 @@ def test_is_zip():
     assert is_zip("test.zip")
     assert is_zip("test.tar.gz")
     assert not is_zip("test.txt")
+
+
+class MockPostgresHook(object):
+    def __init__(self, *args):
+        self.sqlalchemy_url = (
+            "postgresql://bluecore_admin:bluecore_admin@localhost/bluecore"
+        )
+
+
+@pytest.fixture
+def mock_postgres_hook(mocker):
+    mocker.patch(
+        "ils_middleware.tasks.bluecore.PostgresHook",
+        return_value=MockPostgresHook(),
+    )
+    return mocker
+
+
+def test_get_bluecore_db(mock_postgres_hook):
+    db_string = get_bluecore_db()
+
+    assert db_string.startswith("postgresql://bluecore_admin")
