@@ -77,7 +77,7 @@ def load(file_path: str, user_uid: str, bluecore_db: str):
 
     # parse the RDF into a graph
     graph = rdflib.Graph()
-    graph.parse(file_path)
+    graph.parse(file_path, format="json-ld")
 
     # get the bluecore namespace, ideally we would use Airflow's Variable
     # here but we are running in a virtualenv without Airflow installed
