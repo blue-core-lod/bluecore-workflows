@@ -2,23 +2,13 @@
 
 import logging
 import os
-
 from datetime import datetime
 
 from airflow.decorators import dag, task
 from airflow.sdk import get_current_context
 
 from ils_middleware.tasks.amazon.bluecore_records_s3 import get_file
-
-from ils_middleware.tasks.bluecore.batch import (
-    delete_upload,
-    is_zip,
-    parse_file_to_graph,
-)
-from ils_middleware.tasks.bluecore.storage import (
-    get_bluecore_db,
-    store_bluecore_resources,
-)
+from ils_middleware.tasks.bluecore import delete_upload, get_bluecore_db, load
 
 logger = logging.getLogger(__name__)
 
@@ -56,26 +46,6 @@ def resource_loader():
         logger.info(f"user_uid from conf: {uid!r}")
         return uid
 
-    @task.branch(task_id="process_choice")
-    def choose_processing(**kwargs) -> list:
-        file_path = kwargs.get("file", "")
-        if is_zip(file_path):
-            return ["process_zip"]
-        return ["process"]
-
-    @task(trigger_rule="one_success")
-    def process(*args, **kwargs) -> list:
-        file_path = kwargs.get("file", "")
-        logger.info(f"Processing data {file_path}")
-        resources = parse_file_to_graph(file_path)
-        logger.info(f"{len(resources)} Resources to process")
-        return resources
-
-    @task
-    def process_zip(**kwargs):
-        # Placeholder to be implemented in a follow-up PR
-        logger.info("Process zip file")
-
     @task
     def bluecore_db_info(**kwargs) -> str:
         return get_bluecore_db()
@@ -88,19 +58,8 @@ def resource_loader():
 
     file_path = ingest()
     user_uid = get_keycloak_user_uid()
-    next_task = choose_processing(file=file_path)
-    records = process(file=file_path)
-    process_zip_task = process_zip(file=file_path)
     bluecore_db = bluecore_db_info()
-
-    next_task >> [records, process_zip_task]
-    process_zip_task >> records
-
-    store_bluecore_resources(
-        records=records,
-        bluecore_db=bluecore_db,
-        user_uid=user_uid,
-    ) >> delete_file_path(file_path)
+    load(file_path, user_uid, bluecore_db) >> delete_file_path(file_path)
 
 
-resource_loader()
+resource_loader_dag = resource_loader()
