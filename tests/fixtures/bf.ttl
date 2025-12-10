@@ -108,7 +108,7 @@ bf:Work rdfs:label "http://id.loc.gov/ontologies/bibframe/Work" .
     bf:classification [ a bf:ClassificationLcc ;
             bf:classificationPortion "BP52.5"@eng ] ;
     bf:content <http://id.loc.gov/vocabulary/contentTypes/txt> ;
-    bf:contribution [ a bflc:PrimaryContribution ;
+    bf:contribution [ a bf:PrimaryContribution ;
             bf:agent <http://id.loc.gov/authorities/names/n2012041708>,
                 <http://id.loc.gov/authorities/names/nb2002005989> ;
             bf:role <http://id.loc.gov/vocabulary/relators/aut> ],

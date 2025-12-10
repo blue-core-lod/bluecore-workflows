@@ -60,7 +60,7 @@ SELECT ?agent ?role
 WHERE {{
     <{bf_work}> a bf:Work .
     <{bf_work}> bf:contribution ?contrib_bnode .
-    ?contrib_bnode a bflc:PrimaryContribution .
+    ?contrib_bnode a bf:PrimaryContribution .
     ?contrib_bnode bf:role ?role_uri .
     ?role_uri rdfs:label ?role .
     ?contrib_bnode bf:agent ?agent_uri .
