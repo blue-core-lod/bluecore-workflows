@@ -15,7 +15,7 @@ BF_TO_FOLIO_MAP = {
         "uri": "work",
         "class": "bf:Person",
     },
-    "editions": {"template": bf_work_map.editions, "uri": "work"},
+    "editions": {"template": bf_instance_map.editions, "uri": "instance"},
     "instance_format": {
         "template": bf_instance_map.instance_format_id,
         "uri": "instance",
