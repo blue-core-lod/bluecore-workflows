@@ -98,13 +98,8 @@ x-airflow-common:
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
     AIRFLOW__WEBSERVER__SHOW_TRIGGER_FORM_IF_NO_PARAMS: 'true'
     AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
-    AIRFLOW_VAR_MARC_S3_BUCKET: 'sinopia-marc-development'
-    AIRFLOW_VAR_RDF2MARC_LAMBDA: 'sinopia-rdf2marc-development'
     AIRFLOW_VAR_SINOPIA_ENV: ${AIRFLOW_VAR_SINOPIA_ENV:-dev}
-    AIRFLOW_VAR_SQS_URL: 'http://localstack:4566/000000000000/'
-    AIRFLOW_VAR_STANFORD_FOLIO_LOGIN: 'USERNAME'
-    AIRFLOW_VAR_STANFORD_FOLIO_PASSWORD: 'PASSWORD'
-    AIRFLOW_VAR_STANFORD_FOLIO_AUTH_URL: 'https://okapi-folio.dev.sul.stanford.edu/authn/login'
+    AIRFLOW_VAR_KEYCLOAK_URL: 'http://keycloak:8080'
     AIRFLOW_VAR_BLUECORE_URL: 'http://localhost:3000/'
     AIRFLOW_CONN_BLUECORE_DB: 'postgresql+psycopg2://airflow:airflow@postgres:5432/bluecore'
     # yamllint disable rule:line-length
