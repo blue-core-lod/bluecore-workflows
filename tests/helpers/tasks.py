@@ -61,10 +61,9 @@ def test_mms_id():
 
 mock_resources = {
     "0000-1111-2222-3333": {
-        "user": "jpnelson",
+        "email": "	johnydev@bluecore.edu",
         "group": "stanford",
-        "editGroups": ["other", "pcc"],
-        "data": [
+        "resource": [
             {
                 "@id": "_:b29",
                 "@type": ["http://id.loc.gov/ontologies/bibframe/Title"],
@@ -98,8 +97,7 @@ mock_resources = {
     "4444-5555-6666-7777": {
         "user": "jpnelson",
         "group": "stanford",
-        "editGroups": ["other", "pcc"],
-        "data": [
+        "resource": [
             {
                 "@id": "https://api.development.sinopia.io/resource/4444-5555-6666-7777",
                 "@type": ["http://id.loc.gov/ontologies/bibframe/Instance"],
@@ -261,9 +259,8 @@ def mock_task_instance(monkeypatch, tmp_path):
             return {
                 "email": mock_resource_attributes[key]["email"],
                 "group": mock_resource_attributes[key]["group"],
-                "target": mock_resource_attributes[key]["target"],
                 "resource_uri": f"https://api.development.sinopia.io/resource/{key}",
-                "resource": mock_resources[key],
+                "resource": mock_resources[key]["resource"],
             }
         elif key == "overlay_resources":
             return overlay_resources
@@ -284,6 +281,8 @@ def mock_task_instance(monkeypatch, tmp_path):
                 return folio_ids[key]
             if task_ids.endswith("process_alma.download_marc"):
                 return "tests/fixtures/record.mar"
+            if task_ids.endswith("instance_type_task"):
+                return []
         else:
             return mock_push_store.get(key)
 

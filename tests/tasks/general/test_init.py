@@ -34,9 +34,9 @@ def test_parse_messages(mocker, mock_keycloak):  # noqa: F811
             "username": "dev_op",
             "email": "dev_op@bluecore.org",
             "id": "48bac4b4-a4f1-4008-9f16-7dc0b51fd85e",
+            "groups": ["stanford"],
         },
         "resource": "https://bcld.info/instance/7922d096-9b45-4235-be9a-a89d390bee83",
-        "group": "stanford",
     }
 
     result = parse_messages(task_instance=mock_task_instance, message=message)
