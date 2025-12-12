@@ -304,7 +304,7 @@ def _inventory_record(**kwargs) -> dict:
     record = {
         "id": _folio_id(instance_uri, folio_client.okapi_url),
         "metadata": _create_update_metadata(**kwargs),
-        "source": "SINOPIA",
+        "source": "BLUECORE",
         "electronicAccess": [_electronic_access(**kwargs)],
     }
     instance_uuid = instance_uri.split("/")[-1]
@@ -313,6 +313,8 @@ def _inventory_record(**kwargs) -> dict:
         post_processing = transforms.get(folio_field, _default_transform)
         task_id = _task_ids(task_groups, folio_field)
         raw_values = task_instance.xcom_pull(key=instance_uuid, task_ids=task_id)
+        if folio_field.startswith("instance_type") and len(raw_values) == 0:
+            raw_values = [["text"]]  # Default value
         if raw_values:
             record_field, values = post_processing(
                 values=raw_values,
