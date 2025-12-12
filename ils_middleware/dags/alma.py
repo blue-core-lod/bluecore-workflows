@@ -110,10 +110,7 @@ for institution in institutions:
             login_sinopia = PythonOperator(
                 task_id="sinopia-login",
                 python_callable=sinopia_login,
-                op_kwargs={
-                    "region": "us-west-2",
-                    "sinopia_env": Variable.get("sinopia_env"),
-                },
+                op_kwargs={},
             )
 
             # Adds localAdminMetadata
