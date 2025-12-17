@@ -78,13 +78,12 @@ def _email_on_failure_attributes(message: dict) -> dict:
 
 
 def _email_on_success_attributes(message: dict) -> dict:
+    logger.info(f"Success email message {message}")
     email_addr = message["email"]
     resource_uri = message["resource_uri"]
-    group = message["group"]
-    target = message["target"]
     return {
         "mail_from": "sinopia-devs@lists.stanford.edu",
         "to": email_addr,
         "subject": f"successfully published {resource_uri}",
-        "html_content": f"You have successfully published {resource_uri} from Sinopia to {group} {target}",
+        "html_content": f"You have successfully published {resource_uri} from Blue Core",
     }
