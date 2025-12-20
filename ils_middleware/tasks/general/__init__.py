@@ -48,7 +48,7 @@ def parse_messages(**kwargs) -> str:
             key=resource_payload["uuid"],
             value={
                 "email": user["email"],
-                "group": message["group"],
+                "group": user["groups"][0],
                 "resource_uri": resource_uri,
                 "resource": resource_payload["data"],
             },

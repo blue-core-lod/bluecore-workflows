@@ -76,6 +76,19 @@ def _task_id(task_groups: str) -> str:
     return task_id
 
 
+def _retrieve_values(query_row: list | tuple) -> list:
+    output = []
+    for field in query_row:
+        if field:
+            if isinstance(field, rdflib.URIRef):
+                output.append(str(field))
+                continue
+            output.append(field.value)
+        else:
+            output.append(None)  # type: ignore
+    return output
+
+
 def _build_and_query_graph(**kwargs) -> list:
     bf_class = kwargs["bf_class"]
     instance_uri = kwargs["instance_uri"]
@@ -103,7 +116,10 @@ def _build_and_query_graph(**kwargs) -> list:
     json_ld = task_instance.xcom_pull(key=instance_uuid, task_ids=task_id).get("graph")
     graph.parse(data=json_ld, format="json-ld")
     logging.info(f"SPARQL:\n{query}")
-    return [row for row in graph.query(query)]
+    values = []
+    for row in graph.query(query):
+        values.append(_retrieve_values(row))  # type: ignore
+    return values
 
 
 def map_to_folio(**kwargs):

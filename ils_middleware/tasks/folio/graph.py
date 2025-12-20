@@ -41,8 +41,7 @@ def construct_graph(**kwargs):
         resource = task_instance.xcom_pull(
             key=instance_uuid, task_ids="api-message-parse"
         ).get("resource")
-
-        graph, work_uri = _build_graph(resource.get("data"), instance_uri)
+        graph, work_uri = _build_graph(resource, instance_uri)
         task_instance.xcom_push(
             key=instance_uuid,
             value={"graph": graph.serialize(format="json-ld"), "work_uri": work_uri},

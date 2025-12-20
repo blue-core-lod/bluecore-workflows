@@ -1,22 +1,26 @@
-"""Sinopia Login to generate a Cognito JWT."""
+"""Blue Core Login"""
 
-import boto3
+import httpx
+
 from airflow.models import Variable
 
 
 def sinopia_login(**kwargs):
-    """Log into Sinopia using Airflow Variables."""
-    region = kwargs.get("aws_region", "us-west-2")
+    """Log into Blue Core using Airflow Variables and retrieves JWT."""
     sinopia_user = Variable.get("sinopia_user")
     sinopia_password = Variable.get("sinopia_password")
-    cognito_app_client_id = Variable.get("cognito_client_id")
+    keycloak_url = Variable.get("keycloak_url")
 
-    client = kwargs.get("client", boto3.client("cognito-idp", region))
-
-    login_response = client.initiate_auth(
-        AuthFlow="USER_PASSWORD_AUTH",
-        AuthParameters={"USERNAME": sinopia_user, "PASSWORD": sinopia_password},
-        ClientId=cognito_app_client_id,
+    login_response = httpx.post(
+        f"{keycloak_url}/keycloak/realms/bluecore/protocol/openid-connect/token",
+        data={
+            "client_id": "bluecore_api",
+            "username": sinopia_user,
+            "password": sinopia_password,
+            "grant_type": "password",
+        },
     )
 
-    return login_response.get("AuthenticationResult").get("AccessToken")
+    login_response.raise_for_status()
+
+    return login_response.json().get("access_token")

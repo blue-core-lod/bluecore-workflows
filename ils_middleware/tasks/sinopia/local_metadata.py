@@ -1,15 +1,15 @@
 """Adds Sinopia localAdminMetadata record."""
 
-import json
+# import json
 import datetime
 import logging
 import typing
-import uuid
+# import uuid
 
 import rdflib
-import requests  # type: ignore
+# import requests  # type: ignore
 
-from airflow.models import Variable
+# from airflow.models import Variable
 
 logger = logging.getLogger(__name__)
 
@@ -89,75 +89,76 @@ def create_admin_metadata(**kwargs) -> str:
 
 def new_local_admin_metadata(*args, **kwargs):
     "Add Identifier to Sinopia localAdminMetadata."
+
     task_instance = kwargs["task_instance"]
     resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
 
-    jwt = kwargs.get("jwt")
+    # jwt = kwargs.get("jwt")
     ils_tasks = kwargs.get("ils_tasks")
 
-    user = Variable.get("sinopia_user")
-    kwargs["cataloger_id"] = user
-    sinopia_api_uri = Variable.get("sinopia_api_uri")
+    # user = Variable.get("sinopia_user")
+    # kwargs["cataloger_id"] = user
+    # sinopia_api_uri = Variable.get("sinopia_api_uri")
 
     for resource_uri in resources:
         resource_uuid = resource_uri.split("/")[-1]
-        message = task_instance.xcom_pull(
-            key=resource_uuid, task_ids="api-message-parse"
-        )
-        resource = message.get("resource")
-        group = resource.get("group")
-        logger.debug(resource)
+        # message = task_instance.xcom_pull(
+        #     key=resource_uuid, task_ids="api-message-parse"
+        # )
+        # resource = message.get("resource")
+        # group = resource.get("group")
+        # logger.debug(resource)
 
-        editGroups = resource.get("editGroups", [])
+        # editGroups = resource.get("editGroups", [])
 
-        admin_metadata_uri = f"{sinopia_api_uri}/{uuid.uuid4()}"
+        # admin_metadata_uri = f"{sinopia_api_uri}/{uuid.uuid4()}"
 
         ils_identifiers = _retrieve_ils_identifiers(
             ils_tasks, resource_uri, task_instance
         )
 
-        local_metadata_rdf = create_admin_metadata(
-            instance_uri=resource_uri,
-            admin_metadata_uri=admin_metadata_uri,
-            ils_identifiers=ils_identifiers,
-        )
+        # local_metadata_rdf = create_admin_metadata(
+        #     instance_uri=resource_uri,
+        #     admin_metadata_uri=admin_metadata_uri,
+        #     ils_identifiers=ils_identifiers,
+        # )
 
-        local_metadata_rdf = json.loads(local_metadata_rdf)
+        # local_metadata_rdf = json.loads(local_metadata_rdf)
 
-        headers = {"Authorization": f"Bearer {jwt}", "Content-Type": "application/json"}
+        # headers = {"Authorization": f"Bearer {jwt}", "Content-Type": "application/json"}
 
-        sinopia_doc = {
-            "data": local_metadata_rdf,
-            "user": user,
-            "group": group,
-            "editGroups": editGroups,
-            "templateId": "pcc:sinopia:localAdminMetadata",
-            "types": [
-                str(SINOPIA.LocalAdminMetadata),
-            ],
-            "bfAdminMetadataRefs": [],
-            "bfItemRefs": [],
-            "bfInstanceRefs": [
-                resource_uri,
-            ],
-            "bfWorkRefs": [],
-            "sinopiaLocalAdminMetadataForRefs": [
-                resource_uri,
-            ],
-        }
+        # sinopia_doc = {
+        #     "data": local_metadata_rdf,
+        #     "user": user,
+        #     "group": group,
+        #     "editGroups": editGroups,
+        #     "templateId": "pcc:sinopia:localAdminMetadata",
+        #     "types": [
+        #         str(SINOPIA.LocalAdminMetadata),
+        #     ],
+        #     "bfAdminMetadataRefs": [],
+        #     "bfItemRefs": [],
+        #     "bfInstanceRefs": [
+        #         resource_uri,
+        #     ],
+        #     "bfWorkRefs": [],
+        #     "sinopiaLocalAdminMetadataForRefs": [
+        #         resource_uri,
+        #     ],
+        # }
 
-        logger.debug(sinopia_doc)
+        # logger.debug(sinopia_doc)
 
-        new_admin_result = requests.post(
-            admin_metadata_uri,
-            json=sinopia_doc,
-            headers=headers,
-        )
+        # new_admin_result = requests.post(
+        #     admin_metadata_uri,
+        #     json=sinopia_doc,
+        #     headers=headers,
+        # )
 
-        if new_admin_result.status_code > 399:
-            msg = f"Failed to add localAdminMetadata, {new_admin_result.status_code}\n{new_admin_result.text}"
-            logger.error(msg)
-            raise Exception(msg)
+        # if new_admin_result.status_code > 399:
+        #     msg = f"Failed to add localAdminMetadata, {new_admin_result.status_code}\n{new_admin_result.text}"
+        #     logger.error(msg)
+        #     raise Exception(msg)
 
-        logger.debug(f"Results of new_admin_result {new_admin_result.text}")
-        task_instance.xcom_push(key=resource_uuid, value=admin_metadata_uri)
+        # logger.debug(f"Results of new_admin_result {new_admin_result.text}")
+        task_instance.xcom_push(key=resource_uuid, value=ils_identifiers)

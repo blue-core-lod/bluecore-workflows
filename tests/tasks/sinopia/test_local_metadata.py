@@ -48,6 +48,7 @@ def mock_uuid(monkeypatch):
     monkeypatch.setattr(uuid, "uuid4", mock_uuid4)
 
 
+@pytest.mark.skip("Need different mechanism for storing ILS info for Blue Core")
 def test_new_local_admin_metadata(
     mock_requests_post,
     mock_airflow_variables,
@@ -71,6 +72,7 @@ def test_new_local_admin_metadata(
     )
 
 
+@pytest.mark.skip("Need different mechanism for storing ILS info for Blue Core")
 def test_create_admin_metadata():
     admin_metadata = rdflib.Graph()
     admin_metadata_str = create_admin_metadata(

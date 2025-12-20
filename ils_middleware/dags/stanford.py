@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.models import Variable
+
+# from airflow.models import Variable
 from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
@@ -108,10 +109,7 @@ with DAG(
         login_sinopia = PythonOperator(
             task_id="sinopia-login",
             python_callable=sinopia_login,
-            op_kwargs={
-                "region": "us-west-2",
-                "sinopia_env": Variable.get("sinopia_env"),
-            },
+            op_kwargs={},
         )
 
         # Adds localAdminMetadata
