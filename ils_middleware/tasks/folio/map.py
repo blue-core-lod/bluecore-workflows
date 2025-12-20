@@ -80,9 +80,12 @@ def _retrieve_values(query_row: list | tuple) -> list:
     output = []
     for field in query_row:
         if field:
+            if isinstance(field, rdflib.URIRef):
+                output.append(str(field))
+                continue
             output.append(field.value)
         else:
-            output.append(None)
+            output.append(None)  # type: ignore
     return output
 
 
@@ -115,7 +118,7 @@ def _build_and_query_graph(**kwargs) -> list:
     logging.info(f"SPARQL:\n{query}")
     values = []
     for row in graph.query(query):
-        values.append(_retrieve_values(row))
+        values.append(_retrieve_values(row))  # type: ignore
     return values
 
 

@@ -1,15 +1,15 @@
 """Adds Sinopia localAdminMetadata record."""
 
-import json
+# import json
 import datetime
 import logging
 import typing
-import uuid
+# import uuid
 
 import rdflib
-import requests  # type: ignore
+# import requests  # type: ignore
 
-from airflow.models import Variable
+# from airflow.models import Variable
 
 logger = logging.getLogger(__name__)
 
@@ -102,9 +102,9 @@ def new_local_admin_metadata(*args, **kwargs):
 
     for resource_uri in resources:
         resource_uuid = resource_uri.split("/")[-1]
-        message = task_instance.xcom_pull(
-            key=resource_uuid, task_ids="api-message-parse"
-        )
+        # message = task_instance.xcom_pull(
+        #     key=resource_uuid, task_ids="api-message-parse"
+        # )
         # resource = message.get("resource")
         # group = resource.get("group")
         # logger.debug(resource)

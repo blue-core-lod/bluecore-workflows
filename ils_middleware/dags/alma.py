@@ -1,7 +1,8 @@
 from datetime import datetime, timedelta
 
 from airflow import DAG
-from airflow.models import Variable
+
+#  from airflow.models import Variable
 from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
