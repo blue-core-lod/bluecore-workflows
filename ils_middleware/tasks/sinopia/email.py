@@ -70,9 +70,9 @@ def _email_on_failure_attributes(message: dict) -> dict:
     resource_uri = message["resource_uri"]
     group = message["group"]
     return {
-        "mail_from": "sinopia-devs@lists.stanford.edu",
+        "mail_from": "admin@bcld.info",
         "to": email_addr,
-        "subject": "Error executing Sinopia to ILS task on your behalf",
+        "subject": "Error executing Blue Core to ILS task on your behalf",
         "html_content": f"Error processing resource_uri (if available): {resource_uri} / group (if available): {group}",
     }
 
@@ -82,8 +82,8 @@ def _email_on_success_attributes(message: dict) -> dict:
     email_addr = message["email"]
     resource_uri = message["resource_uri"]
     return {
-        "mail_from": "sinopia-devs@lists.stanford.edu",
+        "mail_from": "admin@bcld.info",
         "to": email_addr,
         "subject": f"successfully published {resource_uri}",
-        "html_content": f"You have successfully published {resource_uri} from Blue Core",
+        "html_content": f"You have successfully published {resource_uri} from Blue Core.",
     }
