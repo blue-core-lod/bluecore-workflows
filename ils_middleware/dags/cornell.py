@@ -49,6 +49,7 @@ with DAG(
     tags=["folio"],
     schedule=None,
     catchup=False,
+    render_template_as_native_obj=True,
 ) as dag:
     get_messages = PythonOperator(
         task_id="get-message-from-context", python_callable=message_from_context
@@ -69,7 +70,7 @@ with DAG(
                 python_callable=map_to_folio,
                 op_kwargs={
                     "folio_field": folio_field,
-                    "task_groups_ids": [""],
+                    "task_groups_ids": [],
                 },
             )
 
@@ -87,7 +88,7 @@ with DAG(
         task_id="new-or-upsert-folio-records",
         python_callable=post_folio_records,
         op_kwargs={
-            "task_groups_ids": [""],
+            "task_groups_ids": [],
             "folio_connection_id": "cornell_folio",
         },
     )
