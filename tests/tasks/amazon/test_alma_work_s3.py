@@ -25,8 +25,18 @@ def test_get_work_uri():
     assert result == work_uri
 
 
-def test_parse_graph():
+def mock_httpx_get():
+    mock_httpx = Mock()
+    mock_httpx.json = lambda: {"data": []}
+    return mock_httpx
+
+
+@patch(
+    "ils_middleware.tasks.amazon.alma_work_s3.httpx.get", return_value=mock_httpx_get()
+)
+def test_parse_graph(mock_get):
     uri = "http://example.com/resource"
+
     with patch.object(Graph, "parse", return_value=None):
         graph = parse_graph(uri)
         assert isinstance(graph, Graph)
@@ -183,6 +193,9 @@ def test_push_to_xcom():
     )
 
 
+@patch(
+    "ils_middleware.tasks.amazon.alma_work_s3.httpx.get", return_value=mock_httpx_get()
+)
 @patch("ils_middleware.tasks.amazon.alma_work_s3.S3Hook")
 @patch(
     "ils_middleware.tasks.amazon.alma_work_s3.Variable.get", return_value="test_bucket"
@@ -191,7 +204,12 @@ def test_push_to_xcom():
 @patch("ils_middleware.tasks.amazon.alma_work_s3.ET.parse")
 @patch("ils_middleware.tasks.amazon.alma_work_s3.ET.XSLT")
 def test_send_work_to_alma_s3(
-    mock_etree_XSLT, mock_etree_parse, mock_graph_class, mock_variable_get, mock_s3_hook
+    mock_etree_XSLT,
+    mock_etree_parse,
+    mock_graph_class,
+    mock_variable_get,
+    mock_s3_hook,
+    mock_httpx_get,
 ):
     mock_task_instance = Mock()
     mock_task_instance.xcom_pull.return_value = [
@@ -214,6 +232,7 @@ def test_send_work_to_alma_s3(
         </bflc:Relationship>
     </rdf:RDF>
     """
+    # mock_httpx_get
     bf_work_tree = ET.fromstring(mock_graph_instance.serialize.return_value)
     mock_etree_parse.return_value = ET.ElementTree(bf_work_tree)
 
@@ -228,12 +247,7 @@ def test_send_work_to_alma_s3(
     mock_task_instance.xcom_pull.assert_called_once_with(
         key="resources", task_ids="api-message-parse"
     )
-    mock_graph_instance.parse.assert_any_call(
-        URIRef("https://example.com/resource/instance_uri")
-    )
-    mock_graph_instance.parse.assert_any_call(
-        URIRef("https://example.com/resource/work_uri")
-    )
+    mock_graph_instance.parse.assert_any_call(data=[], format="json-ld")
     mock_graph_instance.serialize.assert_called_once_with(
         format="pretty-xml", encoding="utf-8"
     )

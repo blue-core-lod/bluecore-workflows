@@ -1,4 +1,7 @@
 import logging
+
+import httpx
+
 from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 from rdflib import Graph, URIRef, Namespace
@@ -15,8 +18,9 @@ def get_work_uri(instance_graph, instance_uri, bf):
 
 
 def parse_graph(uri):
+    resource_result = httpx.get(uri)
     graph = Graph()
-    graph.parse(uri)
+    graph.parse(data=resource_result.json()["data"], format="json-ld")
     return graph
 
 
