@@ -247,7 +247,7 @@ def test_send_work_to_alma_s3(
     mock_task_instance.xcom_pull.assert_called_once_with(
         key="resources", task_ids="api-message-parse"
     )
-    mock_graph_instance.parse.assert_any_call(data=[], format="json-ld")
+    mock_graph_instance.parse.assert_any_call(data="[]", format="json-ld")
     mock_graph_instance.serialize.assert_called_once_with(
         format="pretty-xml", encoding="utf-8"
     )

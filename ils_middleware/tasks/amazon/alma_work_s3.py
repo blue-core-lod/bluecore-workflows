@@ -1,3 +1,4 @@
+import json
 import logging
 
 import httpx
@@ -20,7 +21,7 @@ def get_work_uri(instance_graph, instance_uri, bf):
 def parse_graph(uri):
     resource_result = httpx.get(uri)
     graph = Graph()
-    graph.parse(data=resource_result.json()["data"], format="json-ld")
+    graph.parse(data=json.dumps(resource_result.json()["data"]), format="json-ld")
     return graph
 
 
