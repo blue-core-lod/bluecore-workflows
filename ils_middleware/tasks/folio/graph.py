@@ -21,7 +21,7 @@ def _build_graph(json_ld: list, instance_uri: str) -> tuple:
         raise ValueError(f"Instance {instance_uri} missing bf:instanceOf")
 
     # Retrieve JSON-LD from Work RDF
-    work_result = requests.get(str(work_uri))
+    work_result = requests.get(f"{work_uri}?expand=true")
 
     if work_result.status_code > 399:
         raise ValueError(f"Error retrieving {work_uri}")

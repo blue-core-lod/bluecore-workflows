@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 
 def get_resource(resource_uri: str) -> dict:
     """Retrieves the Resource from Bluecore API"""
-    result = httpx.get(resource_uri)
+    result = httpx.get(f"{resource_uri}?expand=true")
     result.raise_for_status()
     return result.json()
 
