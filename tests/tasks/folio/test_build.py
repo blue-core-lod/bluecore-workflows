@@ -147,7 +147,7 @@ def test_happypath_build_records(
     assert record["metadata"]["createdByUserId"].startswith(
         "faecc486-50f1-5082-a6d0-5e967e6f4786"
     )
-    assert record["electronicAccess"][0]["uri"].startswith(instance_uri)
+    assert record["sourceUri"].startswith(instance_uri)
     assert record["title"] == "Great force"
 
 
@@ -264,7 +264,7 @@ def test_inventory_record(mock_task_instance):  # noqa: F811
         folio_url=okapi_uri,
         folio_client=MockFolioClient(),
     )
-    assert record["electronicAccess"][0]["uri"].startswith(instance_uri)
+    assert record["sourceUri"].startswith(instance_uri)
 
 
 def test_inventory_record_existing_metadata(
@@ -283,7 +283,7 @@ def test_inventory_record_existing_metadata(
         folio_client=MockFolioClient(),
         metadata=metadata,
     )
-    assert record["electronicAccess"][0]["uri"].startswith(instance_uri)
+    assert record["sourceUri"].startswith(instance_uri)
     assert record["metadata"]["createdDate"].startswith("2021-12-06T15:45:28.140795")
 
 

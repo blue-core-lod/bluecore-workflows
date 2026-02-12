@@ -61,25 +61,6 @@ def _folio_id(resource_uri: str, okapi_url: str) -> str:
     return str(folio_id)
 
 
-def _electronic_access(**kwargs) -> dict:
-    folio_client = kwargs["folio_client"]
-    sinopia_url = kwargs["instance_uri"]
-
-    output = {}
-    relationship_id = None
-    for row in folio_client.folio_get(
-        "/electronic-access-relationships", key="electronicAccessRelationships"
-    ):
-        if row["name"] == "Resource":
-            relationship_id = row["id"]
-            break
-
-    if relationship_id is not None:
-        output = {"uri": sinopia_url, "relationshipId": relationship_id}
-
-    return output
-
-
 def _identifiers(**kwargs) -> tuple:
     folio_client = kwargs["folio_client"]
     folio_field = kwargs["folio_field"]
@@ -305,7 +286,7 @@ def _inventory_record(**kwargs) -> dict:
         "id": _folio_id(instance_uri, folio_client.okapi_url),
         "metadata": _create_update_metadata(**kwargs),
         "source": "BLUECORE",
-        "electronicAccess": [_electronic_access(**kwargs)],
+        "sourceUri": instance_uri,
     }
     instance_uuid = instance_uri.split("/")[-1]
 
