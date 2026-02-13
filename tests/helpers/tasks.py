@@ -193,20 +193,12 @@ folio_ids = {
     "0000-1111-2222-3333": {
         "id": "98a0337a-ec22-53aa-8ffc-933a86d10159",
         "hrid": "in000789",
-        "electronicAccess": [
-            {
-                "uri": "https://api.development.sinopia.io/resource/0000-1111-2222-3333",
-            }
-        ],
+        "sourceUri": "https://api.development.sinopia.io/resource/0000-1111-2222-3333",
     },
     "4444-5555-6666-7777": {
         "id": "147b1171-740e-513e-84d5-b63a9642792c",
         "hrid": "in000001234",
-        "electronicAccess": [
-            {
-                "uri": "https://api.development.sinopia.io/resource/0000-1111-2222-3333",
-            }
-        ],
+        "sourceUri": "https://api.development.sinopia.io/resource/0000-1111-2222-3333",
     },
 }
 

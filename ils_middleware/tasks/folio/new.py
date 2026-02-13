@@ -36,7 +36,7 @@ def _check_for_existance(records: list, folio_client: FolioClient) -> tuple:
 def _push_to_xcom(records: list, task_instance):
     for record in records:
         logger.debug(record)
-        uri = record["electronicAccess"][0]["uri"]
+        uri = record["sourceUri"]
         uuid = uri.split("/")[-1]
         task_instance.xcom_push(key=uuid, value=record["id"])
 

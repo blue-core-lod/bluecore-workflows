@@ -167,11 +167,7 @@ def test_put_to_okapi_exception(mocker, mock_task_instance, caplog):  # noqa: F8
         records=[
             {
                 "id": "0e076a6f-156d-4735-98dd-4d876edeab37",
-                "electronicAccess": [
-                    {
-                        "uri": "https://api.stage.sinopia.io/resource/f6d4b9e2-08f4-4a42-8bb4-ca6103c33237"
-                    }
-                ],
+                "sourceUri": "https://bcld.info/instance/f6d4b9e2-08f4-4a42-8bb4-ca6103c33237",
             }
         ],
         folio_client=MockFolioClient(),
