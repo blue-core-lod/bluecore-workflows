@@ -1,15 +1,16 @@
-import json
 import logging
 
 import httpx
 
 from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from rdflib import Graph, URIRef, Namespace
+from rdflib import URIRef, Namespace
 from rdflib.namespace import RDF
 from copy import deepcopy
 from lxml import etree as ET
 from ils_middleware.tasks.amazon.alma_ns import alma_namespaces
+
+from bluecore_models.utils.graph import load_jsonld
 
 logger = logging.getLogger(__name__)
 
@@ -20,8 +21,7 @@ def get_work_uri(instance_graph, instance_uri, bf):
 
 def parse_graph(uri):
     resource_result = httpx.get(uri)
-    graph = Graph()
-    graph.parse(data=json.dumps(resource_result.json()["data"]), format="json-ld")
+    graph = load_jsonld(resource_result.json()["data"])
     return graph
 
 
@@ -113,9 +113,10 @@ def send_work_to_alma_s3(**kwargs):
     task_instance = kwargs.get("task_instance")
     resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
 
+    bf = Namespace("http://id.loc.gov/ontologies/bibframe/")
+
     for instance_uri in resources:
         instance_uri = URIRef(instance_uri)
-        bf = Namespace("http://id.loc.gov/ontologies/bibframe/")
         namespaces = {
             "bf": "http://id.loc.gov/ontologies/bibframe/",
             "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",

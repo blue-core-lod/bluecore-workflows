@@ -1,13 +1,14 @@
-import json
 import logging
 
 import httpx
 
 from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from rdflib import Graph, URIRef, Namespace
+from rdflib import URIRef, Namespace
 from lxml import etree as ET
 from ils_middleware.tasks.amazon.alma_ns import alma_namespaces
+
+from bluecore_models.utils.graph import load_jsonld
 
 logger = logging.getLogger(__name__)
 
@@ -17,17 +18,14 @@ def send_instance_to_alma_s3(**kwargs):
     task_instance = kwargs.get("task_instance")
     resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
 
+    # Define the bf namespace
+    bf = Namespace("http://id.loc.gov/ontologies/bibframe/")
+
     for instance_uri in resources:
         instance_result = httpx.get(instance_uri)
         instance_uri = URIRef(instance_uri)
         work_uri = None
-        instance_graph = Graph()
-        instance_graph.parse(
-            data=json.dumps(instance_result.json()["data"]), format="json-ld"
-        )
-
-        # Define the bf namespace
-        bf = Namespace("http://id.loc.gov/ontologies/bibframe/")
+        instance_graph = load_jsonld(instance_result.json()["data"])
 
         # Bind the namespaces to the instance graph
         for prefix, url in alma_namespaces:

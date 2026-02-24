@@ -200,7 +200,7 @@ def test_push_to_xcom():
 @patch(
     "ils_middleware.tasks.amazon.alma_work_s3.Variable.get", return_value="test_bucket"
 )
-@patch("ils_middleware.tasks.amazon.alma_work_s3.Graph")
+@patch("ils_middleware.tasks.amazon.alma_work_s3.load_jsonld")
 @patch("ils_middleware.tasks.amazon.alma_work_s3.ET.parse")
 @patch("ils_middleware.tasks.amazon.alma_work_s3.ET.XSLT")
 def test_send_work_to_alma_s3(
@@ -232,7 +232,6 @@ def test_send_work_to_alma_s3(
         </bflc:Relationship>
     </rdf:RDF>
     """
-    # mock_httpx_get
     bf_work_tree = ET.fromstring(mock_graph_instance.serialize.return_value)
     mock_etree_parse.return_value = ET.ElementTree(bf_work_tree)
 
@@ -247,7 +246,7 @@ def test_send_work_to_alma_s3(
     mock_task_instance.xcom_pull.assert_called_once_with(
         key="resources", task_ids="api-message-parse"
     )
-    mock_graph_instance.parse.assert_any_call(data="[]", format="json-ld")
+
     mock_graph_instance.serialize.assert_called_once_with(
         format="pretty-xml", encoding="utf-8"
     )
