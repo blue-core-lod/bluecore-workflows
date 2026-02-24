@@ -9,6 +9,16 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+def mock_httpx_get():
+    mock_httpx = Mock()
+    mock_httpx.json = lambda: {"data": []}
+    return mock_httpx
+
+
+@patch(
+    "ils_middleware.tasks.amazon.alma_instance_s3.httpx.get",
+    return_value=mock_httpx_get(),
+)
 @patch.dict(
     "os.environ", {"AWS_ACCESS_KEY_ID": "test", "AWS_SECRET_ACCESS_KEY": "test"}
 )
@@ -25,6 +35,7 @@ def test_send_instance_to_alma_s3(
     mock_s3_hook,
     mock_get_connection,
     mock_variable,
+    mock_httpx_get,
 ):
     # Arrange
     mock_task_instance = Mock()

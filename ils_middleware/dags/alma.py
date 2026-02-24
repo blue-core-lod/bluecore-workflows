@@ -62,6 +62,7 @@ for institution in institutions:
         schedule=None,
         on_failure_callback=dag_failure_callback,
         max_active_runs=1,
+        render_template_as_native_obj=True,
     ) as dag:
         get_messages = PythonOperator(
             task_id="get-message-from-context", python_callable=message_from_context
