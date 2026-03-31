@@ -185,7 +185,7 @@ def load_cbd_files(
             try:
                 graph.parse(data=cbd_file_buf.read(), format=graph_format)
                 save_graph(session_maker, graph, namespace=bc_url)
-            except:
+            except Exception:
                 errors.append(name)
 
             if i > 0 and not i % 100:
