@@ -182,6 +182,9 @@ def load_cbd_files(
             graph_format = rdflib.util.guess_format(name)
             graph = rdflib.Graph()
             cbd_file_buf = cbd_archived_file.extractfile(name)
+            if cbd_file_buf is None:
+                errors.append(name)
+                continue
             try:
                 graph.parse(data=cbd_file_buf.read(), format=graph_format)
                 save_graph(session_maker, graph, namespace=bc_url)
