@@ -164,6 +164,9 @@ def load_cbd_files(
 
     import rdflib
 
+    logging.getLogger("rdflib").setLevel(logging.ERROR)
+    logging.getLogger("bluecore_models").setLevel(logging.ERROR)
+
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
     from bluecore_models.bluecore_graph import save_graph
@@ -188,7 +191,8 @@ def load_cbd_files(
             try:
                 graph.parse(data=cbd_file_buf.read(), format=graph_format)
                 save_graph(session_maker, graph, namespace=bc_url)
-            except Exception:
+            except Exception as e:
+                logger.error(f"Error {e}")
                 errors.append(name)
 
             if i > 0 and not i % 100:
