@@ -1,8 +1,36 @@
 import os
+import tarfile
+import zipfile
 
 import pytest
 
-from ils_middleware.tasks.bluecore import delete_upload, is_zip, get_bluecore_db
+from ils_middleware.tasks.bluecore import (
+    batch_archived_files,
+    delete_upload,
+    is_zip,
+    get_bluecore_db,
+    zip_to_tar_gz,
+)
+
+
+def test_batch_archived_files_no_file():
+    with pytest.raises(FileNotFoundError, match="cbd.tar.gz does not exist"):
+        batch_archived_files("cbd.tar.gz")
+
+
+def test_batch_archived_files(tmp_path):
+    test_cbd_files_dir = tmp_path / "data"
+    test_cbd_files_dir.mkdir()
+    for i in range(0, 10_000):
+        test_cbd_file = test_cbd_files_dir / f"20{i}.cbd.jsonld"
+        test_cbd_file.write_text("{}")
+    archived_file_path = tmp_path / "cbd.tar.gz"
+    with tarfile.open(archived_file_path, "x:gz") as tar_file:
+        tar_file.add(test_cbd_files_dir)
+
+    test_batches = batch_archived_files(str(archived_file_path))
+    assert len(test_batches) == 6
+    assert len(test_batches[0]) == 2_000
 
 
 def test_delete_upload(tmp_path):
@@ -59,3 +87,16 @@ def test_get_bluecore_db(mock_postgres_hook):
     db_string = get_bluecore_db()
 
     assert db_string.startswith("postgresql://bluecore_admin")
+
+
+def test_zip_to_tar_gz(tmp_path):
+    cbd_file_path = tmp_path / "022.cbd.jsonld"
+    cbd_file_path.write_text("{}")
+
+    zip_file_path = tmp_path / "cbd.zip"
+    with zipfile.ZipFile(zip_file_path, "w") as zip_file:
+        zip_file.write(cbd_file_path)
+
+    tar_file_name = zip_to_tar_gz(str(zip_file_path))
+    assert not zip_file_path.exists()
+    assert tar_file_name.endswith("cbd.tar.gz")
