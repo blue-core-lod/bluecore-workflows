@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 def batch_archived_files(
     archive_file_location: str, number_of_batches: int = 5
-) -> list:
+) -> list[list[str]]:
     """
     Retrieves list of files from a zip file and batches the file names into
     lists

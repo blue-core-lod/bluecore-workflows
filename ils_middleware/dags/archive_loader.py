@@ -67,7 +67,7 @@ def archived_file_loader():
         return batch_archived_files(archive_file)
 
     @task
-    def bluecore_db_info(**kwargs) -> str:
+    def bluecore_db_info() -> str:
         return get_bluecore_db()
 
     @task

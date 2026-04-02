@@ -18,7 +18,7 @@ def test_batch_archived_files_no_file():
         batch_archived_files("cbd.tar.gz")
 
 
-def test_batch_zipped_files(tmp_path):
+def test_batch_archived_files(tmp_path):
     test_cbd_files_dir = tmp_path / "data"
     test_cbd_files_dir.mkdir()
     for i in range(0, 10_000):
