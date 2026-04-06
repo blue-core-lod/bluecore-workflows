@@ -30,3 +30,10 @@ def get_file(**kwargs):
     elif file_str.startswith("/opt/airflow"):
         local_file_path = pathlib.Path(file_str)
     return str(local_file_path)
+
+
+def upload_db_backup(**kwargs):
+    """
+    Uploads compressed Blue Core SQL file to S3
+    """
+    raise NotImplementedError
