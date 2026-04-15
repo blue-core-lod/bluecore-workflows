@@ -1,11 +1,10 @@
 """Record Loader Workflow for a single file."""
 
 import logging
-import os
+import pathlib
 from datetime import datetime
 
-from airflow.decorators import dag, task
-from airflow.sdk import get_current_context
+from airflow.sdk import dag, get_current_context, task
 
 from ils_middleware.tasks.amazon.bluecore_records_s3 import get_file
 from ils_middleware.tasks.bluecore import delete_upload, get_bluecore_db, load
@@ -51,15 +50,20 @@ def resource_loader():
         return get_bluecore_db()
 
     @task
+    def load_resource(file_path: str, user_uid: str, bluecore_db: str):
+        load(file_path, user_uid, bluecore_db)
+
+    @task
     def delete_file_path(file_path: str):
-        parent_dir = os.path.dirname(file_path)
-        remove_empty_parent = parent_dir != "uploads"
+        current_path = pathlib.Path(file_path)
+        remove_empty_parent = current_path.parent.name != "uploads"
         delete_upload(upload=file_path, remove_empty_parent=remove_empty_parent)
 
     file_path = ingest()
     user_uid = get_keycloak_user_uid()
     bluecore_db = bluecore_db_info()
-    load(file_path, user_uid, bluecore_db) >> delete_file_path(file_path)
+    load_task = load_resource(file_path, user_uid, bluecore_db)
+    load_task >> delete_file_path(file_path)
 
 
 resource_loader_dag = resource_loader()

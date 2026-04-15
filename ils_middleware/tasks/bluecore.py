@@ -70,7 +70,7 @@ def is_zip(file_name: str) -> bool:
 
 def get_bluecore_db() -> str:
     pg_hook = PostgresHook("bluecore_db")
-    return str(pg_hook.sqlalchemy_url)
+    return pg_hook.sqlalchemy_url.render_as_string(hide_password=False)
 
 
 def zip_to_tar_gz(zip_file: str) -> str:
