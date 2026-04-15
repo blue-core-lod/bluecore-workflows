@@ -3,6 +3,7 @@ import tarfile
 import zipfile
 
 import pytest
+from sqlalchemy.engine import make_url
 
 from ils_middleware.tasks.bluecore import (
     batch_archived_files,
@@ -69,7 +70,7 @@ def test_is_zip():
 
 class MockPostgresHook(object):
     def __init__(self, *args):
-        self.sqlalchemy_url = (
+        self.sqlalchemy_url = make_url(
             "postgresql://bluecore_admin:bluecore_admin@localhost/bluecore"
         )
 

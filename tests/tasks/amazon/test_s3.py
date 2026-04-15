@@ -5,11 +5,10 @@ import pytest
 from unittest import mock
 
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from airflow.models.taskinstance import TaskInstance
 
 from ils_middleware.tasks.amazon.s3 import get_from_s3, send_to_s3
 
-from tasks import test_task_instance, mock_task_instance, marc_as_json  # noqa
+from tasks import test_task_instance, mock_task_instance, marc_as_json, TaskInstanceStub  # noqa
 
 
 @pytest.fixture
@@ -73,7 +72,7 @@ def failed_task_instance(monkeypatch):
                 "https://api.development.sinopia.io/resource/rdf2marc-no-work": "Error message from rdf2marc"
             }
 
-    monkeypatch.setattr(TaskInstance, "xcom_pull", mock_xcom_pull)
+    monkeypatch.setattr(TaskInstanceStub, "xcom_pull", mock_xcom_pull)
 
 
 def test_get_from_s3_error(failed_task_instance, mock_env_vars):
