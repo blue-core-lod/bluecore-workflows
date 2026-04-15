@@ -4,8 +4,6 @@ import requests  # type: ignore
 
 from pytest_mock import MockerFixture
 
-from airflow.models.taskinstance import TaskInstance
-
 
 class TaskInstanceStub:
     """Minimal stand-in for Airflow TaskInstance used in tests."""

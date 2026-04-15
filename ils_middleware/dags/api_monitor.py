@@ -2,7 +2,7 @@ import logging
 
 from datetime import datetime
 
-from airflow.decorators import dag, task
+from airflow.sdk import dag, task
 from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.sdk import get_current_context
 

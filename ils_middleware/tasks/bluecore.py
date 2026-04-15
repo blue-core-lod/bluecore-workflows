@@ -12,7 +12,6 @@ from sqlalchemy.orm import sessionmaker
 from bluecore_models.bluecore_graph import save_graph
 from bluecore_models.models.version import CURRENT_USER_ID
 
-from airflow.decorators import task
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 BLUECORE_URL = os.environ.get("BLUECORE_URL", "https://bcld.info/")
