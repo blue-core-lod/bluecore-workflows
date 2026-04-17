@@ -3,10 +3,9 @@
 import pytest
 import rdflib
 
-from airflow.models.taskinstance import TaskInstance
 from ils_middleware.tasks.folio.map import map_to_folio
 
-from tasks import test_task_instance
+from tasks import test_task_instance, TaskInstanceStub
 
 instance_uri = (
     "https://api.stage.sinopia.io/resource/b0319047-acd0-4f30-bd8b-98e6c1bac6b0"
@@ -41,8 +40,8 @@ def mock_task_instance(monkeypatch, test_graph: rdflib.Graph):
         mock_push_store[key] = [str(value[0][0]), str(value[0][1])]
         return None
 
-    monkeypatch.setattr(TaskInstance, "xcom_pull", mock_xcom_pull)
-    monkeypatch.setattr(TaskInstance, "xcom_push", mock_xcom_push)
+    monkeypatch.setattr(TaskInstanceStub, "xcom_pull", mock_xcom_pull)
+    monkeypatch.setattr(TaskInstanceStub, "xcom_push", mock_xcom_push)
 
 
 def test_folio(mock_task_instance, test_graph: rdflib.Graph):  # noqa: F811

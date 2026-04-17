@@ -5,13 +5,23 @@ import pathlib
 import tarfile
 import zipfile
 
+import rdflib
 
-from airflow.decorators import task
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from bluecore_models.bluecore_graph import save_graph
+from bluecore_models.models.version import CURRENT_USER_ID
+
 from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 BLUECORE_URL = os.environ.get("BLUECORE_URL", "https://bcld.info/")
 
+logging.getLogger("rdflib").setLevel(logging.ERROR)
+logging.getLogger("bluecore_models").setLevel(logging.ERROR)
+
 logger = logging.getLogger(__name__)
+if not logger.handlers:
+    logging.basicConfig(level=logging.INFO)
 
 
 def batch_archived_files(
@@ -59,7 +69,7 @@ def is_zip(file_name: str) -> bool:
 
 def get_bluecore_db() -> str:
     pg_hook = PostgresHook("bluecore_db")
-    return str(pg_hook.sqlalchemy_url)
+    return pg_hook.sqlalchemy_url.render_as_string(hide_password=False)
 
 
 def zip_to_tar_gz(zip_file: str) -> str:
@@ -84,42 +94,19 @@ def zip_to_tar_gz(zip_file: str) -> str:
     return str(tar_path)
 
 
-# we need to run in a virtualenv so that we can use the latest
-# bluecore-models and sqlalchemy 2
-#
-# when testing bluecore-models it can be helpful to reference a branch here
-# e.g. "bluecore-models @ git+https://github.com/blue-core-lod/bluecore-models@my-branch"
-@task.virtualenv(
-    requirements=["bluecore-models"],
-    system_site_packages=False,
-)
 def load(file_path: str, user_uid: str, bluecore_db: str):
-    import logging
-
-    logger = logging.getLogger(__name__)
-    if not logger.handlers:
-        logging.basicConfig(level=logging.INFO)
-    """Stores Work or Instance in the Blue Core Database
-
-    Note: Virtualenv is needed because bluecore.models uses SQLAlchemy 2.+
-    and Airflow uses a 1.x version of SQLAlchemy
+    """
+    Stores Work or Instance in the Blue Core Database
     """
     try:
         """
         Set CURRENT_USER_ID from DAG-provided user_uid so #add_version can write
         versions.keycloak_user_id during ORM events triggered by inserts/updates.
         """
-        from bluecore_models.models.version import CURRENT_USER_ID
-
         CURRENT_USER_ID.set(user_uid)
         logger.info("Using CURRENT_USER_ID: %s", user_uid)
     except Exception as e:
         logger.error("Failed to set CURRENT_USER_ID: %s", e)
-
-    import rdflib
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-    from bluecore_models.bluecore_graph import save_graph
 
     # create the database session maker
     engine = create_engine(bluecore_db)
@@ -138,38 +125,19 @@ def load(file_path: str, user_uid: str, bluecore_db: str):
     logger.info(f"processed {len(bc_graph)} triples")
 
 
-@task.virtualenv(
-    requirements=["bluecore-models"],
-    system_site_packages=False,
-)
 def load_cbd_files(
     cbd_files: list, bluecore_db: str, user_uid: str, archived_file_path: str
 ):
-    """"""
-
-    import logging
-    import tarfile
-
+    """
+    Load CBD files
+    """
     logger = logging.getLogger(__name__)
-    if not logger.handlers:
-        logging.basicConfig(level=logging.INFO)
 
     try:
-        from bluecore_models.models.version import CURRENT_USER_ID
-
         CURRENT_USER_ID.set(user_uid)
         logger.info("Using CURRENT_USER_ID: %s", user_uid)
     except Exception as e:
         logger.error("Failed to set CURRENT_USER_ID: %s", e)
-
-    import rdflib
-
-    logging.getLogger("rdflib").setLevel(logging.ERROR)
-    logging.getLogger("bluecore_models").setLevel(logging.ERROR)
-
-    from sqlalchemy import create_engine
-    from sqlalchemy.orm import sessionmaker
-    from bluecore_models.bluecore_graph import save_graph
 
     bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
 

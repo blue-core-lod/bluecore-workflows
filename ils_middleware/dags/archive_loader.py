@@ -4,8 +4,7 @@ import logging
 import pathlib
 from datetime import datetime
 
-from airflow.decorators import dag, task
-from airflow.sdk import get_current_context
+from airflow.sdk import dag, task, get_current_context
 
 from ils_middleware.tasks.bluecore import (
     batch_archived_files,
@@ -76,12 +75,21 @@ def archived_file_loader():
         remove_empty_parent = current_path.parent.name != "uploads"
         delete_upload(upload=archive_file_path, remove_empty_parent=remove_empty_parent)
 
+    @task
+    def cbd_file_loader(**kwargs):
+        return load_cbd_files(
+            bluecore_db=kwargs["bluecore_db"],
+            archived_file_path=kwargs["archived_file_path"],
+            user_uid=kwargs["user_uid"],
+            cbd_files=kwargs["cbd_files"],
+        )
+
     zip_file_path = setup()
     user_uid = get_keycloak_user_uid()
     archive_file_path = convert_zip_to_tar_gz(zip_file_path)
     bc_db_info = bluecore_db_info()
     cbd_batches = batch_cbd_files(archive_file=archive_file_path)
-    errors = load_cbd_files.partial(
+    errors = cbd_file_loader.partial(
         bluecore_db=bc_db_info,
         archived_file_path=archive_file_path,
         user_uid=user_uid,

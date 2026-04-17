@@ -8,7 +8,7 @@ from tasks import (
 from unittest import mock
 from unittest.mock import patch, Mock
 from pytest_mock import MockerFixture
-from airflow.hooks.base import BaseHook
+from airflow.hooks.base import BaseHook  # type: ignore
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 import os
 from ils_middleware.tasks.alma.post_bfinstance import (

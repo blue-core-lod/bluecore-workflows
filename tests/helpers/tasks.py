@@ -1,13 +1,19 @@
 import pytest
 import json
 import requests  # type: ignore
-from datetime import datetime
 
 from pytest_mock import MockerFixture
 
-from airflow import DAG
-from airflow.providers.standard.operators.empty import EmptyOperator
-from airflow.models.taskinstance import TaskInstance
+
+class TaskInstanceStub:
+    """Minimal stand-in for Airflow TaskInstance used in tests."""
+
+    def xcom_push(self, *args, **kwargs):
+        pass
+
+    def xcom_pull(self, *args, **kwargs):
+        return None
+
 
 CATKEY = "320011"
 MARC_JSON = {
@@ -20,18 +26,8 @@ MARC_JSON = {
 MARC_JSON_NO_CAT_KEY = {"leader": "11222999   adf", "fields": [{"tag": "245"}]}
 
 
-def test_task():
-    return EmptyOperator(
-        task_id="test_task",
-        dag=DAG(
-            "test_dag",
-            default_args={"owner": "airflow", "start_date": datetime(2021, 9, 20)},
-        ),
-    )
-
-
 def test_task_instance():
-    return TaskInstance(test_task())
+    return TaskInstanceStub()
 
 
 def test_alma_api_key():
@@ -284,5 +280,5 @@ def mock_task_instance(monkeypatch, tmp_path):
         mock_push_store[key] = value
         return None
 
-    monkeypatch.setattr(TaskInstance, "xcom_pull", mock_xcom_pull)
-    monkeypatch.setattr(TaskInstance, "xcom_push", mock_xcom_push)
+    monkeypatch.setattr(TaskInstanceStub, "xcom_pull", mock_xcom_pull)
+    monkeypatch.setattr(TaskInstanceStub, "xcom_push", mock_xcom_push)

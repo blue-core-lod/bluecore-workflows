@@ -3,7 +3,7 @@
 import logging
 import requests  # type: ignore
 
-from airflow.hooks.base import BaseHook
+from airflow.hooks.base import BaseHook  # type: ignore
 
 logger = logging.getLogger(__name__)
 

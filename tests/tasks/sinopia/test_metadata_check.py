@@ -9,9 +9,7 @@ from unittest.mock import MagicMock
 
 from pytest_mock import MockerFixture
 
-from airflow import DAG
-from airflow.models.taskinstance import TaskInstance
-from airflow.providers.standard.operators.empty import EmptyOperator
+from tasks import TaskInstanceStub
 
 from ils_middleware.tasks.sinopia.metadata_check import (
     existing_metadata_check,
@@ -20,15 +18,7 @@ from ils_middleware.tasks.sinopia.metadata_check import (
 )
 
 
-def sample_task():
-    start_date = datetime.datetime(2021, 10, 28)
-    test_dag = DAG(
-        "test_dag", default_args={"owner": "airflow", "start_date": start_date}
-    )
-    return EmptyOperator(task_id="test", dag=test_dag)
-
-
-task_instance = TaskInstance(sample_task())
+task_instance = TaskInstanceStub()
 mock_push_store: dict = {}
 
 admin_metadata = [
@@ -126,8 +116,8 @@ def mock_task_instance(monkeypatch):
         mock_push_store[key] = value
         return None
 
-    monkeypatch.setattr(TaskInstance, "xcom_push", mock_xcom_push)
-    monkeypatch.setattr(TaskInstance, "xcom_pull", mock_xcom_pull)
+    monkeypatch.setattr(TaskInstanceStub, "xcom_push", mock_xcom_push)
+    monkeypatch.setattr(TaskInstanceStub, "xcom_pull", mock_xcom_pull)
 
 
 def test_check_one_metadata_record(mock_requests, mock_datetime, mock_task_instance):

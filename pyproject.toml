@@ -1,6 +1,6 @@
 [project]
 name = "bluecore-workflows"
-version = "0.8.0"
+version = "0.9.0"
 description = "Blue Core Workflows using Apache Airflow"
 readme = "README.md"
 authors = [{ name = "Jeremy Nelson", email = "jpnelson@stanford.edu"}]
@@ -8,7 +8,7 @@ requires-python = "==3.12.*"
 
 dependencies = [
     "pymarc",
-    "apache-airflow==3.0.2", # keep version in sync with image in Dockerfile
+    "apache-airflow==3.2.0", # keep version in sync with image in Dockerfile
     "apache-airflow-providers-amazon",
     "apache-airflow-providers-fab",
     "sqlalchemy",
