@@ -29,14 +29,26 @@ jobs:
       - name: Update dependencies
         run: uv lock --upgrade
 
+      - name: Check for dependency changes
+        id: check_changes
+        run: |
+          if git diff --quiet uv.lock; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Install dependencies
+        if: steps.check_changes.outputs.changed == 'true'
         run: uv sync
 
       - name: Run tests
+        if: steps.check_changes.outputs.changed == 'true'
         run: uv run pytest
 
       - name: Bump patch version
         id: bump_version
+        if: steps.check_changes.outputs.changed == 'true'
         run: |
           NEW_VERSION=$(python3 -c "
           import re
@@ -50,6 +62,7 @@ jobs:
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
+        if: steps.check_changes.outputs.changed == 'true'
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
