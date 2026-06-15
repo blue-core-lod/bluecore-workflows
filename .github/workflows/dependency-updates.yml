@@ -84,7 +84,8 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           PR_URL: ${{ steps.create_pr.outputs.pull-request-url }}
           NEW_VERSION: ${{ steps.bump_version.outputs.new_version }}
+          REPO_NAME: ${{ github.event.repository.name }}
         run: |
           curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\": \"bluecore-workflows dependency update PR opened: <$PR_URL|v$NEW_VERSION>\"}" \
+            --data "{\"text\": \"${REPO_NAME} dependency update PR opened: <$PR_URL|v$NEW_VERSION>\"}" \
             "$SLACK_WEBHOOK_URL"
