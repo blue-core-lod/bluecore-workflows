@@ -48,7 +48,7 @@ jobs:
 
       - name: Bump patch version
         id: bump_version
-        if: steps.check_changes.outputs.changed == 'true' && success()
+        if: steps.check_changes.outputs.changed == 'true'
         run: |
           NEW_VERSION=$(python3 -c "
           import re
@@ -84,7 +84,19 @@ jobs:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
           PR_URL: ${{ steps.create_pr.outputs.pull-request-url }}
           NEW_VERSION: ${{ steps.bump_version.outputs.new_version }}
+          REPO_NAME: ${{ github.event.repository.name }}
         run: |
           curl -X POST -H 'Content-type: application/json' \
-            --data "{\"text\": \"bluecore-workflows dependency update PR opened: <$PR_URL|v$NEW_VERSION>\"}" \
+            --data "{\"text\": \"$REPO_NAME dependency update PR opened: <$PR_URL|v$NEW_VERSION>\"}" \
+            "$SLACK_WEBHOOK_URL"
+
+      - name: Notify Slack on test failure
+        if: steps.check_changes.outputs.changed == 'true' && failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          REPO_NAME: ${{ github.event.repository.name }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          curl -X POST -H 'Content-type: application/json' \
+            --data "{\"text\": \"$REPO_NAME dependency update failed: <$RUN_URL|view run>\"}" \
             "$SLACK_WEBHOOK_URL"
