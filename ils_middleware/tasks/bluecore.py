@@ -3,11 +3,13 @@ import logging
 import os
 import pathlib
 import tarfile
+import time
 import zipfile
 
 import rdflib
 
 from sqlalchemy import create_engine
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 from bluecore_models.bluecore_graph import save_graph
 from bluecore_models.models.version import CURRENT_USER_ID
@@ -156,12 +158,21 @@ def load_cbd_files(
             if cbd_file_buf is None:
                 errors.append(name)
                 continue
-            try:
-                graph.parse(data=cbd_file_buf.read(), format=graph_format)
-                save_graph(session_maker, graph, namespace=bc_url)
-            except Exception as e:
-                logger.error(f"Error {e}")
-                errors.append(name)
+            graph.parse(data=cbd_file_buf.read(), format=graph_format)
+            # If deadlock occurs, try saving the graph again by sleep up to 2 seconds
+            # to see if deadlock continues
+            for attempt in range(3):
+                try:
+                    save_graph(session_maker, graph, namespace=bc_url)
+                    break
+                except OperationalError:
+                    if attempt == 2:
+                        raise
+                    time.sleep(2**attempt)
+                except Exception as e:
+                    logger.error(f"Error {e}")
+                    errors.append(name)
+                    break
 
             if i > 0 and not i % 100:
                 logger.info(f"{i:,} graphs saved")

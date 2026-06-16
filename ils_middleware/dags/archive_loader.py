@@ -70,7 +70,11 @@ def archived_file_loader():
         return get_bluecore_db()
 
     @task
-    def delete_file_path(archive_file_path: str):
+    def delete_file_path(archive_file_path: str, errors: list):
+        if len(errors) > 0:
+            msg = f"Errors exist; keeping {archive_file_path}"
+            logger.error(msg)
+            raise ValueError(msg)
         current_path = pathlib.Path(archive_file_path)
         remove_empty_parent = current_path.parent.name != "uploads"
         delete_upload(upload=archive_file_path, remove_empty_parent=remove_empty_parent)
@@ -94,7 +98,7 @@ def archived_file_loader():
         archived_file_path=archive_file_path,
         user_uid=user_uid,
     ).expand(cbd_files=cbd_batches)
-    delete_task = delete_file_path(archive_file_path=archive_file_path)
+    delete_task = delete_file_path(archive_file_path=archive_file_path, errors=errors)
     errors >> delete_task
 
 
