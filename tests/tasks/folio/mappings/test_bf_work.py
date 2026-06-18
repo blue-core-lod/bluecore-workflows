@@ -67,3 +67,12 @@ def test_subject(test_graph: rdflib.Graph):
     subjects = [row for row in test_graph.query(sparql)]
 
     assert len(subjects) == 3
+
+
+@typing.no_type_check
+def test_genre(test_graph: rdflib.Graph):
+    sparql = bf_work_map.genre.format(bf_work=work_uri)
+
+    genres = [row for row in test_graph.query(sparql)]
+
+    assert str(genres[0][0]).startswith("Informational works")
