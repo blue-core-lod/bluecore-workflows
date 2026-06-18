@@ -94,6 +94,5 @@ WHERE {{
     OPTIONAL {{
         ?genre_node rdfs:label ?genre .
     }}
-    
 }}
 """
