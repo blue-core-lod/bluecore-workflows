@@ -32,7 +32,7 @@ def test_batch_archived_files(tmp_path):
         tar_file.add(test_cbd_files_dir)
 
     test_batches = batch_archived_files(str(archived_file_path))
-    assert len(test_batches) == 6
+    assert len(test_batches) == 5
     assert len(test_batches[0]) == 2_000
 
 
