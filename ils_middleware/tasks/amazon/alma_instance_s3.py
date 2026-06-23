@@ -22,10 +22,12 @@ def send_instance_to_alma_s3(**kwargs):
     bf = Namespace("http://id.loc.gov/ontologies/bibframe/")
 
     for instance_uri in resources:
-        instance_result = httpx.get(instance_uri)
+        instance_result = httpx.get(
+            instance_uri, headers={"Accept": "application/ld+json"}
+        )
         instance_uri = URIRef(instance_uri)
         work_uri = None
-        instance_graph = load_jsonld(instance_result.json()["data"])
+        instance_graph = load_jsonld(instance_result.json())
 
         # Bind the namespaces to the instance graph
         for prefix, url in alma_namespaces:

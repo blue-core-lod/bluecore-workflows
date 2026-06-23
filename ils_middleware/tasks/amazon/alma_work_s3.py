@@ -20,8 +20,8 @@ def get_work_uri(instance_graph, instance_uri, bf):
 
 
 def parse_graph(uri):
-    resource_result = httpx.get(uri)
-    graph = load_jsonld(resource_result.json()["data"])
+    resource_result = httpx.get(uri, headers={"Accept": "application/ld+json"})
+    graph = load_jsonld(resource_result.json())
     return graph
 
 
