@@ -1,6 +1,10 @@
 import pytest
 
-from ils_middleware.tasks.general import message_from_context, parse_messages
+from ils_middleware.tasks.general import (
+    get_resource,
+    message_from_context,
+    parse_messages,
+)
 from tests.keycloak.server_mocks import mock_keycloak  # type: ignore # noqa: F401
 
 
@@ -45,3 +49,16 @@ def test_parse_messages(mocker, mock_keycloak):  # noqa: F811
     assert xcoms[0]["key"].endswith("7922d096-9b45-4235-be9a-a89d390bee83")
     assert xcoms[1]["value"][0].startswith("https://bcld.info/instance/7922d096")
     assert xcoms[2]["value"] == []
+
+
+def test_get_resource(mocker):
+    resource_uri = "https://bcld.info/instance/7922d096-9b45-4235-be9a-a89d390bee83"
+    mock_get = mocker.patch("ils_middleware.tasks.general.httpx.get")
+    mock_get.return_value.json.return_value = {"uri": resource_uri}
+
+    result = get_resource(resource_uri)
+
+    assert result == {"uri": resource_uri}
+    mock_get.assert_called_once_with(
+        resource_uri, headers={"Accept": "application/vnd.sinopia+json"}
+    )

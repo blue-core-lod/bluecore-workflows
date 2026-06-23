@@ -1,8 +1,9 @@
-import json
 import logging
 
+import httpx
 import rdflib
-import requests  # type: ignore
+
+from bluecore_models.utils.graph import load_jsonld
 
 logger = logging.getLogger(__name__)
 
@@ -12,8 +13,7 @@ BF = rdflib.Namespace("http://id.loc.gov/ontologies/bibframe/")
 def _build_graph(json_ld: list, instance_uri: str) -> tuple:
     """Builds RDF Graph from BF Instance's RDF and retrieves
     and parses RDF from Work"""
-    graph = rdflib.Graph()
-    graph.parse(data=json.dumps(json_ld), format="json-ld")
+    graph = load_jsonld(json_ld)
 
     work_uri = graph.value(subject=rdflib.URIRef(instance_uri), predicate=BF.instanceOf)
 
@@ -21,12 +21,12 @@ def _build_graph(json_ld: list, instance_uri: str) -> tuple:
         raise ValueError(f"Instance {instance_uri} missing bf:instanceOf")
 
     # Retrieve JSON-LD from Work RDF
-    work_result = requests.get(str(work_uri))
+    work_result = httpx.get(str(work_uri), headers={"Accept": "application/ld+json"})
 
     if work_result.status_code > 399:
         raise ValueError(f"Error retrieving {work_uri}")
 
-    graph.parse(data=json.dumps(work_result.json()["data"]), format="json-ld")
+    graph.parse(data=work_result.text, format="json-ld")
     logger.debug(f"Graph triples {len(graph)}")
     return graph, str(work_uri)
 

@@ -7,8 +7,11 @@ logger = logging.getLogger(__name__)
 
 
 def get_resource(resource_uri: str) -> dict:
-    """Retrieves the Resource from Bluecore API"""
-    result = httpx.get(resource_uri)
+    """
+    Retrieves the Resource from Bluecore API using Sinopia header for
+    URI and RDF data fields
+    """
+    result = httpx.get(resource_uri, headers={"Accept": "application/vnd.sinopia+json"})
     result.raise_for_status()
     return result.json()
 
