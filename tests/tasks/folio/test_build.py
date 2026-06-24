@@ -85,6 +85,10 @@ class MockFolioClient(object):
         self.instance_note_types = [
             {"id": "6a2533a7-4de2-4e64-8466-074c2fa9308c", "name": "General note"},
         ]
+        self.subject_types = [
+            {"id": "d6488f88-1e74-40ce-81b5-b19a928ff5b7", "name": "Topical term"},
+            {"id": "d6488f88-1e74-4674-9e7f-a294b9a6451d", "name": "Genre/form"},
+        ]
 
     def folio_get(self, *args, **kwargs):
         get_response = MagicMock()
@@ -333,7 +337,7 @@ def test_mode_of_issuance_id():
 def test_notes():  # noqa: F811
     notes = _notes(values=[["A great note"]], folio_client=MockFolioClient())
     assert (notes[0]).startswith("notes")
-    assert (notes[1][0]["instanceNoteId"]).startswith(
+    assert (notes[1][0]["instanceNoteTypeId"]).startswith(
         "6a2533a7-4de2-4e64-8466-074c2fa9308c"
     )
     assert (notes[1][0]["note"]).startswith("A great note")
@@ -357,10 +361,20 @@ def test_publication():
 
 
 def test_subjects():
-    subjects = _subjects(values=[["California"], ["Forest biodiversity"]], record={})
+    subjects = _subjects(
+        values=[["California"], ["Forest biodiversity"]],
+        record={},
+        folio_client=MockFolioClient(),
+    )
     assert subjects[0] == "subjects"
-    assert subjects[1][0] == {"value": "California"}
-    assert subjects[1][1] == {"value": "Forest biodiversity"}
+    assert subjects[1][0] == {
+        "value": "California",
+        "typeId": "d6488f88-1e74-40ce-81b5-b19a928ff5b7",
+    }
+    assert subjects[1][1] == {
+        "value": "Forest biodiversity",
+        "typeId": "d6488f88-1e74-40ce-81b5-b19a928ff5b7",
+    }
 
 
 def test_editions_accumulates():

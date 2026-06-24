@@ -178,7 +178,9 @@ def _notes(**kwargs) -> tuple:
             break
     notes = []
     for row in values:
-        notes.append({"instanceNoteTypeId": note_id, "note": row[0], "staffOnly": False})
+        notes.append(
+            {"instanceNoteTypeId": note_id, "note": row[0], "staffOnly": False}
+        )
 
     return "notes", notes
 
