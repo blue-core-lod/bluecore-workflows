@@ -178,7 +178,7 @@ def _notes(**kwargs) -> tuple:
             break
     notes = []
     for row in values:
-        notes.append({"instanceNoteId": note_id, "note": row[0], "staffOnly": False})
+        notes.append({"instanceNoteTypeId": note_id, "note": row[0], "staffOnly": False})
 
     return "notes", notes
 
@@ -212,10 +212,18 @@ def _publication(**kwargs) -> tuple:
 
 
 def _subjects(**kwargs) -> tuple:
+    folio_client = kwargs["folio_client"]
     values = kwargs["values"]
+
+    topical_term_type_id = None
+    for subject_type in folio_client.subject_types:
+        if subject_type["name"] == "Topical term":
+            topical_term_type_id = subject_type["id"]
+            break
+
     subjects = []
     for row in values:
-        subjects.append({"value": row[0]})
+        subjects.append({"value": row[0], "typeId": topical_term_type_id})
 
     return "subjects", subjects
 
@@ -225,7 +233,7 @@ def _genre(**kwargs) -> tuple:
     values = kwargs["values"]
 
     genre_form_type_id = None
-    for subject_type in folio_client.folio_get("/subject-types"):
+    for subject_type in folio_client.subject_types:
         if subject_type["name"] == "Genre/form":
             genre_form_type_id = subject_type["id"]
             break

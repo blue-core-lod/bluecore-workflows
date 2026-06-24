@@ -11,7 +11,11 @@ def get_resource(resource_uri: str) -> dict:
     Retrieves the Resource from Bluecore API using Sinopia header for
     URI and RDF data fields
     """
-    result = httpx.get(resource_uri, headers={"Accept": "application/vnd.sinopia+json"})
+    result = httpx.get(
+        resource_uri,
+        headers={"Accept": "application/vnd.sinopia+json"},
+        params={"expand": "true"},
+    )
     result.raise_for_status()
     return result.json()
 
