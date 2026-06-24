@@ -103,16 +103,26 @@ WHERE {{
 
 publication = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX bflc: <http://id.loc.gov/ontologies/bflc/>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?publisher ?date ?place
 WHERE {{
    <{bf_instance}> a bf:Instance .
    <{bf_instance}> bf:provisionActivity ?activity .
    ?activity a bf:Publication .
-   ?activity bflc:simpleAgent ?publisher .
-   OPTIONAL {{ ?activity bflc:simpleDate ?date . }}
-   OPTIONAL {{ ?activity bflc:simplePlace ?place . }}
+   {{
+       ?activity bflc:simpleAgent ?publisher .
+       OPTIONAL {{ ?activity bflc:simpleDate ?date . }}
+       OPTIONAL {{ ?activity bflc:simplePlace ?place . }}
+   }} UNION {{
+       ?activity bf:agent ?agent_uri .
+       ?agent_uri rdfs:label ?publisher .
+       OPTIONAL {{ ?activity bf:date ?date . }}
+       OPTIONAL {{
+           ?activity bf:place ?place_uri .
+           ?place_uri rdfs:label ?place .
+       }}
+   }}
 }}
 """
 

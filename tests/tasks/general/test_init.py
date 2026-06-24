@@ -60,5 +60,7 @@ def test_get_resource(mocker):
 
     assert result == {"uri": resource_uri}
     mock_get.assert_called_once_with(
-        resource_uri, headers={"Accept": "application/vnd.sinopia+json"}
+        resource_uri,
+        headers={"Accept": "application/vnd.sinopia+json"},
+        params={"expand": "true"},
     )
