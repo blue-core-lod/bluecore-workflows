@@ -543,7 +543,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.15.0"
+version = "0.17.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -554,14 +554,14 @@ dependencies = [
     { name = "tenacity" },
     { name = "transformers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/19/6b/1f339b0e63ddc53eb549f454cad9ae5aa3f1856ce6f24090700d0163ac2a/bluecore_models-0.15.0.tar.gz", hash = "sha256:97d79e3402966d1707a4a96f9a16d9179b1d89532f6b0a2df13f0c03159f3c47", size = 164747, upload-time = "2026-06-17T20:43:14.651Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/74/4f/731c9b0f369c945b567ff9b659d8e9107a7f0c7a2889da4d4f56a41af832/bluecore_models-0.17.0.tar.gz", hash = "sha256:5ea08a434ed3925ceb61dc210b97cdd95daa69b60a390f4f73b9a90b70059377", size = 166330, upload-time = "2026-06-24T19:08:38.156Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8a/59/9a3565f626e36d77ca4712292ad5cdf09419009b1efd43d3f909bd155268/bluecore_models-0.15.0-py3-none-any.whl", hash = "sha256:aa13f9dafc305a350fe668e44f3ce0650ed75729929220a876db361a1925039e", size = 32052, upload-time = "2026-06-17T20:43:15.522Z" },
+    { url = "https://files.pythonhosted.org/packages/2c/d8/dea6a14d296abe8521b6047bedb157f3f1d94676abbd27e7c0ecc61915fd/bluecore_models-0.17.0-py3-none-any.whl", hash = "sha256:ce3505dbb8194dc31de3b59b4c4eda492a53f8ebb9dc527e4426f72abfb8f395", size = 31107, upload-time = "2026-06-24T19:08:37.107Z" },
 ]
 
 [[package]]
 name = "bluecore-workflows"
-version = "0.10.0"
+version = "0.10.2"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
@@ -914,8 +914,8 @@ name = "faiss-cpu"
 version = "1.14.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "numpy" },
-    { name = "packaging" },
+    { name = "numpy", marker = "sys_platform != 'win32'" },
+    { name = "packaging", marker = "sys_platform != 'win32'" },
 ]
 wheels = [
     { url = "https://files.pythonhosted.org/packages/83/b0/48c083d01b7b68c463c1d56507147a9d733f791e1c469a77215a872a9fb5/faiss_cpu-1.14.3-cp310-abi3-macosx_14_0_arm64.whl", hash = "sha256:a9369863290a3f0e033757e4c10577b6ef7431f1cede394dabd0a137e4e2ed45", size = 4768290, upload-time = "2026-06-13T02:19:03.427Z" },
@@ -1678,10 +1678,10 @@ name = "milvus-lite"
 version = "3.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
-    { name = "faiss-cpu" },
-    { name = "grpcio" },
-    { name = "numpy" },
-    { name = "pyarrow" },
+    { name = "faiss-cpu", marker = "sys_platform != 'win32'" },
+    { name = "grpcio", marker = "sys_platform != 'win32'" },
+    { name = "numpy", marker = "sys_platform != 'win32'" },
+    { name = "pyarrow", marker = "sys_platform != 'win32'" },
 ]
 sdist = { url = "https://files.pythonhosted.org/packages/a3/9a/d80d260e6fe1246818a8ef782c374ba9c6ca46ca3b987c14eabe914ef805/milvus_lite-3.0.tar.gz", hash = "sha256:2c35d0d046b1faae3402cde1fb73d65f51ee8c6aba65f54de1dda46f7bb18b9b", size = 589749, upload-time = "2026-05-13T07:14:05.827Z" }
 wheels = [
