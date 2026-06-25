@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = "==3.12.*"
 resolution-markers = [
     "sys_platform == 'win32'",
@@ -543,7 +543,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.17.0"
+version = "0.18.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -554,14 +554,14 @@ dependencies = [
     { name = "tenacity" },
     { name = "transformers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/74/4f/731c9b0f369c945b567ff9b659d8e9107a7f0c7a2889da4d4f56a41af832/bluecore_models-0.17.0.tar.gz", hash = "sha256:5ea08a434ed3925ceb61dc210b97cdd95daa69b60a390f4f73b9a90b70059377", size = 166330, upload-time = "2026-06-24T19:08:38.156Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/97/3b/23bd1695228e0e3eadaf3b40d6fd5d3e8a7e7afa196597d31a27f9852893/bluecore_models-0.18.0.tar.gz", hash = "sha256:4c2219d439d088bfb848917cc492c1794c65807d58ba775d6c103ce0063d7e07", size = 168879, upload-time = "2026-06-25T21:18:17.627Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2c/d8/dea6a14d296abe8521b6047bedb157f3f1d94676abbd27e7c0ecc61915fd/bluecore_models-0.17.0-py3-none-any.whl", hash = "sha256:ce3505dbb8194dc31de3b59b4c4eda492a53f8ebb9dc527e4426f72abfb8f395", size = 31107, upload-time = "2026-06-24T19:08:37.107Z" },
+    { url = "https://files.pythonhosted.org/packages/70/6c/9b84e4e5acc37741ec07d583b07276644f01d27855e48b4a9eea9a57a1a5/bluecore_models-0.18.0-py3-none-any.whl", hash = "sha256:60514543d26c411f45288d3f88d1c519ec7373115c7409f63dffe2ab3e99eb8a", size = 33364, upload-time = "2026-06-25T21:18:16.794Z" },
 ]
 
 [[package]]
 name = "bluecore-workflows"
-version = "0.10.2"
+version = "0.10.3"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
