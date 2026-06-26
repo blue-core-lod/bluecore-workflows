@@ -6,6 +6,7 @@ import rdflib
 import ils_middleware.tasks.folio.mappings.bf_instance as bf_instance_map
 
 uri = "https://api.stage.sinopia.io/resource/b0319047-acd0-4f30-bd8b-98e6c1bac6b0"
+bf_agent_uri = "https://api.stage.sinopia.io/resource/bf-agent-instance"
 
 
 @typing.no_type_check
@@ -69,6 +70,16 @@ def test_publication(test_graph: rdflib.Graph):
     assert str(publications[0][0]).startswith("Edizioni Ca'Foscari")
     assert str(publications[0][1]).startswith("2020")
     assert str(publications[0][2]).startswith("Venice (Italy)")
+
+
+@typing.no_type_check
+def test_publication_bf_agent(test_graph: rdflib.Graph):
+    sparql = bf_instance_map.publication.format(bf_instance=bf_agent_uri)
+    publications = [row for row in test_graph.query(sparql)]
+
+    assert str(publications[0][0]).startswith("Oxford University Press")
+    assert str(publications[0][1]).startswith("2021")
+    assert str(publications[0][2]).startswith("Oxford (England)")
 
 
 @typing.no_type_check

@@ -9,13 +9,22 @@ import ils_middleware.tasks.folio.mappings.bf_work as bf_work_map
 
 logger = logging.getLogger(__name__)
 
+# Order matters: fields that accumulate into the same FOLIO array (e.g. subjects/genre,
+# identifiers, editions) must be ordered so the first writer populates the list before
+# subsequent entries append to it via record.get(..., []).
 BF_TO_FOLIO_MAP = {
+    "contributor.Person": {
+        "template": bf_work_map.contributor,
+        "uri": "work",
+        "class": "bf:Person",
+    },
     "contributor.primary.Person": {
         "template": bf_work_map.primary_contributor,
         "uri": "work",
         "class": "bf:Person",
     },
     "editions": {"template": bf_instance_map.editions, "uri": "instance"},
+    "editions.work": {"template": bf_work_map.editions, "uri": "work"},
     "instance_format": {
         "template": bf_instance_map.instance_format_id,
         "uri": "instance",
@@ -44,6 +53,10 @@ BF_TO_FOLIO_MAP = {
         "template": bf_instance_map.identifier,
         "uri": "instance",
         "class": "bf:Issn",
+    },
+    "identifiers.local": {
+        "template": bf_instance_map.local_identifier,
+        "uri": "instance",
     },
     "instance_type": {"template": bf_work_map.instance_type_id, "uri": "work"},
     "language": {"template": bf_work_map.language, "uri": "work"},

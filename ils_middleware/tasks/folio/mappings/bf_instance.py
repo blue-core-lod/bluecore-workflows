@@ -95,12 +95,14 @@ WHERE {{
     <{bf_instance}> bf:extent ?extent_bnode .
     ?extent_bnode a bf:Extent .
     ?extent_bnode rdfs:label ?extent .
-    <{bf_instance}> bf:dimensions ?dimensions .
+    OPTIONAL {{
+        <{bf_instance}> bf:dimensions ?dimensions .
+    }}
 }}
 """
 
 publication = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
-PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
+PREFIX bflc: <http://id.loc.gov/ontologies/bflc/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
 SELECT ?publisher ?date ?place
@@ -108,15 +110,18 @@ WHERE {{
    <{bf_instance}> a bf:Instance .
    <{bf_instance}> bf:provisionActivity ?activity .
    ?activity a bf:Publication .
-   ?activity bf:agent ?agent .
-   ?agent a bf:Agent .
-   ?agent rdfs:label ?publisher .
-   OPTIONAL {{
-      ?activity bf:date ?date .
-   }}
-   OPTIONAL {{
-      ?activity bf:place ?place_holder .
-      ?place_holder rdfs:label ?place .
+   {{
+       ?activity bflc:simpleAgent ?publisher .
+       OPTIONAL {{ ?activity bflc:simpleDate ?date . }}
+       OPTIONAL {{ ?activity bflc:simplePlace ?place . }}
+   }} UNION {{
+       ?activity bf:agent ?agent_uri .
+       ?agent_uri rdfs:label ?publisher .
+       OPTIONAL {{ ?activity bf:date ?date . }}
+       OPTIONAL {{
+           ?activity bf:place ?place_uri .
+           ?place_uri rdfs:label ?place .
+       }}
    }}
 }}
 """
