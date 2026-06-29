@@ -74,7 +74,7 @@ def archived_file_loader():
         if len(errors) > 0:
             msg = f"Errors exist; keeping {archive_file_path}"
             logger.error(msg)
-            raise ValueError(msg)
+            return
         current_path = pathlib.Path(archive_file_path)
         remove_empty_parent = current_path.parent.name != "uploads"
         delete_upload(upload=archive_file_path, remove_empty_parent=remove_empty_parent)

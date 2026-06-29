@@ -165,12 +165,13 @@ def load_cbd_files(
                 try:
                     save_graph(session_maker, graph, namespace=bc_url)
                     break
-                except OperationalError:
+                except OperationalError as e:
                     if attempt == 2:
                         raise
+                    logger.error(f"Operational Error {e} for {name}")
                     time.sleep(2**attempt)
                 except Exception as e:
-                    logger.error(f"Error {e}")
+                    logger.error(f"Error {e} for {name}")
                     errors.append(name)
                     break
 
