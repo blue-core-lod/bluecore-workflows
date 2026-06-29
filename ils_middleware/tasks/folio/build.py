@@ -3,11 +3,11 @@ SPARQL queries run on BF Instance and Work RDF graphs from Sinopia."""
 
 import datetime
 import logging
+from typing import Any
 
 from airflow.models.connection import Connection
-
-from folioclient import FolioClient
 from folio_uuid import FOLIONamespaces, FolioUUID
+from folioclient import FolioClient
 
 from ils_middleware.tasks.folio.map import FOLIO_FIELDS
 
@@ -276,16 +276,16 @@ def _task_ids(task_groups: str, folio_field: str) -> str:
     return task_id
 
 
-def _inventory_record(**kwargs) -> dict:
+def _inventory_record(**kwargs: Any) -> dict[str, Any]:
     instance_uri = kwargs["instance_uri"]
     task_instance = kwargs["task_instance"]
     task_groups = ".".join(kwargs["task_groups_ids"])
     folio_client = kwargs["folio_client"]
 
-    record = {
+    record: dict[str, Any] = {
         "id": _folio_id(instance_uri, folio_client.okapi_url),
         "metadata": _create_update_metadata(**kwargs),
-        "source": "BLUECORE",
+        "source": "BIBFRAME",
         "sourceUri": instance_uri,
     }
     instance_uuid = instance_uri.split("/")[-1]
