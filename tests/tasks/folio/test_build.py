@@ -1,22 +1,18 @@
 import datetime
 import json
-
 from unittest.mock import MagicMock
 
 import pytest
-
 from airflow.models import Connection
-
-from tasks import test_task_instance  # noqa: F401
-from tasks import mock_requests_okapi  # noqa: F401
-from tasks import mock_task_instance  # noqa: F401
-from tasks import folio_properties
-
+from tasks import (
+    folio_properties,
+    mock_requests_okapi,  # noqa: F401
+    mock_task_instance,  # noqa: F401
+    test_task_instance,  # noqa: F401
+)
 
 import ils_middleware.tasks.folio.build as folio_build
-
 from ils_middleware.tasks.folio.build import (
-    build_records,
     _default_transform,
     _identifiers,
     _instance_format_ids,
@@ -30,6 +26,7 @@ from ils_middleware.tasks.folio.build import (
     _subjects,
     _title,
     _user_folio_id,
+    build_records,
 )
 
 instance_uri = "https://api.development.sinopia.io/resource/0000-1111-2222-3333"
@@ -149,6 +146,7 @@ def test_happypath_build_records(
     )
     assert record["sourceUri"].startswith(instance_uri)
     assert record["title"] == "Great force"
+    assert record["source"] == "BIBFRAME"
 
 
 def test_default_transform_value_listing():
