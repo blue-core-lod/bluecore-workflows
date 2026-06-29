@@ -14,12 +14,15 @@ from tasks import (
 import ils_middleware.tasks.folio.build as folio_build
 from ils_middleware.tasks.folio.build import (
     _default_transform,
+    _editions,
+    _genre,
     _identifiers,
     _instance_format_ids,
     _instance_type_id,
     _inventory_record,
     _language,
     _mode_of_issuance_id,
+    _non_primary_contributor,
     _notes,
     _physical_descriptions,
     _publication,
@@ -59,6 +62,7 @@ class MockFolioClient(object):
             {"id": "913300b2-03ed-469a-8179-c1092c991227", "name": "ISSN"},
             {"id": "c858e4f2-2b6b-4385-842b-60732ee14abb", "name": "LCCN"},
             {"id": "439bfbae-75bc-4f74-9fc7-b2a2d47ce3ef", "name": "OCLC"},
+            {"id": "7e591197-f335-4afb-bc6d-a6d76ca3bace", "name": "Local identifier"},
         ]
 
         self.instance_formats = [
@@ -78,6 +82,10 @@ class MockFolioClient(object):
         self.instance_note_types = [
             {"id": "6a2533a7-4de2-4e64-8466-074c2fa9308c", "name": "General note"},
         ]
+        self.subject_types = [
+            {"id": "d6488f88-1e74-40ce-81b5-b19a928ff5b7", "name": "Topical term"},
+            {"id": "d6488f88-1e74-4674-9e7f-a294b9a6451d", "name": "Genre/form"},
+        ]
 
     def folio_get(self, *args, **kwargs):
         get_response = MagicMock()
@@ -85,6 +93,10 @@ class MockFolioClient(object):
         get_response.text = json.dumps(folio_properties)
         if args[0].endswith("electronic-access-relationships"):
             return [{"name": "Resource", "id": "d2f38edc-b225-4cb4-a412-734d8bbbc855"}]
+        if args[0].endswith("subject-types"):
+            return [
+                {"name": "Genre/form", "id": "d6488f88-1e74-4674-9e7f-a294b9a6451d"}
+            ]
         return get_response
 
     def folio_put(self, *args, **kwargs):
@@ -323,7 +335,7 @@ def test_mode_of_issuance_id():
 def test_notes():  # noqa: F811
     notes = _notes(values=[["A great note"]], folio_client=MockFolioClient())
     assert (notes[0]).startswith("notes")
-    assert (notes[1][0]["instanceNoteId"]).startswith(
+    assert (notes[1][0]["instanceNoteTypeId"]).startswith(
         "6a2533a7-4de2-4e64-8466-074c2fa9308c"
     )
     assert (notes[1][0]["note"]).startswith("A great note")
@@ -347,10 +359,69 @@ def test_publication():
 
 
 def test_subjects():
-    subjects = _subjects(values=[["California"], ["Forest biodiversity"]])
-    assert (subjects[0]).startswith("subjects")
-    assert (subjects[1][0]).startswith("California")
-    assert (subjects[1][1]).startswith("Forest biodiversity")
+    subjects = _subjects(
+        values=[["California"], ["Forest biodiversity"]],
+        record={},
+        folio_client=MockFolioClient(),
+    )
+    assert subjects[0] == "subjects"
+    assert subjects[1][0] == {
+        "value": "California",
+        "typeId": "d6488f88-1e74-40ce-81b5-b19a928ff5b7",
+    }
+    assert subjects[1][1] == {
+        "value": "Forest biodiversity",
+        "typeId": "d6488f88-1e74-40ce-81b5-b19a928ff5b7",
+    }
+
+
+def test_editions_accumulates():
+    _, instance_editions = _editions(values=[["First edition"]], record={})
+    _, merged = _editions(
+        values=[["Première édition"]], record={"editions": instance_editions}
+    )
+    assert len(merged) == 2
+    assert "First edition" in merged
+    assert "Première édition" in merged
+
+
+def test_non_primary_contributor():
+    field, contributors = _non_primary_contributor(
+        values=[["Butler, Octavia", "Author"]],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    assert field == "contributors"
+    assert contributors[0]["primary"] is False
+    assert contributors[0]["name"] == "Butler, Octavia"
+
+
+def test_identifiers_local():
+    identifiers = _identifiers(
+        values=[["(OCoLC)1272909598"]],
+        folio_client=MockFolioClient(),
+        folio_field="identifiers.local",
+        record={},
+    )
+    assert identifiers[0] == "identifiers"
+    assert (
+        identifiers[1][0]["identifierTypeId"] == "7e591197-f335-4afb-bc6d-a6d76ca3bace"
+    )
+    assert identifiers[1][0]["value"] == "(OCoLC)1272909598"
+
+
+def test_genre_merges_into_subjects():
+    existing_subjects = [{"value": "Mining engineering"}]
+    field, subjects = _genre(
+        values=[["Science fiction"]],
+        folio_client=MockFolioClient(),
+        record={"subjects": existing_subjects},
+    )
+    assert field == "subjects"
+    assert len(subjects) == 2
+    assert subjects[0] == {"value": "Mining engineering"}
+    assert subjects[1]["value"] == "Science fiction"
+    assert subjects[1]["typeId"] == "d6488f88-1e74-4674-9e7f-a294b9a6451d"
 
 
 def test_title_transform_all():

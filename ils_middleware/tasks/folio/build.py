@@ -21,6 +21,14 @@ def _default_transform(**kwargs) -> tuple:
     return folio_field, values
 
 
+def _editions(**kwargs) -> tuple:
+    values = kwargs["values"]
+    editions = kwargs["record"].get("editions", [])
+    for row in values:
+        editions.append(row[0])
+    return "editions", editions
+
+
 def _contributors(**kwargs) -> tuple:
     folio_client = kwargs["folio_client"]
     values = kwargs["values"]
@@ -52,6 +60,10 @@ def _contributors(**kwargs) -> tuple:
     return "contributors", contributors
 
 
+def _non_primary_contributor(**kwargs) -> tuple:
+    return _contributors(primary=False, contrib_name="Personal name", **kwargs)
+
+
 def _primary_contributor(**kwargs) -> tuple:
     return _contributors(primary=True, contrib_name="Personal name", **kwargs)
 
@@ -75,6 +87,8 @@ def _identifiers(**kwargs) -> tuple:
         identifier_name = "DOI"
     if folio_field.endswith("issn"):
         identifier_name = "ISSN"
+    if folio_field.endswith("local"):
+        identifier_name = "Local identifier"
 
     values = kwargs["values"]
 
@@ -164,7 +178,9 @@ def _notes(**kwargs) -> tuple:
             break
     notes = []
     for row in values:
-        notes.append({"instanceNoteId": note_id, "note": row[0], "staffOnly": False})
+        notes.append(
+            {"instanceNoteTypeId": note_id, "note": row[0], "staffOnly": False}
+        )
 
     return "notes", notes
 
@@ -198,21 +214,37 @@ def _publication(**kwargs) -> tuple:
 
 
 def _subjects(**kwargs) -> tuple:
+    folio_client = kwargs["folio_client"]
     values = kwargs["values"]
+
+    topical_term_type_id = None
+    for subject_type in folio_client.subject_types:
+        if subject_type["name"] == "Topical term":
+            topical_term_type_id = subject_type["id"]
+            break
+
     subjects = []
     for row in values:
-        subjects.append(row[0])
+        subjects.append({"value": row[0], "typeId": topical_term_type_id})
 
     return "subjects", subjects
 
 
-def genre(**kwargs) -> tuple:
+def _genre(**kwargs) -> tuple:
+    folio_client = kwargs["folio_client"]
     values = kwargs["values"]
-    genre = []
-    for row in values:
-        genre.append(row[0])
 
-    return "genre", genre
+    genre_form_type_id = None
+    for subject_type in folio_client.subject_types:
+        if subject_type["name"] == "Genre/form":
+            genre_form_type_id = subject_type["id"]
+            break
+
+    subjects = kwargs["record"].get("subjects", [])
+    for row in values:
+        subjects.append({"value": row[0], "typeId": genre_form_type_id})
+
+    return "subjects", subjects
 
 
 def _title(**kwargs) -> tuple:
@@ -235,19 +267,25 @@ def _user_folio_id(okapi_url: str, folio_user: str) -> str:
 
 
 transforms = {
+    "contributor.Person": _non_primary_contributor,
+    "contributor.primary.Person": _primary_contributor,
+    "editions": _editions,
+    "editions.work": _editions,
     "identifiers.isbn": _identifiers,
     "identifiers.oclc": _identifiers,
     "identifiers.doi": _identifiers,
     "identifiers.lccn": _identifiers,
+    "identifiers.issn": _identifiers,
+    "identifiers.local": _identifiers,
     "instance_format": _instance_format_ids,
     "instance_type": _instance_type_id,
     "language": _language,
     "modeOfIssuanceId": _mode_of_issuance_id,
     "notes": _notes,
     "physical_description": _physical_descriptions,
-    "contributor.primary.Person": _primary_contributor,
     "publication": _publication,
     "subjects": _subjects,
+    "genre": _genre,
     "title": _title,
 }
 
@@ -292,13 +330,15 @@ def _inventory_record(**kwargs: Any) -> dict[str, Any]:
 
     for folio_field in FOLIO_FIELDS:
         post_processing = transforms.get(folio_field, _default_transform)
-        task_id = _task_ids(task_groups, folio_field)
-        raw_values = task_instance.xcom_pull(key=instance_uuid, task_ids=task_id)
-        if folio_field.startswith("instance_type") and len(raw_values) == 0:
-            raw_values = [["text"]]  # Default value
-        if raw_values:
+        bf_to_folio_task_id = _task_ids(task_groups, folio_field)
+        sparql_rows = task_instance.xcom_pull(
+            key=instance_uuid, task_ids=bf_to_folio_task_id
+        )
+        if folio_field.startswith("instance_type") and len(sparql_rows) == 0:
+            sparql_rows = [["text"]]  # Default value
+        if sparql_rows:
             record_field, values = post_processing(
-                values=raw_values,
+                values=sparql_rows,
                 okapi_url=folio_client.okapi_url,
                 folio_field=folio_field,
                 folio_user=folio_client.username,
@@ -307,7 +347,7 @@ def _inventory_record(**kwargs: Any) -> dict[str, Any]:
             )
 
             record[record_field] = values
-        logger.debug(f"{raw_values} values for {instance_uri}'s {task_id}")
+        logger.debug(f"{sparql_rows} values for {instance_uri}'s {bf_to_folio_task_id}")
     return record
 
 

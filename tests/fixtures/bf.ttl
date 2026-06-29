@@ -82,10 +82,9 @@ bf:Work rdfs:label "http://id.loc.gov/ontologies/bibframe/Work" .
         [ a bf:Note ;
             rdfs:label "Description based on online resource (Stanford Digital Repository, viewed October 1, 2021)"@eng ] ;
     bf:provisionActivity [ a bf:Publication ;
-            bf:agent [ a bf:Agent ;
-                    rdfs:label "Edizioni Ca'Foscari"@eng ] ;
-            bf:date "2020"@eng ;
-            bf:place <http://id.loc.gov/authorities/names/n79018142> ] ;
+            bflc:simpleAgent "Edizioni Ca'Foscari" ;
+            bflc:simpleDate "2020" ;
+            bflc:simplePlace "Venice (Italy)" ] ;
     bf:provisionActivityStatement "Venezia : Edizioni Ca'Foscari, 2020"@ita ;
     bf:responsibilityStatement "Simone Brioni e Shirin Ramzanali Fazel"@ita ;
     bf:seriesStatement "Diaspore, 2610-9387 ;  13"@ita ;
@@ -140,4 +139,18 @@ bf:Work rdfs:label "http://id.loc.gov/ontologies/bibframe/Work" .
 <https://purl.stanford.edu/mf283yt5578> rdfs:label "Stanford Digital Repository"@eng .
 
 <http://id.loc.gov/vocabulary/relators/aut> rdfs:label "author" .
+
+<https://api.stage.sinopia.io/resource/pub-agent-oup> a bf:Organization ;
+    rdfs:label "Oxford University Press" .
+
+<https://api.stage.sinopia.io/resource/pub-place-oxford> a bf:Place ;
+    rdfs:label "Oxford (England)" .
+
+<https://api.stage.sinopia.io/resource/bf-agent-instance> a bf:Instance ;
+    bf:instanceOf <https://api.stage.sinopia.io/resource/c96d8b55-e0ac-48a5-9a9b-b0684758c99e> ;
+    bf:issuance <http://id.loc.gov/vocabulary/issuance/mono> ;
+    bf:provisionActivity [ a bf:Publication ;
+            bf:agent <https://api.stage.sinopia.io/resource/pub-agent-oup> ;
+            bf:date "2021" ;
+            bf:place <https://api.stage.sinopia.io/resource/pub-place-oxford> ] .
 

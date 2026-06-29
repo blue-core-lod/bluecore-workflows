@@ -39,7 +39,12 @@ def batch_archived_files(
         raise FileNotFoundError(f"{archive_file_path} does not exist")
 
     archive_file = tarfile.open(archive_file_path, "r")
-    file_names = archive_file.getnames()
+    file_names = [
+        name
+        for name in archive_file.getnames()
+        if rdflib.util.guess_format(name) is not None
+        and not pathlib.Path(name).name.startswith("._")
+    ]
 
     total_names = len(file_names)
     batch_size = int(total_names / number_of_batches)
@@ -152,7 +157,11 @@ def load_cbd_files(
 
     with tarfile.open(archived_file_path, "r") as cbd_archived_file:
         for i, name in enumerate(cbd_files):
+            if pathlib.Path(name).name.startswith("._"):
+                continue
             graph_format = rdflib.util.guess_format(name)
+            if graph_format is None:
+                continue
             graph = rdflib.Graph()
             cbd_file_buf = cbd_archived_file.extractfile(name)
             if cbd_file_buf is None:

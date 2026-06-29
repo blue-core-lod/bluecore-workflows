@@ -1,5 +1,6 @@
+import json
+
 import pytest
-import requests  # type: ignore
 
 from pytest_mock import MockerFixture
 from airflow.models.taskinstance import TaskInstance
@@ -20,8 +21,8 @@ mock_instance_doc = {
     }
 }
 
-mock_work = {
-    "data": [
+mock_work_jsonld = json.dumps(
+    [
         {
             "@id": "https://api.development.sinopia.io/resource/6497a461-42dc-42bf-b433-5e47c73f7e89",
             "@type": ["http://id.loc.gov/ontologies/bibframe/Work"],
@@ -44,7 +45,7 @@ mock_work = {
             ],
         },
     ]
-}
+)
 
 instance_uri = (
     "https://api.stage.sinopia.io/resource/8a2dda53-d3bc-485a-9154-635823045b4f"
@@ -56,14 +57,15 @@ work_uri = "https://api.sinopia.io/resources/not-found"
 def mock_requests(monkeypatch, mocker: MockerFixture):
     def mock_get(*args, **kwargs):
         get_response = mocker.stub(name="get_result")
-        if args[0] == work_uri:
+        url = args[0]
+        if url.startswith(work_uri):
             get_response.status_code = 401
         else:
             get_response.status_code = 200
-            get_response.json = lambda: mock_work
+            get_response.text = mock_work_jsonld
         return get_response
 
-    monkeypatch.setattr(requests, "get", mock_get)
+    monkeypatch.setattr("ils_middleware.tasks.folio.graph.httpx.get", mock_get)
 
 
 def test_construct_graph(mock_requests, mock_task_instance):  # noqa: F811
