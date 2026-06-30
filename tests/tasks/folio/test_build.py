@@ -92,12 +92,12 @@ class MockFolioClient(object):
             {"id": "d6488f88-1e74-40ce-81b5-b19a928ff5b7", "name": "Topical term"},
             {"id": "d6488f88-1e74-4674-9e7f-a294b9a6451d", "name": "Genre/form"},
         ]
-        self.alternative_title_types = [
+        self.alt_title_types = [
             {"id": "bba5b222-1cc8-4745-9a75-3f1d3b5c3a67", "name": "Abbreviated title"},
             {"id": "4bb300a4-04c9-414b-bfbc-9c032f74b7b2", "name": "Parallel title"},
             {"id": "35bbe7f2-1a49-11ed-861d-0242ac120002", "name": "Variant title"},
         ]
-        self.classification_types = [
+        self.class_types = [
             {"id": "ce176ace-a53e-4b4d-aa89-725ed7b2edac", "name": "LC"},
             {"id": "42471af9-7d25-4f3a-bf78-60d29dcf463b", "name": "Dewey"},
             {"id": "a7f4d03f-b0d8-496c-aebf-4e9cdb678200", "name": "NLM"},

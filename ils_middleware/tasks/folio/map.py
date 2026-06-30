@@ -1,5 +1,6 @@
 """Maps Sinopia RDF to FOLIO Records."""
 
+import datetime
 import logging
 
 import rdflib
@@ -146,7 +147,10 @@ def _retrieve_values(query_row: list | tuple) -> list:
             if isinstance(field, rdflib.URIRef):
                 output.append(str(field))
                 continue
-            output.append(field.value)
+            value = field.value
+            if isinstance(value, (datetime.date, datetime.datetime)):
+                value = value.isoformat()
+            output.append(value)
         else:
             output.append(None)  # type: ignore
     return output

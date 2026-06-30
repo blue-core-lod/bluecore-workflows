@@ -35,7 +35,7 @@ def _classifications(**kwargs) -> tuple:
     type_name = _CLASSIFICATION_TYPE_NAMES[subtype]
 
     type_id = None
-    for row in folio_client.classification_types:
+    for row in folio_client.class_types:
         if row["name"] == type_name:
             type_id = row["id"]
             break
@@ -65,7 +65,7 @@ def _alternative_titles(**kwargs) -> tuple:
     type_name = _ALT_TITLE_TYPE_NAMES[subtype]
 
     type_id = None
-    for row in folio_client.alternative_title_types:
+    for row in folio_client.alt_title_types:
         if row["name"] == type_name:
             type_id = row["id"]
             break
@@ -422,10 +422,9 @@ def _inventory_record(**kwargs: Any) -> dict[str, Any]:
     folio_client = kwargs["folio_client"]
 
     status_id = None
-    for row in folio_client.instance_statuses:
-        if row["name"] == "Cataloged":
-            status_id = row["id"]
-            break
+    instance_status = folio_client.folio_get("instance-statuses", "instanceStatuses", "name==Cataloged")
+    if instance_status:
+        status_id = instance_status[0]["id"]
 
     record: dict[str, Any] = {
         "id": _folio_id(instance_uri, folio_client.okapi_url),

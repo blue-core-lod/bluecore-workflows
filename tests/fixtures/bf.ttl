@@ -168,9 +168,10 @@ bf:Work rdfs:label "http://id.loc.gov/ontologies/bibframe/Work" .
             bf:classificationPortion "BP52" ] ;
     bf:relation [ a bf:Relation ;
             bf:associatedResource <https://api.stage.sinopia.io/resource/test-series-hub> ],
-        [ a bf:Series ;
-            bf:title [ a bf:Title ;
-                    bf:mainTitle "Italian studies series" ] ] .
+        [ a bf:Relation ;
+            bf:associatedResource [ a bf:Series ;
+                    bf:title [ a bf:Title ;
+                            bf:mainTitle "Italian studies series" ] ] ] .
 
 <https://api.stage.sinopia.io/resource/test-series-hub> a bf:Hub ;
     rdfs:label "Diaspore" .

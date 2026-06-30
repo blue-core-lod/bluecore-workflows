@@ -101,7 +101,9 @@ PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 SELECT ?series_title
 WHERE {{
     <{bf_work}> a bf:Work .
-    <{bf_work}> bf:relation ?series .
+    <{bf_work}> bf:relation ?relation .
+    ?relation a bf:Relation .
+    ?relation bf:associatedResource ?series .
     ?series a bf:Series .
     ?series bf:title ?title_node .
     ?title_node bf:mainTitle ?series_title .
