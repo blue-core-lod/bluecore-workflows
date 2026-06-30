@@ -422,7 +422,9 @@ def _inventory_record(**kwargs: Any) -> dict[str, Any]:
     folio_client = kwargs["folio_client"]
 
     status_id = None
-    instance_status = folio_client.folio_get("instance-statuses", "instanceStatuses", "name==Cataloged")
+    instance_status = folio_client.folio_get(
+        "instance-statuses", "instanceStatuses", "name==Cataloged"
+    )
     if instance_status:
         status_id = instance_status[0]["id"]
 
