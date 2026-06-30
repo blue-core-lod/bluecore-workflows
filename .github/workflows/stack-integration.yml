@@ -1,0 +1,48 @@
+name: Stack Integration Tests
+
+# Trigger the bluecore-stack integration test suite against THIS PR's branch and
+# wait for the result, so it shows up as a check on the PR. The bluecore-stack
+# workflow builds the workflows image from `workflows_ref` and runs the full suite.
+#
+# Auth is via an org GitHub App (no personal PAT). Requires:
+#   - vars.STACK_DISPATCH_APP_ID            -> the App's App ID
+#   - secrets.STACK_DISPATCH_APP_PRIVATE_KEY -> the App's private key (.pem contents)
+# The App must be installed on blue-core-lod/bluecore-stack with
+# Actions: Read & write.
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+# Cancel superseded runs when new commits are pushed to the same PR.
+concurrency:
+  group: stack-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  stack-integration:
+    runs-on: ubuntu-latest
+    # This job never uses GITHUB_TOKEN (it authenticates via the App token), so
+    # drop the default token to no permissions.
+    permissions: {}
+    steps:
+      # Mint a short-lived installation token scoped to bluecore-stack.
+      - name: Mint bluecore-stack token
+        id: app-token
+        uses: actions/create-github-app-token@v2
+        with:
+          app-id: ${{ vars.STACK_DISPATCH_APP_ID }}
+          private-key: ${{ secrets.STACK_DISPATCH_APP_PRIVATE_KEY }}
+          owner: blue-core-lod
+          repositories: bluecore-stack
+
+      - name: Trigger bluecore-stack integration tests and wait
+        uses: aurelien-baudet/workflow-dispatch@v2
+        with:
+          repo: blue-core-lod/bluecore-stack
+          workflow: bluecore-integration-test.yml
+          ref: main
+          token: ${{ steps.app-token.outputs.token }}
+          wait-for-completion: true
+          wait-for-completion-timeout: 45m
+          wait-for-completion-interval: 30s
+          inputs: '{ "workflows_ref": "${{ github.head_ref }}" }'
