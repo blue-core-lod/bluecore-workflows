@@ -148,7 +148,7 @@ def load_cbd_files(
 
     bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
 
-    engine = create_engine(bluecore_db)
+    engine = create_engine(bluecore_db, pool_pre_ping=True)
     session_maker = sessionmaker(bind=engine)
 
     errors = []
