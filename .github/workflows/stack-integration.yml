@@ -4,8 +4,8 @@ name: Stack Integration Tests
 # wait for the result, so it shows up as a check on the PR. The bluecore-stack
 # workflow builds the workflows image from `workflows_ref` and runs the full suite.
 #
-# Auth is via an org GitHub App (no personal PAT). Requires:
-#   - vars.STACK_DISPATCH_APP_ID            -> the App's App ID
+# Auth is via an org GitHub App. Requires:
+#   - vars.STACK_DISPATCH_APP_ID             -> the App's App ID
 #   - secrets.STACK_DISPATCH_APP_PRIVATE_KEY -> the App's private key (.pem contents)
 # The App must be installed on blue-core-lod/bluecore-stack with
 # Actions: Read & write.
@@ -21,8 +21,6 @@ concurrency:
 jobs:
   stack-integration:
     runs-on: ubuntu-latest
-    # This job never uses GITHUB_TOKEN (it authenticates via the App token), so
-    # drop the default token to no permissions.
     permissions: {}
     steps:
       # Mint a short-lived installation token scoped to bluecore-stack.
@@ -35,14 +33,22 @@ jobs:
           owner: blue-core-lod
           repositories: bluecore-stack
 
+      # Dispatch the bluecore-stack integration workflow and wait for its result.
+      # Uses RUN_NAME for the remote run (passed via the "run_name"
+      # input, which bluecore-stack echoes into its top-level run-name:) so the
+      # action correlates THIS exact run by name.
       - name: Trigger bluecore-stack integration tests and wait
-        uses: aurelien-baudet/workflow-dispatch@v2
+        uses: aurelien-baudet/workflow-dispatch@v4
+        env:
+          RUN_NAME: api-integration-${{ github.run_id }}-${{ github.run_attempt }}
         with:
           repo: blue-core-lod/bluecore-stack
           workflow: bluecore-integration-test.yml
           ref: main
           token: ${{ steps.app-token.outputs.token }}
+          run-name: ${{ env.RUN_NAME }}
           wait-for-completion: true
           wait-for-completion-timeout: 45m
           wait-for-completion-interval: 30s
-          inputs: '{ "workflows_ref": "${{ github.head_ref }}" }'
+          display-workflow-run-url: true
+          inputs: '{ "workflows_ref": "${{ github.head_ref }}", "run_name": "${{ env.RUN_NAME }}" }'
