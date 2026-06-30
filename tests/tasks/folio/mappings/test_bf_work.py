@@ -76,3 +76,49 @@ def test_genre(test_graph: rdflib.Graph):
     genres = [row for row in test_graph.query(sparql)]
 
     assert str(genres[0][0]).startswith("Informational works")
+
+
+@typing.no_type_check
+def test_classification_lcc(test_graph: rdflib.Graph):
+    sparql = bf_work_map.classification.format(
+        bf_work=work_uri, bf_class="bf:ClassificationLcc"
+    )
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]).startswith("BP52.5")
+
+
+@typing.no_type_check
+def test_classification_ddc(test_graph: rdflib.Graph):
+    sparql = bf_work_map.classification.format(
+        bf_work=work_uri, bf_class="bf:ClassificationDdc"
+    )
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]).startswith("297.09451")
+
+
+@typing.no_type_check
+def test_classification_nlm(test_graph: rdflib.Graph):
+    sparql = bf_work_map.classification.format(
+        bf_work=work_uri, bf_class="bf:ClassificationNlm"
+    )
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]).startswith("BP52")
+
+
+@typing.no_type_check
+def test_series_controlled(test_graph: rdflib.Graph):
+    sparql = bf_work_map.series_controlled.format(bf_work=work_uri)
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]).startswith("Diaspore")
+
+
+@typing.no_type_check
+def test_series_uncontrolled(test_graph: rdflib.Graph):
+    sparql = bf_work_map.series_uncontrolled.format(bf_work=work_uri)
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]).startswith("Italian studies series")

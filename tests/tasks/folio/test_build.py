@@ -13,8 +13,12 @@ from tasks import (
 
 import ils_middleware.tasks.folio.build as folio_build
 from ils_middleware.tasks.folio.build import (
+    _alternative_titles,
+    _cataloged_date,
+    _classifications,
     _default_transform,
     _editions,
+    _electronic_access,
     _genre,
     _identifiers,
     _instance_format_ids,
@@ -26,6 +30,8 @@ from ils_middleware.tasks.folio.build import (
     _notes,
     _physical_descriptions,
     _publication,
+    _publication_frequency,
+    _series,
     _subjects,
     _title,
     _user_folio_id,
@@ -85,6 +91,19 @@ class MockFolioClient(object):
         self.subject_types = [
             {"id": "d6488f88-1e74-40ce-81b5-b19a928ff5b7", "name": "Topical term"},
             {"id": "d6488f88-1e74-4674-9e7f-a294b9a6451d", "name": "Genre/form"},
+        ]
+        self.alternative_title_types = [
+            {"id": "bba5b222-1cc8-4745-9a75-3f1d3b5c3a67", "name": "Abbreviated title"},
+            {"id": "4bb300a4-04c9-414b-bfbc-9c032f74b7b2", "name": "Parallel title"},
+            {"id": "35bbe7f2-1a49-11ed-861d-0242ac120002", "name": "Variant title"},
+        ]
+        self.classification_types = [
+            {"id": "ce176ace-a53e-4b4d-aa89-725ed7b2edac", "name": "LC"},
+            {"id": "42471af9-7d25-4f3a-bf78-60d29dcf463b", "name": "Dewey"},
+            {"id": "a7f4d03f-b0d8-496c-aebf-4e9cdb678200", "name": "NLM"},
+        ]
+        self.instance_statuses = [
+            {"id": "9634a5ab-9228-4703-baf2-4d12ebc77d56", "name": "Cataloged"},
         ]
 
     def folio_get(self, *args, **kwargs):
@@ -440,3 +459,165 @@ def test_folio_uuid():
     user_uuid = _user_folio_id(okapi_uri, "dschully")
 
     assert user_uuid.startswith("5415dbd9-8f80-50a2-9d6c-b1c932a4a6a5")
+
+
+def test_cataloged_date():
+    result = _cataloged_date(values=[["2021-10-01"]])
+    assert result[0] == "catalogedDate"
+    assert result[1] == "2021-10-01"
+
+
+def test_publication_frequency():
+    result = _publication_frequency(values=[["annual"], ["monthly"]])
+    assert result[0] == "publicationFrequency"
+    assert result[1] == ["annual", "monthly"]
+
+
+def test_electronic_access():
+    result = _electronic_access(
+        values=[
+            ["https://purl.stanford.edu/mf283yt5578"],
+            ["https://phaidra.cab.unipd.it/detail/o:445140"],
+        ]
+    )
+    assert result[0] == "electronicAccess"
+    assert result[1][0] == {"uri": "https://purl.stanford.edu/mf283yt5578"}
+    assert result[1][1] == {"uri": "https://phaidra.cab.unipd.it/detail/o:445140"}
+
+
+def test_series():
+    field, series = _series(values=[["Italian studies series"]], record={})
+    assert field == "series"
+    assert series[0] == {"value": "Italian studies series"}
+
+
+def test_series_accumulates():
+    _, first_series = _series(values=[["Diaspore"]], record={})
+    _, merged = _series(
+        values=[["Italian studies series"]], record={"series": first_series}
+    )
+    assert len(merged) == 2
+    assert {"value": "Diaspore"} in merged
+    assert {"value": "Italian studies series"} in merged
+
+
+def test_classifications_lcc():
+    result = _classifications(
+        folio_field="classifications.lcc",
+        values=[["BP52.5"]],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    assert result[0] == "classifications"
+    assert result[1][0]["classificationNumber"] == "BP52.5"
+    assert (
+        result[1][0]["classificationTypeId"] == "ce176ace-a53e-4b4d-aa89-725ed7b2edac"
+    )
+
+
+def test_classifications_ddc():
+    result = _classifications(
+        folio_field="classifications.ddc",
+        values=[["297.09451"]],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    assert result[0] == "classifications"
+    assert result[1][0]["classificationNumber"] == "297.09451"
+    assert (
+        result[1][0]["classificationTypeId"] == "42471af9-7d25-4f3a-bf78-60d29dcf463b"
+    )
+
+
+def test_classifications_nlm():
+    result = _classifications(
+        folio_field="classifications.nlm",
+        values=[["BP52"]],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    assert result[0] == "classifications"
+    assert result[1][0]["classificationNumber"] == "BP52"
+    assert (
+        result[1][0]["classificationTypeId"] == "a7f4d03f-b0d8-496c-aebf-4e9cdb678200"
+    )
+
+
+def test_classifications_accumulates():
+    _, first_class = _classifications(
+        folio_field="classifications.lcc",
+        values=[["BP52.5"]],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    _, merged = _classifications(
+        folio_field="classifications.ddc",
+        values=[["297.09451"]],
+        folio_client=MockFolioClient(),
+        record={"classifications": first_class},
+    )
+    assert len(merged) == 2
+    assert merged[0]["classificationNumber"] == "BP52.5"
+    assert merged[1]["classificationNumber"] == "297.09451"
+
+
+def test_alternative_titles_parallel():
+    result = _alternative_titles(
+        folio_field="alternative_titles.parallel",
+        values=[["Writing about Islam", "narrating a diaspora", None, None]],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    assert result[0] == "alternativeTitles"
+    assert (
+        result[1][0]["alternativeTitleTypeId"] == "4bb300a4-04c9-414b-bfbc-9c032f74b7b2"
+    )
+    assert (
+        result[1][0]["alternativeTitle"] == "Writing about Islam : narrating a diaspora"
+    )
+
+
+def test_alternative_titles_variant_no_subtitle():
+    result = _alternative_titles(
+        folio_field="alternative_titles.variant",
+        values=[["Scrivere Islam", None, None, None]],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    assert result[0] == "alternativeTitles"
+    assert (
+        result[1][0]["alternativeTitleTypeId"] == "35bbe7f2-1a49-11ed-861d-0242ac120002"
+    )
+    assert result[1][0]["alternativeTitle"] == "Scrivere Islam"
+
+
+def test_alternative_titles_abbreviated():
+    result = _alternative_titles(
+        folio_field="alternative_titles.abbreviated",
+        values=[["Islam writing", None, None, None]],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    assert result[0] == "alternativeTitles"
+    assert (
+        result[1][0]["alternativeTitleTypeId"] == "bba5b222-1cc8-4745-9a75-3f1d3b5c3a67"
+    )
+    assert result[1][0]["alternativeTitle"] == "Islam writing"
+
+
+def test_alternative_titles_accumulates():
+    _, first_titles = _alternative_titles(
+        folio_field="alternative_titles.parallel",
+        values=[["Writing about Islam", None, None, None]],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    _, merged = _alternative_titles(
+        folio_field="alternative_titles.variant",
+        values=[["Scrivere Islam", None, None, None]],
+        folio_client=MockFolioClient(),
+        record={"alternativeTitles": first_titles},
+    )
+    assert len(merged) == 2
+    assert merged[0]["alternativeTitle"] == "Writing about Islam"
+    assert merged[1]["alternativeTitle"] == "Scrivere Islam"

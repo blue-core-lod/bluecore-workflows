@@ -79,7 +79,9 @@ def _alternative_titles(**kwargs) -> tuple:
             title = f"{title}. {row[2]}"
         if row[3]:  # partName
             title = f"{title}, {row[3]}"
-        alt_titles.append({"alternativeTitleTypeId": type_id, "alternativeTitle": title})
+        alt_titles.append(
+            {"alternativeTitleTypeId": type_id, "alternativeTitle": title}
+        )
 
     return "alternativeTitles", alt_titles
 

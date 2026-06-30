@@ -98,3 +98,61 @@ def test_parallel_title(test_graph: rdflib.Graph):
 
     assert str(titles[0][0]).startswith("Writing about Islam")
     assert str(titles[0][1]).startswith("narrating a diaspora")
+
+
+@typing.no_type_check
+def test_cataloged_date(test_graph: rdflib.Graph):
+    sparql = bf_instance_map.cataloged_date.format(bf_instance=uri)
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]).startswith("2021-10-01")
+
+
+@typing.no_type_check
+def test_alternative_title_variant(test_graph: rdflib.Graph):
+    sparql = bf_instance_map.alternative_title.format(
+        bf_instance=uri, bf_class="bf:VariantTitle"
+    )
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]).startswith("Scrivere Islam")
+
+
+@typing.no_type_check
+def test_alternative_title_abbreviated(test_graph: rdflib.Graph):
+    sparql = bf_instance_map.alternative_title.format(
+        bf_instance=uri, bf_class="bf:AbbreviatedTitle"
+    )
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]).startswith("Islam writing")
+
+
+@typing.no_type_check
+def test_alternative_title_parallel(test_graph: rdflib.Graph):
+    sparql = bf_instance_map.alternative_title.format(
+        bf_instance=uri, bf_class="bf:ParallelTitle"
+    )
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]).startswith("Writing about Islam")
+
+
+@typing.no_type_check
+def test_electronic_locator(test_graph: rdflib.Graph):
+    sparql = bf_instance_map.electronic_locator.format(bf_instance=uri)
+    results = [row for row in test_graph.query(sparql)]
+
+    urls = [str(row[0]) for row in results]
+    assert any(url.startswith("https://purl.stanford.edu/mf283yt5578") for url in urls)
+    assert any(
+        url.startswith("https://phaidra.cab.unipd.it/detail/o:445140") for url in urls
+    )
+
+
+@typing.no_type_check
+def test_publication_frequency(test_graph: rdflib.Graph):
+    sparql = bf_instance_map.publication_frequency.format(bf_instance=uri)
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]).startswith("annual")

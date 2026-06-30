@@ -47,7 +47,9 @@ bf:Work rdfs:label "http://id.loc.gov/ontologies/bibframe/Work" .
 
 <https://api.stage.sinopia.io/resource/48e954be-4b9b-4589-b2a2-776551807d50> rdfs:label "Resource Description and Access"@eng .
 
-<https://api.stage.sinopia.io/resource/992c99e5-adde-4d63-afcd-3391128136fe> rdfs:label "Resource Description and Access"@eng .
+<https://api.stage.sinopia.io/resource/992c99e5-adde-4d63-afcd-3391128136fe> a bf:AdminMetadata ;
+    rdfs:label "Resource Description and Access"@eng ;
+    bf:date "2021-10-01" .
 
 <https://api.stage.sinopia.io/resource/b0319047-acd0-4f30-bd8b-98e6c1bac6b0> a bf:Instance ;
     rdfs:label "OCLC"@eng ;
@@ -153,4 +155,23 @@ bf:Work rdfs:label "http://id.loc.gov/ontologies/bibframe/Work" .
             bf:agent <https://api.stage.sinopia.io/resource/pub-agent-oup> ;
             bf:date "2021" ;
             bf:place <https://api.stage.sinopia.io/resource/pub-place-oxford> ] .
+
+<https://api.stage.sinopia.io/resource/b0319047-acd0-4f30-bd8b-98e6c1bac6b0> bf:frequency [ rdfs:label "annual" ] ;
+    bf:title [ a bf:VariantTitle ;
+            bf:mainTitle "Scrivere Islam"@ita ],
+        [ a bf:AbbreviatedTitle ;
+            bf:mainTitle "Islam writing"@eng ] .
+
+<https://api.stage.sinopia.io/resource/c96d8b55-e0ac-48a5-9a9b-b0684758c99e> bf:classification [ a bf:ClassificationDdc ;
+            bf:classificationPortion "297.09451" ],
+        [ a bf:ClassificationNlm ;
+            bf:classificationPortion "BP52" ] ;
+    bf:relation [ a bf:Relation ;
+            bf:associatedResource <https://api.stage.sinopia.io/resource/test-series-hub> ],
+        [ a bf:Series ;
+            bf:title [ a bf:Title ;
+                    bf:mainTitle "Italian studies series" ] ] .
+
+<https://api.stage.sinopia.io/resource/test-series-hub> a bf:Hub ;
+    rdfs:label "Diaspore" .
 
