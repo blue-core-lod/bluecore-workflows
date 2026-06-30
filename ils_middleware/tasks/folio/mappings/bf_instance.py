@@ -2,6 +2,32 @@
 BF Instance with its associated BF Work.
 """
 
+cataloged_date = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+
+SELECT ?date
+WHERE {{
+    <{bf_instance}> a bf:Instance .
+    <{bf_instance}> bf:adminMetadata ?admin_metadata .
+    ?admin_metadata a bf:AdminMetadata .
+    ?admin_metadata bf:date ?date .
+}}
+"""
+
+alternative_title = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?main_title ?subtitle ?part_number ?part_name
+WHERE {{
+    <{bf_instance}> a bf:Instance .
+    <{bf_instance}> bf:title ?title .
+    ?title a {bf_class} .
+    ?title bf:mainTitle ?main_title .
+    OPTIONAL {{ ?title bf:subtitle ?subtitle . }}
+    OPTIONAL {{ ?title bf:partNumber ?part_number . }}
+    OPTIONAL {{ ?title bf:partName ?part_name . }}
+}}
+"""
+
 editions = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -60,6 +86,15 @@ WHERE {{
 }}
 """
 
+electronic_locator = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+
+SELECT ?url
+WHERE {{
+    <{bf_instance}> a bf:Instance .
+    <{bf_instance}> bf:electronicLocator ?url .
+}}
+"""
+
 mode_of_issuance = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
@@ -98,6 +133,17 @@ WHERE {{
     OPTIONAL {{
         <{bf_instance}> bf:dimensions ?dimensions .
     }}
+}}
+"""
+
+publication_frequency = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?frequency
+WHERE {{
+    <{bf_instance}> a bf:Instance .
+    <{bf_instance}> bf:frequency ?freq_bnode .
+    ?freq_bnode rdfs:label ?frequency .
 }}
 """
 

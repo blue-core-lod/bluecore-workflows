@@ -2,6 +2,17 @@
 BF Instance with its associated BF Work.
 """
 
+classification = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+
+SELECT ?class_number
+WHERE {{
+    <{bf_work}> a bf:Work .
+    <{bf_work}> bf:classification ?class_node .
+    ?class_node a {bf_class} .
+    ?class_node bf:classificationPortion ?class_number .
+}}
+"""
+
 contributor = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX bflc: <http://id.loc.gov/ontologies/bflc/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
@@ -67,6 +78,33 @@ WHERE {{
     ?contrib_bnode bf:agent ?agent_uri .
     ?agent_uri a {bf_class} .
     ?agent_uri rdfs:label ?agent .
+}}
+"""
+
+series_controlled = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?series_title
+WHERE {{
+    <{bf_work}> a bf:Work .
+    <{bf_work}> bf:relation ?relation .
+    ?relation a bf:Relation .
+    ?relation bf:associatedResource ?hub .
+    ?hub a bf:Hub .
+    ?hub rdfs:label ?series_title .
+}}
+"""
+
+series_uncontrolled = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT ?series_title
+WHERE {{
+    <{bf_work}> a bf:Work .
+    <{bf_work}> bf:relation ?series .
+    ?series a bf:Series .
+    ?series bf:title ?title_node .
+    ?title_node bf:mainTitle ?series_title .
 }}
 """
 
