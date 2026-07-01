@@ -122,3 +122,23 @@ def test_series_uncontrolled(test_graph: rdflib.Graph):
     results = [row for row in test_graph.query(sparql)]
 
     assert str(results[0][0]).startswith("Italian studies series")
+
+
+@typing.no_type_check
+def test_alternative_title_variant_work(test_graph: rdflib.Graph):
+    sparql = bf_work_map.alternative_title.format(
+        bf_work=work_uri, bf_class="bf:VariantTitle"
+    )
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]).startswith("Islam writing work variant")
+
+
+@typing.no_type_check
+def test_alternative_title_abbreviated_work(test_graph: rdflib.Graph):
+    sparql = bf_work_map.alternative_title.format(
+        bf_work=work_uri, bf_class="bf:AbbreviatedTitle"
+    )
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]).startswith("Islam wr.")

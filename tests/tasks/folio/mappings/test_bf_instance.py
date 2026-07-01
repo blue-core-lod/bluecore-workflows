@@ -156,3 +156,12 @@ def test_publication_frequency(test_graph: rdflib.Graph):
     results = [row for row in test_graph.query(sparql)]
 
     assert str(results[0][0]).startswith("annual")
+
+
+@typing.no_type_check
+def test_publication_range(test_graph: rdflib.Graph):
+    sparql = bf_instance_map.publication_range.format(bf_instance=uri)
+    results = [row for row in test_graph.query(sparql)]
+
+    assert str(results[0][0]) == "Vol. 1"
+    assert str(results[0][1]) == "Vol. 10"

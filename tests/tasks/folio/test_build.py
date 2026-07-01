@@ -20,6 +20,7 @@ from ils_middleware.tasks.folio.build import (
     _editions,
     _electronic_access,
     _genre,
+    _nature_of_content,
     _identifiers,
     _instance_format_ids,
     _instance_type_id,
@@ -115,6 +116,12 @@ class MockFolioClient(object):
         if args[0].endswith("subject-types"):
             return [
                 {"name": "Genre/form", "id": "d6488f88-1e74-4674-9e7f-a294b9a6451d"}
+            ]
+        if args[0].endswith("nature-of-content-terms"):
+            return [
+                {"name": "journal", "id": "0abeee3d-8ad2-4b04-92ff-221b4fce1075"},
+                {"name": "proceedings", "id": "073f7f2f-9212-4395-b039-6f9825b11d54"},
+                {"name": "thesis", "id": "94f6d06a-61e0-47c1-bbcb-6186989e6040"},
             ]
         return get_response
 
@@ -441,6 +448,21 @@ def test_genre_merges_into_subjects():
     assert subjects[0] == {"value": "Mining engineering"}
     assert subjects[1]["value"] == "Science fiction"
     assert subjects[1]["typeId"] == "d6488f88-1e74-4674-9e7f-a294b9a6451d"
+
+
+def test_nature_of_content_matching():
+    field, term_ids = _nature_of_content(
+        values=[
+            ["Conference papers and proceedings"],
+            ["Electronic journals"],
+            ["Informational works"],
+        ],
+        folio_client=MockFolioClient(),
+    )
+    assert field == "natureOfContentTermIds"
+    assert "073f7f2f-9212-4395-b039-6f9825b11d54" in term_ids  # proceedings
+    assert "0abeee3d-8ad2-4b04-92ff-221b4fce1075" in term_ids  # journal
+    assert len(term_ids) == 2
 
 
 def test_title_transform_all():

@@ -48,6 +48,21 @@ BF_TO_FOLIO_MAP = {
         "uri": "instance",
         "class": "bf:VariantTitle",
     },
+    "alternative_titles.abbreviated.work": {
+        "template": bf_work_map.alternative_title,
+        "uri": "work",
+        "class": "bf:AbbreviatedTitle",
+    },
+    "alternative_titles.parallel.work": {
+        "template": bf_work_map.alternative_title,
+        "uri": "work",
+        "class": "bf:ParallelTitle",
+    },
+    "alternative_titles.variant.work": {
+        "template": bf_work_map.alternative_title,
+        "uri": "work",
+        "class": "bf:VariantTitle",
+    },
     "contributor.Person": {
         "template": bf_work_map.contributor,
         "uri": "work",
@@ -113,6 +128,10 @@ BF_TO_FOLIO_MAP = {
         "template": bf_instance_map.publication_frequency,
         "uri": "instance",
     },
+    "publication_range": {
+        "template": bf_instance_map.publication_range,
+        "uri": "instance",
+    },
     "series.controlled": {
         "template": bf_work_map.series_controlled,
         "uri": "work",
@@ -123,6 +142,7 @@ BF_TO_FOLIO_MAP = {
     },
     "subjects": {"template": bf_work_map.subject, "uri": "work"},
     "genre": {"template": bf_work_map.genre, "uri": "work"},
+    "nature_of_content": {"template": bf_work_map.genre, "uri": "work"},
     "title": {
         "template": bf_instance_map.title,
         "uri": "instance",
@@ -148,7 +168,9 @@ def _retrieve_values(query_row: list | tuple) -> list:
                 output.append(str(field))
                 continue
             value = field.value
-            if isinstance(value, (datetime.date, datetime.datetime)):
+            if isinstance(value, datetime.datetime):
+                value = value.date().isoformat()
+            elif isinstance(value, datetime.date):
                 value = value.isoformat()
             output.append(value)
         else:

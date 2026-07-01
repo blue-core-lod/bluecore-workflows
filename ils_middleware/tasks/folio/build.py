@@ -61,7 +61,7 @@ def _alternative_titles(**kwargs) -> tuple:
     folio_field = kwargs["folio_field"]
     values = kwargs["values"]
 
-    subtype = folio_field.split(".")[-1]
+    subtype = folio_field.split(".")[1]
     type_name = _ALT_TITLE_TYPE_NAMES[subtype]
 
     type_id = None
@@ -280,6 +280,20 @@ def _publication_frequency(**kwargs) -> tuple:
     return "publicationFrequency", [row[0] for row in values]
 
 
+def _publication_range(**kwargs) -> tuple:
+    values = kwargs["values"]
+    output = []
+    for row in values:
+        first, last = row[0], row[1]
+        if first and last:
+            output.append(f"{first} - {last}")
+        elif first:
+            output.append(f"{first} -")
+        elif last:
+            output.append(f"- {last}")
+    return "publicationRange", output
+
+
 def _publication(**kwargs) -> tuple:
     values = kwargs["values"]
     publications = []
@@ -318,6 +332,30 @@ def _subjects(**kwargs) -> tuple:
         subjects.append({"value": row[0], "typeId": topical_term_type_id})
 
     return "subjects", subjects
+
+
+def _nature_of_content(**kwargs) -> tuple:
+    folio_client = kwargs["folio_client"]
+    values = kwargs["values"]
+
+    nature_terms = folio_client.folio_get(
+        "nature-of-content-terms",
+        "natureOfContentTerms",
+        query_params={"limit": 200},
+    )
+    lookup = {term["name"].casefold(): term["id"] for term in nature_terms}
+
+    term_ids = []
+    seen: set = set()
+    for row in values:
+        if row[0]:
+            label = str(row[0]).casefold()
+            for term_name, term_id in lookup.items():
+                if term_name in label and term_id not in seen:
+                    term_ids.append(term_id)
+                    seen.add(term_id)
+
+    return "natureOfContentTermIds", term_ids
 
 
 def _genre(**kwargs) -> tuple:
@@ -364,6 +402,9 @@ transforms = {
     "alternative_titles.abbreviated": _alternative_titles,
     "alternative_titles.parallel": _alternative_titles,
     "alternative_titles.variant": _alternative_titles,
+    "alternative_titles.abbreviated.work": _alternative_titles,
+    "alternative_titles.parallel.work": _alternative_titles,
+    "alternative_titles.variant.work": _alternative_titles,
     "contributor.Person": _non_primary_contributor,
     "contributor.primary.Person": _primary_contributor,
     "editions": _editions,
@@ -383,10 +424,12 @@ transforms = {
     "physical_description": _physical_descriptions,
     "publication": _publication,
     "publication_frequency": _publication_frequency,
+    "publication_range": _publication_range,
     "series.controlled": _series,
     "series.uncontrolled": _series,
     "subjects": _subjects,
     "genre": _genre,
+    "nature_of_content": _nature_of_content,
     "title": _title,
 }
 
