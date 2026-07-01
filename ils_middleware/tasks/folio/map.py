@@ -1,5 +1,6 @@
 """Maps Sinopia RDF to FOLIO Records."""
 
+import datetime
 import logging
 
 import rdflib
@@ -13,6 +14,55 @@ logger = logging.getLogger(__name__)
 # identifiers, editions) must be ordered so the first writer populates the list before
 # subsequent entries append to it via record.get(..., []).
 BF_TO_FOLIO_MAP = {
+    "cataloged_date": {
+        "template": bf_instance_map.cataloged_date,
+        "uri": "instance",
+    },
+    "classifications.ddc": {
+        "template": bf_work_map.classification,
+        "uri": "work",
+        "class": "bf:ClassificationDdc",
+    },
+    "classifications.lcc": {
+        "template": bf_work_map.classification,
+        "uri": "work",
+        "class": "bf:ClassificationLcc",
+    },
+    "classifications.nlm": {
+        "template": bf_work_map.classification,
+        "uri": "work",
+        "class": "bf:ClassificationNlm",
+    },
+    "alternative_titles.abbreviated": {
+        "template": bf_instance_map.alternative_title,
+        "uri": "instance",
+        "class": "bf:AbbreviatedTitle",
+    },
+    "alternative_titles.parallel": {
+        "template": bf_instance_map.alternative_title,
+        "uri": "instance",
+        "class": "bf:ParallelTitle",
+    },
+    "alternative_titles.variant": {
+        "template": bf_instance_map.alternative_title,
+        "uri": "instance",
+        "class": "bf:VariantTitle",
+    },
+    "alternative_titles.abbreviated.work": {
+        "template": bf_work_map.alternative_title,
+        "uri": "work",
+        "class": "bf:AbbreviatedTitle",
+    },
+    "alternative_titles.parallel.work": {
+        "template": bf_work_map.alternative_title,
+        "uri": "work",
+        "class": "bf:ParallelTitle",
+    },
+    "alternative_titles.variant.work": {
+        "template": bf_work_map.alternative_title,
+        "uri": "work",
+        "class": "bf:VariantTitle",
+    },
     "contributor.Person": {
         "template": bf_work_map.contributor,
         "uri": "work",
@@ -24,6 +74,10 @@ BF_TO_FOLIO_MAP = {
         "class": "bf:Person",
     },
     "editions": {"template": bf_instance_map.editions, "uri": "instance"},
+    "electronic_access": {
+        "template": bf_instance_map.electronic_locator,
+        "uri": "instance",
+    },
     "editions.work": {"template": bf_work_map.editions, "uri": "work"},
     "instance_format": {
         "template": bf_instance_map.instance_format_id,
@@ -70,8 +124,25 @@ BF_TO_FOLIO_MAP = {
         "uri": "instance",
     },
     "publication": {"template": bf_instance_map.publication, "uri": "instance"},
+    "publication_frequency": {
+        "template": bf_instance_map.publication_frequency,
+        "uri": "instance",
+    },
+    "publication_range": {
+        "template": bf_instance_map.publication_range,
+        "uri": "instance",
+    },
+    "series.controlled": {
+        "template": bf_work_map.series_controlled,
+        "uri": "work",
+    },
+    "series.uncontrolled": {
+        "template": bf_work_map.series_uncontrolled,
+        "uri": "work",
+    },
     "subjects": {"template": bf_work_map.subject, "uri": "work"},
     "genre": {"template": bf_work_map.genre, "uri": "work"},
+    "nature_of_content": {"template": bf_work_map.genre, "uri": "work"},
     "title": {
         "template": bf_instance_map.title,
         "uri": "instance",
@@ -96,7 +167,12 @@ def _retrieve_values(query_row: list | tuple) -> list:
             if isinstance(field, rdflib.URIRef):
                 output.append(str(field))
                 continue
-            output.append(field.value)
+            value = field.value
+            if isinstance(value, datetime.datetime):
+                value = value.date().isoformat()
+            elif isinstance(value, datetime.date):
+                value = value.isoformat()
+            output.append(value)
         else:
             output.append(None)  # type: ignore
     return output

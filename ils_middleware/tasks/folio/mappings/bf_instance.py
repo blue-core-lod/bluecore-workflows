@@ -2,10 +2,36 @@
 BF Instance with its associated BF Work.
 """
 
+cataloged_date = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+
+SELECT DISTINCT ?date
+WHERE {{
+    <{bf_instance}> a bf:Instance .
+    <{bf_instance}> bf:adminMetadata ?admin_metadata .
+    ?admin_metadata a bf:AdminMetadata .
+    ?admin_metadata bf:date ?date .
+}}
+"""
+
+alternative_title = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?main_title ?subtitle ?part_number ?part_name
+WHERE {{
+    <{bf_instance}> a bf:Instance .
+    <{bf_instance}> bf:title ?title .
+    ?title a {bf_class} .
+    ?title bf:mainTitle ?main_title .
+    OPTIONAL {{ ?title bf:subtitle ?subtitle . }}
+    OPTIONAL {{ ?title bf:partNumber ?part_number . }}
+    OPTIONAL {{ ?title bf:partName ?part_name . }}
+}}
+"""
+
 editions = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
-SELECT ?edition
+SELECT DISTINCT ?edition
 WHERE {{
     <{bf_instance}> a bf:Instance .
     <{bf_instance}> bf:editionStatement ?edition .
@@ -16,7 +42,7 @@ identifier = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?identifier
+SELECT DISTINCT ?identifier
 WHERE {{
     <{bf_instance}> a bf:Instance .
     <{bf_instance}> bf:identifiedBy ?ident_bnode .
@@ -29,7 +55,7 @@ instance_format_id = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?format_category ?format_term
+SELECT DISTINCT ?format_category ?format_term
 WHERE {{
     <{bf_instance}> a bf:Instance .
     <{bf_instance}> bf:media ?format_category_uri .
@@ -43,7 +69,7 @@ local_identifier = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?identifier
+SELECT DISTINCT ?identifier
 WHERE {{
     <{bf_instance}> a bf:Instance .
     <{bf_instance}> bf:identifiedBy ?ident_bnode .
@@ -60,11 +86,20 @@ WHERE {{
 }}
 """
 
+electronic_locator = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+
+SELECT DISTINCT ?url
+WHERE {{
+    <{bf_instance}> a bf:Instance .
+    <{bf_instance}> bf:electronicLocator ?url .
+}}
+"""
+
 mode_of_issuance = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SElECT ?mode_of_issuance
+SElECT DISTINCT ?mode_of_issuance
 WHERE {{
     <{bf_instance}> a bf:Instance .
     <{bf_instance}> bf:issuance ?mode_of_issuance_uri .
@@ -76,7 +111,7 @@ note = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?note
+SELECT DISTINCT ?note
 WHERE {{
     <{bf_instance}> a bf:Instance .
     <{bf_instance}> bf:note ?note_bnode .
@@ -89,7 +124,7 @@ physical_description = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?extent ?dimensions
+SELECT DISTINCT ?extent ?dimensions
 WHERE {{
     <{bf_instance}> a bf:Instance .
     <{bf_instance}> bf:extent ?extent_bnode .
@@ -101,11 +136,34 @@ WHERE {{
 }}
 """
 
+publication_frequency = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?frequency
+WHERE {{
+    <{bf_instance}> a bf:Instance .
+    <{bf_instance}> bf:frequency ?freq_bnode .
+    FILTER (isBlank(?freq_bnode))
+    ?freq_bnode rdfs:label ?frequency .
+}}
+"""
+
+publication_range = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+
+SELECT DISTINCT ?first_issue ?last_issue
+WHERE {{
+    <{bf_instance}> a bf:Instance .
+    OPTIONAL {{ <{bf_instance}> bf:firstIssue ?first_issue . }}
+    OPTIONAL {{ <{bf_instance}> bf:lastIssue ?last_issue . }}
+    FILTER (BOUND(?first_issue) || BOUND(?last_issue))
+}}
+"""
+
 publication = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX bflc: <http://id.loc.gov/ontologies/bflc/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?publisher ?date ?place
+SELECT DISTINCT ?publisher ?date ?place
 WHERE {{
    <{bf_instance}> a bf:Instance .
    <{bf_instance}> bf:provisionActivity ?activity .
@@ -130,7 +188,7 @@ title = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?main_title ?subtitle ?part_number ?part_name
+SELECT DISTINCT ?main_title ?subtitle ?part_number ?part_name
 WHERE {{
   <{bf_instance}> a bf:Instance .
   <{bf_instance}> bf:title ?title .

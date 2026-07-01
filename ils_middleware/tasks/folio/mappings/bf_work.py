@@ -2,12 +2,37 @@
 BF Instance with its associated BF Work.
 """
 
+alternative_title = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+
+SELECT DISTINCT ?main_title ?subtitle ?part_number ?part_name
+WHERE {{
+    <{bf_work}> a bf:Work .
+    <{bf_work}> bf:title ?title .
+    ?title a {bf_class} .
+    ?title bf:mainTitle ?main_title .
+    OPTIONAL {{ ?title bf:subtitle ?subtitle . }}
+    OPTIONAL {{ ?title bf:partNumber ?part_number . }}
+    OPTIONAL {{ ?title bf:partName ?part_name . }}
+}}
+"""
+
+classification = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+
+SELECT DISTINCT ?class_number
+WHERE {{
+    <{bf_work}> a bf:Work .
+    <{bf_work}> bf:classification ?class_node .
+    ?class_node a {bf_class} .
+    ?class_node bf:classificationPortion ?class_number .
+}}
+"""
+
 contributor = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX bflc: <http://id.loc.gov/ontologies/bflc/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?agent ?role
+SELECT DISTINCT ?agent ?role
 WHERE {{
     <{bf_work}> a bf:Work .
     <{bf_work}> bf:contribution ?contrib_bnode .
@@ -25,7 +50,7 @@ editions = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?edition
+SELECT DISTINCT ?edition
 WHERE {{
     <{bf_work}> a bf:Work .
     <{bf_work}> bf:editionStatement ?edition .
@@ -34,7 +59,7 @@ WHERE {{
 
 instance_type_id = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 
-SELECT ?instance_type_id
+SELECT DISTINCT ?instance_type_id
 WHERE {{
     <{bf_work}> a bf:Work .
     <{bf_work}> bf:content ?instance_type .
@@ -44,7 +69,7 @@ WHERE {{
 
 language = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 
-SELECT ?language_uri ?language
+SELECT DISTINCT ?language_uri ?language
 WHERE {{
     <{bf_work}> a bf:Work .
     <{bf_work}> bf:language ?language_uri .
@@ -57,7 +82,7 @@ PREFIX bflc: <http://id.loc.gov/ontologies/bflc/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?agent ?role
+SELECT DISTINCT ?agent ?role
 WHERE {{
     <{bf_work}> a bf:Work .
     <{bf_work}> bf:contribution ?contrib_bnode .
@@ -70,11 +95,40 @@ WHERE {{
 }}
 """
 
+series_controlled = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?series_title
+WHERE {{
+    <{bf_work}> a bf:Work .
+    <{bf_work}> bf:relation ?relation .
+    ?relation a bf:Relation .
+    ?relation bf:associatedResource ?hub .
+    ?hub a bf:Hub .
+    ?hub rdfs:label ?series_title .
+}}
+"""
+
+series_uncontrolled = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?series_title
+WHERE {{
+    <{bf_work}> a bf:Work .
+    <{bf_work}> bf:relation ?relation .
+    ?relation a bf:Relation .
+    ?relation bf:associatedResource ?series .
+    ?series a bf:Series .
+    ?series bf:title ?title_node .
+    ?title_node bf:mainTitle ?series_title .
+}}
+"""
+
 subject = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?subject
+SELECT DISTINCT ?subject
 WHERE {{
     <{bf_work}> a bf:Work .
     <{bf_work}> bf:subject ?subject_node .
@@ -88,7 +142,7 @@ genre = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
-SELECT ?genre
+SELECT DISTINCT ?genre
 WHERE {{
     <{bf_work}> a bf:Work .
     <{bf_work}> bf:genreForm ?genre_node .
