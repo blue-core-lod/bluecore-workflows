@@ -14,11 +14,88 @@ from ils_middleware.tasks.folio.map import FOLIO_FIELDS
 logger = logging.getLogger(__name__)
 
 
+def _cataloged_date(**kwargs) -> tuple:
+    values = kwargs["values"]
+    return "catalogedDate", values[0][0]
+
+
+_CLASSIFICATION_TYPE_NAMES = {
+    "ddc": "Dewey",
+    "lcc": "LC",
+    "nlm": "NLM",
+}
+
+
+def _classifications(**kwargs) -> tuple:
+    folio_client = kwargs["folio_client"]
+    folio_field = kwargs["folio_field"]
+    values = kwargs["values"]
+
+    subtype = folio_field.split(".")[-1]
+    type_name = _CLASSIFICATION_TYPE_NAMES[subtype]
+
+    type_id = None
+    for row in folio_client.class_types:
+        if row["name"] == type_name:
+            type_id = row["id"]
+            break
+
+    classifications = kwargs["record"].get("classifications", [])
+    for row in values:
+        classifications.append(
+            {"classificationNumber": row[0], "classificationTypeId": type_id}
+        )
+
+    return "classifications", classifications
+
+
+_ALT_TITLE_TYPE_NAMES = {
+    "abbreviated": "Abbreviated title",
+    "parallel": "Parallel title",
+    "variant": "Variant title",
+}
+
+
+def _alternative_titles(**kwargs) -> tuple:
+    folio_client = kwargs["folio_client"]
+    folio_field = kwargs["folio_field"]
+    values = kwargs["values"]
+
+    subtype = folio_field.split(".")[1]
+    type_name = _ALT_TITLE_TYPE_NAMES[subtype]
+
+    type_id = None
+    for row in folio_client.alt_title_types:
+        if row["name"] == type_name:
+            type_id = row["id"]
+            break
+
+    alt_titles = kwargs["record"].get("alternativeTitles", [])
+    for row in values:
+        title = row[0]
+        if row[1]:  # subtitle
+            title = f"{title} : {row[1]}"
+        if row[2]:  # partNumber
+            title = f"{title}. {row[2]}"
+        if row[3]:  # partName
+            title = f"{title}, {row[3]}"
+        alt_titles.append(
+            {"alternativeTitleTypeId": type_id, "alternativeTitle": title}
+        )
+
+    return "alternativeTitles", alt_titles
+
+
 def _default_transform(**kwargs) -> tuple:
     folio_field = kwargs["folio_field"]
     values = kwargs.get("values", [])
     logger.debug(f"field: {folio_field} values: {values} type: {type(values)}")
     return folio_field, values
+
+
+def _electronic_access(**kwargs) -> tuple:
+    values = kwargs["values"]
+    return "electronicAccess", [{"uri": row[0]} for row in values]
 
 
 def _editions(**kwargs) -> tuple:
@@ -198,6 +275,25 @@ def _physical_descriptions(**kwargs) -> tuple:
     return "physicalDescriptions", output
 
 
+def _publication_frequency(**kwargs) -> tuple:
+    values = kwargs["values"]
+    return "publicationFrequency", [row[0] for row in values]
+
+
+def _publication_range(**kwargs) -> tuple:
+    values = kwargs["values"]
+    output = []
+    for row in values:
+        first, last = row[0], row[1]
+        if first and last:
+            output.append(f"{first} - {last}")
+        elif first:
+            output.append(f"{first} -")
+        elif last:
+            output.append(f"- {last}")
+    return "publicationRange", output
+
+
 def _publication(**kwargs) -> tuple:
     values = kwargs["values"]
     publications = []
@@ -211,6 +307,14 @@ def _publication(**kwargs) -> tuple:
             publication["place"] = row[2]
         publications.append(publication)
     return "publication", publications
+
+
+def _series(**kwargs) -> tuple:
+    values = kwargs["values"]
+    series = kwargs["record"].get("series", [])
+    for row in values:
+        series.append({"value": row[0]})
+    return "series", series
 
 
 def _subjects(**kwargs) -> tuple:
@@ -228,6 +332,30 @@ def _subjects(**kwargs) -> tuple:
         subjects.append({"value": row[0], "typeId": topical_term_type_id})
 
     return "subjects", subjects
+
+
+def _nature_of_content(**kwargs) -> tuple:
+    folio_client = kwargs["folio_client"]
+    values = kwargs["values"]
+
+    nature_terms = folio_client.folio_get(
+        "nature-of-content-terms",
+        "natureOfContentTerms",
+        query_params={"limit": 200},
+    )
+    lookup = {term["name"].casefold(): term["id"] for term in nature_terms}
+
+    term_ids = []
+    seen: set = set()
+    for row in values:
+        if row[0]:
+            label = str(row[0]).casefold()
+            for term_name, term_id in lookup.items():
+                if term_name in label and term_id not in seen:
+                    term_ids.append(term_id)
+                    seen.add(term_id)
+
+    return "natureOfContentTermIds", term_ids
 
 
 def _genre(**kwargs) -> tuple:
@@ -267,9 +395,20 @@ def _user_folio_id(okapi_url: str, folio_user: str) -> str:
 
 
 transforms = {
+    "cataloged_date": _cataloged_date,
+    "classifications.ddc": _classifications,
+    "classifications.lcc": _classifications,
+    "classifications.nlm": _classifications,
+    "alternative_titles.abbreviated": _alternative_titles,
+    "alternative_titles.parallel": _alternative_titles,
+    "alternative_titles.variant": _alternative_titles,
+    "alternative_titles.abbreviated.work": _alternative_titles,
+    "alternative_titles.parallel.work": _alternative_titles,
+    "alternative_titles.variant.work": _alternative_titles,
     "contributor.Person": _non_primary_contributor,
     "contributor.primary.Person": _primary_contributor,
     "editions": _editions,
+    "electronic_access": _electronic_access,
     "editions.work": _editions,
     "identifiers.isbn": _identifiers,
     "identifiers.oclc": _identifiers,
@@ -284,8 +423,13 @@ transforms = {
     "notes": _notes,
     "physical_description": _physical_descriptions,
     "publication": _publication,
+    "publication_frequency": _publication_frequency,
+    "publication_range": _publication_range,
+    "series.controlled": _series,
+    "series.uncontrolled": _series,
     "subjects": _subjects,
     "genre": _genre,
+    "nature_of_content": _nature_of_content,
     "title": _title,
 }
 
@@ -320,11 +464,19 @@ def _inventory_record(**kwargs: Any) -> dict[str, Any]:
     task_groups = ".".join(kwargs["task_groups_ids"])
     folio_client = kwargs["folio_client"]
 
+    status_id = None
+    instance_status = folio_client.folio_get(
+        "instance-statuses", "instanceStatuses", "name==Cataloged"
+    )
+    if instance_status:
+        status_id = instance_status[0]["id"]
+
     record: dict[str, Any] = {
         "id": _folio_id(instance_uri, folio_client.okapi_url),
         "metadata": _create_update_metadata(**kwargs),
         "source": "BIBFRAME",
         "sourceUri": instance_uri,
+        "statusId": status_id,
     }
     instance_uuid = instance_uri.split("/")[-1]
 
