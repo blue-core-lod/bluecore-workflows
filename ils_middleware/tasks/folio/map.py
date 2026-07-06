@@ -150,7 +150,38 @@ BF_TO_FOLIO_MAP = {
     },
 }
 
+# Fields mapped to the FOLIO holdings record instead of the instance record.
+BF_TO_FOLIO_HOLDINGS_MAP = {
+    "call_number.shelf_mark": {
+        "template": bf_work_map.call_number,
+        "uri": "work",
+        "class": "bf:shelfMark",
+    },
+    "call_number.ddc": {
+        "template": bf_work_map.call_number,
+        "uri": "work",
+        "class": "bf:shelfMarkDdc",
+    },
+    "call_number.udc": {
+        "template": bf_work_map.call_number,
+        "uri": "work",
+        "class": "bf:shelfMarkUdc",
+    },
+    "call_number.lcc": {
+        "template": bf_work_map.call_number,
+        "uri": "work",
+        "class": "bf:shelfMarkLcc",
+    },
+    "call_number.nlm": {
+        "template": bf_work_map.call_number,
+        "uri": "work",
+        "class": "bf:shelfMarkNlm",
+    },
+}
+
 FOLIO_FIELDS = BF_TO_FOLIO_MAP.keys()
+HOLDINGS_FOLIO_FIELDS = BF_TO_FOLIO_HOLDINGS_MAP.keys()
+ALL_FOLIO_FIELDS = list(FOLIO_FIELDS) + list(HOLDINGS_FOLIO_FIELDS)
 
 
 def _task_id(task_groups: str) -> str:
@@ -214,9 +245,10 @@ def _build_and_query_graph(**kwargs) -> list:
 def map_to_folio(**kwargs):
     task_instance = kwargs["task_instance"]
     folio_field = kwargs.get("folio_field")
-    bf_class = BF_TO_FOLIO_MAP[folio_field].get("class")
-    template = BF_TO_FOLIO_MAP[folio_field].get("template")
-    uri_type = f"bf_{BF_TO_FOLIO_MAP[folio_field].get('uri')}"
+    field_map = BF_TO_FOLIO_MAP.get(folio_field) or BF_TO_FOLIO_HOLDINGS_MAP[folio_field]
+    bf_class = field_map.get("class")
+    template = field_map.get("template")
+    uri_type = f"bf_{field_map.get('uri')}"
 
     resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
     for instance_uri in resources:

@@ -16,6 +16,16 @@ WHERE {{
 }}
 """
 
+# {bf_class} holds the shelfMark predicate (e.g. bf:shelfMarkLcc) here, not an rdf:type.
+call_number = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+
+SELECT DISTINCT ?call_number
+WHERE {{
+    <{bf_work}> a bf:Work .
+    <{bf_work}> {bf_class} ?call_number .
+}}
+"""
+
 classification = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 
 SELECT DISTINCT ?class_number

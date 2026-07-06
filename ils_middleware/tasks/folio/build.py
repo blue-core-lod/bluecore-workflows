@@ -3,13 +3,14 @@ SPARQL queries run on BF Instance and Work RDF graphs from Sinopia."""
 
 import datetime
 import logging
+from collections.abc import Iterable
 from typing import Any
 
 from airflow.models.connection import Connection
 from folio_uuid import FOLIONamespaces, FolioUUID
 from folioclient import FolioClient
 
-from ils_middleware.tasks.folio.map import FOLIO_FIELDS
+from ils_middleware.tasks.folio.map import FOLIO_FIELDS, HOLDINGS_FOLIO_FIELDS
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +48,35 @@ def _classifications(**kwargs) -> tuple:
         )
 
     return "classifications", classifications
+
+
+_CALL_NUMBER_TYPE_NAMES = {
+    "shelf_mark": "Other scheme",
+    "ddc": "Dewey Decimal classification",
+    "udc": "UDC",
+    "lcc": "Library of Congress classification",
+    "nlm": "National Library of Medicine classification",
+}
+
+
+def _call_number(**kwargs) -> tuple:
+    folio_client = kwargs["folio_client"]
+    folio_field = kwargs["folio_field"]
+    values = kwargs["values"]
+    record = kwargs["record"]
+
+    subtype = folio_field.split(".")[-1]
+    type_name = _CALL_NUMBER_TYPE_NAMES[subtype]
+
+    type_id = None
+    for row in folio_client.call_number_types:
+        if row["name"] == type_name:
+            type_id = row["id"]
+            break
+
+    record["callNumberTypeId"] = type_id
+
+    return "callNumber", values[0][0]
 
 
 _ALT_TITLE_TYPE_NAMES = {
@@ -399,6 +429,11 @@ transforms = {
     "classifications.ddc": _classifications,
     "classifications.lcc": _classifications,
     "classifications.nlm": _classifications,
+    "call_number.shelf_mark": _call_number,
+    "call_number.ddc": _call_number,
+    "call_number.udc": _call_number,
+    "call_number.lcc": _call_number,
+    "call_number.nlm": _call_number,
     "alternative_titles.abbreviated": _alternative_titles,
     "alternative_titles.parallel": _alternative_titles,
     "alternative_titles.variant": _alternative_titles,
@@ -458,6 +493,38 @@ def _task_ids(task_groups: str, folio_field: str) -> str:
     return task_id
 
 
+def _apply_field_transforms(
+    record: dict[str, Any],
+    fields: Iterable[str],
+    *,
+    instance_uri: str,
+    task_instance: Any,
+    task_groups: str,
+    folio_client: Any,
+) -> None:
+    instance_uuid = instance_uri.split("/")[-1]
+    for folio_field in fields:
+        post_processing = transforms.get(folio_field, _default_transform)
+        bf_to_folio_task_id = _task_ids(task_groups, folio_field)
+        sparql_rows = task_instance.xcom_pull(
+            key=instance_uuid, task_ids=bf_to_folio_task_id
+        )
+        if folio_field.startswith("instance_type") and len(sparql_rows) == 0:
+            sparql_rows = [["text"]]  # Default value
+        if sparql_rows:
+            record_field, values = post_processing(
+                values=sparql_rows,
+                okapi_url=folio_client.okapi_url,
+                folio_field=folio_field,
+                folio_user=folio_client.username,
+                folio_client=folio_client,
+                record=record,
+            )
+
+            record[record_field] = values
+        logger.debug(f"{sparql_rows} values for {instance_uri}'s {bf_to_folio_task_id}")
+
+
 def _inventory_record(**kwargs: Any) -> dict[str, Any]:
     instance_uri = kwargs["instance_uri"]
     task_instance = kwargs["task_instance"]
@@ -478,28 +545,46 @@ def _inventory_record(**kwargs: Any) -> dict[str, Any]:
         "sourceUri": instance_uri,
         "statusId": status_id,
     }
-    instance_uuid = instance_uri.split("/")[-1]
 
-    for folio_field in FOLIO_FIELDS:
-        post_processing = transforms.get(folio_field, _default_transform)
-        bf_to_folio_task_id = _task_ids(task_groups, folio_field)
-        sparql_rows = task_instance.xcom_pull(
-            key=instance_uuid, task_ids=bf_to_folio_task_id
-        )
-        if folio_field.startswith("instance_type") and len(sparql_rows) == 0:
-            sparql_rows = [["text"]]  # Default value
-        if sparql_rows:
-            record_field, values = post_processing(
-                values=sparql_rows,
-                okapi_url=folio_client.okapi_url,
-                folio_field=folio_field,
-                folio_user=folio_client.username,
-                folio_client=folio_client,
-                record=record,
-            )
+    _apply_field_transforms(
+        record,
+        FOLIO_FIELDS,
+        instance_uri=instance_uri,
+        task_instance=task_instance,
+        task_groups=task_groups,
+        folio_client=folio_client,
+    )
+    return record
 
-            record[record_field] = values
-        logger.debug(f"{sparql_rows} values for {instance_uri}'s {bf_to_folio_task_id}")
+
+def _holdings_source_id(folio_client, name: str = "BIBFRAME") -> str | None:
+    source_id = None
+    holdings_sources = folio_client.folio_get(
+        "holdings-sources", "holdingsRecordsSources", f"name=={name}"
+    )
+    if holdings_sources:
+        source_id = holdings_sources[0]["id"]
+    return source_id
+
+
+def _holdings_record(**kwargs: Any) -> dict[str, Any]:
+    instance_uri = kwargs["instance_uri"]
+    task_instance = kwargs["task_instance"]
+    task_groups = ".".join(kwargs["task_groups_ids"])
+    folio_client = kwargs["folio_client"]
+
+    record: dict[str, Any] = {
+        "sourceId": _holdings_source_id(folio_client),
+    }
+
+    _apply_field_transforms(
+        record,
+        HOLDINGS_FOLIO_FIELDS,
+        instance_uri=instance_uri,
+        task_instance=task_instance,
+        task_groups=task_groups,
+        folio_client=folio_client,
+    )
     return record
 
 
@@ -525,6 +610,12 @@ def build_records(**kwargs):
             folio_client=folio_client,
             **kwargs,
         )
+        holdings_rec = _holdings_record(
+            instance_uri=resource_uri,
+            folio_client=folio_client,
+            **kwargs,
+        )
         resource_uuid = resource_uri.split("/")[-1]
         task_instance.xcom_push(key=resource_uuid, value=inventory_rec)
+        task_instance.xcom_push(key=f"{resource_uuid}-holdings", value=holdings_rec)
     return "build-complete"

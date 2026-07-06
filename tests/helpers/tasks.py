@@ -271,6 +271,8 @@ def mock_task_instance(monkeypatch, tmp_path):
                 return "tests/fixtures/record.mar"
             if task_ids.endswith("instance_type_task"):
                 return []
+            if task_ids.endswith("call_number.lcc_task"):
+                return [["PS3552.O87 P37 2020"]]
         else:
             return mock_push_store.get(key)
 

@@ -10,7 +10,7 @@ from airflow.utils.task_group import TaskGroup
 
 from ils_middleware.tasks.folio.build import build_records
 from ils_middleware.tasks.folio.graph import construct_graph
-from ils_middleware.tasks.folio.map import FOLIO_FIELDS, map_to_folio
+from ils_middleware.tasks.folio.map import ALL_FOLIO_FIELDS, map_to_folio
 from ils_middleware.tasks.folio.new import post_folio_records
 from ils_middleware.tasks.sinopia.local_metadata import new_local_admin_metadata
 from ils_middleware.tasks.sinopia.login import sinopia_login
@@ -64,7 +64,7 @@ with DAG(
     bf_graphs = PythonOperator(task_id="bf-graph", python_callable=construct_graph)
 
     with TaskGroup(group_id="folio_mapping") as folio_map_task_group:
-        for folio_field in FOLIO_FIELDS:
+        for folio_field in ALL_FOLIO_FIELDS:
             bf_to_folio = PythonOperator(
                 task_id=f"{folio_field}_task",
                 python_callable=map_to_folio,

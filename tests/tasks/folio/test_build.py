@@ -14,12 +14,15 @@ from tasks import (
 import ils_middleware.tasks.folio.build as folio_build
 from ils_middleware.tasks.folio.build import (
     _alternative_titles,
+    _call_number,
     _cataloged_date,
     _classifications,
     _default_transform,
     _editions,
     _electronic_access,
     _genre,
+    _holdings_record,
+    _holdings_source_id,
     _nature_of_content,
     _identifiers,
     _instance_format_ids,
@@ -106,6 +109,22 @@ class MockFolioClient(object):
         self.instance_statuses = [
             {"id": "9634a5ab-9228-4703-baf2-4d12ebc77d56", "name": "Cataloged"},
         ]
+        self.call_number_types = [
+            {"id": "6caca63e-5651-4db6-9247-3205156e9699", "name": "Other scheme"},
+            {
+                "id": "03dd64d0-5626-4ecd-8ece-4531e0069f35",
+                "name": "Dewey Decimal classification",
+            },
+            {"id": "d644be8f-deb5-4c4d-8c9e-2291b7c0f46f", "name": "UDC"},
+            {
+                "id": "95467209-6d7b-468b-94df-0f5d7ad2747d",
+                "name": "Library of Congress classification",
+            },
+            {
+                "id": "054d460d-d6b9-4469-9e37-7a78a2266655",
+                "name": "National Library of Medicine classification",
+            },
+        ]
 
     def folio_get(self, *args, **kwargs):
         get_response = MagicMock()
@@ -123,6 +142,10 @@ class MockFolioClient(object):
                 {"name": "proceedings", "id": "073f7f2f-9212-4395-b039-6f9825b11d54"},
                 {"name": "thesis", "id": "94f6d06a-61e0-47c1-bbcb-6186989e6040"},
             ]
+        if args[0].endswith("holdings-sources"):
+            # Real endpoint applies the CQL name== query server-side, so only
+            # the matching source is returned.
+            return [{"name": "BIBFRAME", "id": "4424ae5c-a195-4ddc-a067-c55eca6b7de7"}]
         return get_response
 
     def folio_put(self, *args, **kwargs):
@@ -185,6 +208,9 @@ def test_happypath_build_records(
     assert record["sourceUri"].startswith(instance_uri)
     assert record["title"] == "Great force"
     assert record["source"] == "BIBFRAME"
+
+    holdings_record = test_task_instance().xcom_pull(key=f"{instance_uuid}-holdings")
+    assert holdings_record["sourceId"] == "4424ae5c-a195-4ddc-a067-c55eca6b7de7"
 
 
 def test_default_transform_value_listing():
@@ -290,6 +316,58 @@ def test_instance_format_ids(mock_task_instance):  # noqa: F811
     )
     assert (format_ids[0]).startswith("instanceFormatIds")
     assert (format_ids[1][0]).startswith("8d511d33-5e85-4c5d-9bce-6e3c9cd0c324")
+
+
+def test_holdings_source_id():
+    source_id = _holdings_source_id(MockFolioClient())
+    assert source_id == "4424ae5c-a195-4ddc-a067-c55eca6b7de7"
+
+
+def test_holdings_record(mock_task_instance):  # noqa: F811
+    record = _holdings_record(
+        instance_uri=instance_uri,
+        task_instance=test_task_instance(),
+        task_groups_ids=[""],
+        folio_client=MockFolioClient(),
+    )
+    assert record["sourceId"] == "4424ae5c-a195-4ddc-a067-c55eca6b7de7"
+    assert record["callNumber"] == "PS3552.O87 P37 2020"
+    assert record["callNumberTypeId"] == "95467209-6d7b-468b-94df-0f5d7ad2747d"
+
+
+def test_call_number_lcc():
+    field, call_number = _call_number(
+        folio_field="call_number.lcc",
+        values=[["PS3552.O87 P37 2020"]],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    assert field == "callNumber"
+    assert call_number == "PS3552.O87 P37 2020"
+
+
+def test_call_number_ddc():
+    record = {}
+    _call_number(
+        folio_field="call_number.ddc",
+        values=[["813/.54"]],
+        folio_client=MockFolioClient(),
+        record=record,
+    )
+    assert record["callNumberTypeId"] == "03dd64d0-5626-4ecd-8ece-4531e0069f35"
+
+
+def test_call_number_shelf_mark():
+    record = {}
+    field, call_number = _call_number(
+        folio_field="call_number.shelf_mark",
+        values=[["ML410.C68 C64 2020"]],
+        folio_client=MockFolioClient(),
+        record=record,
+    )
+    assert field == "callNumber"
+    assert call_number == "ML410.C68 C64 2020"
+    assert record["callNumberTypeId"] == "6caca63e-5651-4db6-9247-3205156e9699"
 
 
 def test_inventory_record(mock_task_instance):  # noqa: F811
