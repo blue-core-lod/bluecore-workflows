@@ -245,7 +245,9 @@ def _build_and_query_graph(**kwargs) -> list:
 def map_to_folio(**kwargs):
     task_instance = kwargs["task_instance"]
     folio_field = kwargs.get("folio_field")
-    field_map = BF_TO_FOLIO_MAP.get(folio_field) or BF_TO_FOLIO_HOLDINGS_MAP[folio_field]
+    field_map = (
+        BF_TO_FOLIO_MAP.get(folio_field) or BF_TO_FOLIO_HOLDINGS_MAP[folio_field]
+    )
     bf_class = field_map.get("class")
     template = field_map.get("template")
     uri_type = f"bf_{field_map.get('uri')}"
