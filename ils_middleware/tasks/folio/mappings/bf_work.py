@@ -42,7 +42,9 @@ WHERE {{
     ?role_uri rdfs:label ?role .
     ?contrib_bnode bf:agent ?agent_uri .
     ?agent_uri a {bf_class} .
-    ?agent_uri rdfs:label ?agent .
+    OPTIONAL {{ ?agent_uri rdfs:label ?agent_tagged . FILTER(lang(?agent_tagged) != "") }}
+    OPTIONAL {{ ?agent_uri rdfs:label ?agent_plain . FILTER(lang(?agent_plain) = "") }}
+    BIND(COALESCE(?agent_tagged, ?agent_plain) AS ?agent)
 }}
 """
 
@@ -91,7 +93,9 @@ WHERE {{
     ?role_uri rdfs:label ?role .
     ?contrib_bnode bf:agent ?agent_uri .
     ?agent_uri a {bf_class} .
-    ?agent_uri rdfs:label ?agent .
+    OPTIONAL {{ ?agent_uri rdfs:label ?agent_tagged . FILTER(lang(?agent_tagged) != "") }}
+    OPTIONAL {{ ?agent_uri rdfs:label ?agent_plain . FILTER(lang(?agent_plain) = "") }}
+    BIND(COALESCE(?agent_tagged, ?agent_plain) AS ?agent)
 }}
 """
 

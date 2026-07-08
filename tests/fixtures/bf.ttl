@@ -7,7 +7,8 @@
 <http://id.loc.gov/authorities/genreForms/gf2014026113> rdfs:label "Informational works@en"@eng .
 
 <http://id.loc.gov/authorities/names/n2012041708> a bf:Person ;
-    rdfs:label "Brioni, Simone"@eng .
+    rdfs:label "Brioni, Simone"@eng,
+        "Brioni, Simone" .
 
 <http://id.loc.gov/authorities/names/n79018142> rdfs:label "Venice (Italy)"@eng .
 
