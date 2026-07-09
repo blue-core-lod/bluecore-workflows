@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = "==3.12.*"
 resolution-markers = [
     "sys_platform == 'win32'",
@@ -545,7 +545,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.22.0"
+version = "0.24.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -556,14 +556,14 @@ dependencies = [
     { name = "tenacity" },
     { name = "transformers" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2a/ca/9660559c9d5f368ec5ec01fe09466cc1c2a0c9c65df1c6dedf0ccf2a88c9/bluecore_models-0.22.0.tar.gz", hash = "sha256:4d146853801622ebc913d9e99c2669367c9d5b33eec90bb88b570064f8b2ae8f", size = 173771, upload-time = "2026-07-01T20:32:23.24Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/8f/db/6c7ba44c9c6cc3cdf4bc485ae90cd28c89f425dd443d97bb48ad4edd84ab/bluecore_models-0.24.0.tar.gz", hash = "sha256:1f443fe9400ac9fafff7020e85db511d90e90aecba0c82cf2003c7709454612b", size = 175662, upload-time = "2026-07-09T18:56:08.915Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/12/56/8943c437ea908911a866336a004fc3ecbb00e3e3d8a01d8d219c87d57ab1/bluecore_models-0.22.0-py3-none-any.whl", hash = "sha256:3f8903071be4723045f2914e99d644fa3f11b3b9e1614cd269852eb801fae2db", size = 39348, upload-time = "2026-07-01T20:32:22.035Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/8d/b7e6753b25963476953ddcf42006e4a5249c36ba7c2dafd9cc63edef41ad/bluecore_models-0.24.0-py3-none-any.whl", hash = "sha256:81dd12ae3c6d48895a82eea27116ebe3710b732e57ffe2dbeb7b1ce528431dab", size = 39882, upload-time = "2026-07-09T18:56:07.661Z" },
 ]
 
 [[package]]
 name = "bluecore-workflows"
-version = "0.14.2"
+version = "0.14.3"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
@@ -602,7 +602,7 @@ requires-dist = [
     { name = "apache-airflow", specifier = "==3.2.0" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-fab" },
-    { name = "bluecore-models", specifier = ">=0.22.0" },
+    { name = "bluecore-models" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
