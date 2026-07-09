@@ -362,17 +362,6 @@ services:
     environment:
       <<: *airflow-common-env
       _AIRFLOW_DB_MIGRATE: 'true'
-<<<<<<< Updated upstream
-      _AIRFLOW_WWW_USER_CREATE: 'true'
-<<<<<<< Updated upstream
-      _AIRFLOW_WWW_USER_USERNAME: ${_AIRFLOW_WWW_USER_USERNAME:-airflow}
-      _AIRFLOW_WWW_USER_PASSWORD: ${_AIRFLOW_WWW_USER_PASSWORD:-airflow}
-=======
-      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_WWW_USER_USERNAME:-airflow}
-      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_WWW_USER_PASSWORD:-airflow}
-=======
->>>>>>> Stashed changes
->>>>>>> Stashed changes
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
 
