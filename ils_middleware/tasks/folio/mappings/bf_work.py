@@ -113,6 +113,18 @@ WHERE {{
 }}
 """
 
+summary = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?summary
+WHERE {{
+    <{bf_work}> a bf:Work .
+    <{bf_work}> bf:summary ?summary_bnode .
+    ?summary_bnode a bf:Summary .
+    ?summary_bnode rdfs:label ?summary .
+}}
+"""
+
 series_uncontrolled = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
