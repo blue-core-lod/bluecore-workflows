@@ -90,6 +90,8 @@ class MockFolioClient(object):
         self.instance_note_types = [
             {"id": "6a2533a7-4de2-4e64-8466-074c2fa9308c", "name": "General note"},
             {"id": "d51c86e5-9a72-4a5e-9b6c-3f1f1e4f2e3e", "name": "Summary"},
+            {"id": "86b6e817-e1bc-42fb-bab0-70e7547de6c1", "name": "Bibliography note"},
+            {"id": "7356cde5-ec6b-4961-9cb0-961c48a37af4", "name": "Language note"},
         ]
         self.subject_types = [
             {"id": "d6488f88-1e74-40ce-81b5-b19a928ff5b7", "name": "Topical term"},
@@ -361,13 +363,67 @@ def test_mode_of_issuance_id():
 
 
 def test_notes():  # noqa: F811
-    notes = _notes(values=[["A great note"]], folio_client=MockFolioClient())
+    notes = _notes(values=[["A great note"]], folio_client=MockFolioClient(), record={})
     assert (notes[0]).startswith("notes")
     assert (notes[1][0]["instanceNoteTypeId"]).startswith(
         "6a2533a7-4de2-4e64-8466-074c2fa9308c"
     )
     assert (notes[1][0]["note"]).startswith("A great note")
     assert notes[1][0]["staffOnly"] is False
+
+
+def test_notes_maps_mnotetype_to_folio_note_type():  # noqa: F811
+    notes = _notes(
+        values=[
+            [
+                "Includes bibliographical references",
+                "http://id.loc.gov/vocabulary/mnotetype/biblio",
+            ],
+            ["In Italian.", "http://id.loc.gov/vocabulary/mnotetype/lang"],
+        ],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    assert (notes[1][0]["instanceNoteTypeId"]).startswith(
+        "86b6e817-e1bc-42fb-bab0-70e7547de6c1"
+    )
+    assert (notes[1][1]["instanceNoteTypeId"]).startswith(
+        "7356cde5-ec6b-4961-9cb0-961c48a37af4"
+    )
+
+
+def test_notes_falls_back_to_general_note_for_unmapped_type():  # noqa: F811
+    notes = _notes(
+        values=[
+            [
+                "A note with an unmapped type",
+                "http://id.loc.gov/vocabulary/mnotetype/metaentry",
+            ]
+        ],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    assert (notes[1][0]["instanceNoteTypeId"]).startswith(
+        "6a2533a7-4de2-4e64-8466-074c2fa9308c"
+    )
+
+
+def test_notes_appends_to_existing_notes():  # noqa: F811
+    existing_notes = [
+        {
+            "instanceNoteTypeId": "d51c86e5-9a72-4a5e-9b6c-3f1f1e4f2e3e",
+            "note": "A great summary",
+            "staffOnly": False,
+        }
+    ]
+    notes = _notes(
+        values=[["A great note"]],
+        folio_client=MockFolioClient(),
+        record={"notes": existing_notes},
+    )
+    assert len(notes[1]) == 2
+    assert notes[1][0]["note"].startswith("A great summary")
+    assert notes[1][1]["note"].startswith("A great note")
 
 
 def test_summary_notes():  # noqa: F811
