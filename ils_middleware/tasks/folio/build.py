@@ -262,6 +262,23 @@ def _notes(**kwargs) -> tuple:
     return "notes", notes
 
 
+def _summary_notes(**kwargs) -> tuple:
+    values = kwargs["values"]
+    folio_client = kwargs["folio_client"]
+    note_id = None
+    for row in folio_client.instance_note_types:
+        if row["name"].startswith("Summary"):
+            note_id = row["id"]
+            break
+    notes = kwargs["record"].get("notes", [])
+    for row in values:
+        notes.append(
+            {"instanceNoteTypeId": note_id, "note": row[0], "staffOnly": False}
+        )
+
+    return "notes", notes
+
+
 def _physical_descriptions(**kwargs) -> tuple:
     values = kwargs["values"]
     output = []
@@ -421,6 +438,7 @@ transforms = {
     "language": _language,
     "modeOfIssuanceId": _mode_of_issuance_id,
     "notes": _notes,
+    "notes.summary": _summary_notes,
     "physical_description": _physical_descriptions,
     "publication": _publication,
     "publication_frequency": _publication_frequency,

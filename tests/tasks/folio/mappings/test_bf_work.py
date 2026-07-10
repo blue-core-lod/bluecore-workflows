@@ -135,6 +135,14 @@ def test_alternative_title_variant_work(test_graph: rdflib.Graph):
 
 
 @typing.no_type_check
+def test_summary(test_graph: rdflib.Graph):
+    sparql = bf_work_map.summary.format(bf_work=work_uri)
+    results = [row[0] for row in test_graph.query(sparql)]
+
+    assert str(results[0]).startswith('"Scrivere di Islam')
+
+
+@typing.no_type_check
 def test_alternative_title_abbreviated_work(test_graph: rdflib.Graph):
     sparql = bf_work_map.alternative_title.format(
         bf_work=work_uri, bf_class="bf:AbbreviatedTitle"
