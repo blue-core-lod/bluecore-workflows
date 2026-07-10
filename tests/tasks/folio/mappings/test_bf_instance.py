@@ -47,10 +47,23 @@ def test_mode_of_issuance(test_graph: rdflib.Graph):
 @typing.no_type_check
 def test_note(test_graph: rdflib.Graph):
     sparql = bf_instance_map.note.format(bf_instance=uri)
-    notes = [row[0] for row in test_graph.query(sparql)]
+    results = [row for row in test_graph.query(sparql)]
+    notes = [row[0] for row in results]
+    note_types = {str(row[0]): row[1] for row in results}
 
     assert len(str(notes[0])) == 50
     assert len(str(notes[1])) == 90
+
+    assert str(
+        note_types["Includes bibliographical references (page 117-128)"]
+    ).startswith("http://id.loc.gov/vocabulary/mnotetype/biblio")
+    assert (
+        note_types[
+            "Description based on online resource (Stanford Digital Repository, "
+            "viewed October 1, 2021)"
+        ]
+        is None
+    )
 
 
 @typing.no_type_check

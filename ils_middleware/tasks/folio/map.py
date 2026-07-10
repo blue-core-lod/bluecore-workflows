@@ -119,6 +119,7 @@ BF_TO_FOLIO_MAP = {
         "uri": "instance",
     },
     "notes": {"template": bf_instance_map.note, "uri": "instance"},
+    "notes.work": {"template": bf_work_map.note, "uri": "work"},
     "notes.summary": {"template": bf_work_map.summary, "uri": "work"},
     "physical_description": {
         "template": bf_instance_map.physical_description,
