@@ -363,9 +363,7 @@ def test_mode_of_issuance_id():
 
 
 def test_notes():  # noqa: F811
-    notes = _notes(
-        values=[["A great note"]], folio_client=MockFolioClient(), record={}
-    )
+    notes = _notes(values=[["A great note"]], folio_client=MockFolioClient(), record={})
     assert (notes[0]).startswith("notes")
     assert (notes[1][0]["instanceNoteTypeId"]).startswith(
         "6a2533a7-4de2-4e64-8466-074c2fa9308c"
