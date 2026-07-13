@@ -39,7 +39,9 @@ ROLE_MAP = {
 def get_client_uuid(kc_admin: KeycloakAdmin, client_id: str) -> str:
     matches = [c for c in kc_admin.get_clients() if c["clientId"] == client_id]
     if not matches:
-        raise ValueError(f"Client with ID='{client_id}' not found in realm '{kc_admin.connection.realm_name}'")
+        raise ValueError(
+            f"Client with ID='{client_id}' not found in realm '{kc_admin.connection.realm_name}'"
+        )
     return matches[0]["id"]
 
 
@@ -53,11 +55,17 @@ def resolve_new_role(kc_admin: KeycloakAdmin, client_uuid: str, role_name: str):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--server-url", required=True, help="e.g. http://keycloak:8080/keycloak/")
+    parser.add_argument(
+        "--server-url", required=True, help="e.g. http://keycloak:8080/keycloak/"
+    )
     parser.add_argument("--realm", required=True, help="e.g. bluecore")
-    parser.add_argument("--username", required=True, help="admin username used to run the migration")
+    parser.add_argument(
+        "--username", required=True, help="admin username used to run the migration"
+    )
     parser.add_argument("--password", required=True)
-    parser.add_argument("--user-realm", default="master", help="realm the admin user itself lives in")
+    parser.add_argument(
+        "--user-realm", default="master", help="realm the admin user itself lives in"
+    )
     parser.add_argument("--admin-client-id", default="admin-cli")
     parser.add_argument("--workflows-client-id", default="bluecore_workflows")
     parser.add_argument("--dry-run", action="store_true")
@@ -85,13 +93,19 @@ def main():
         try:
             members = kc_admin.get_client_role_members(client_uuid, old_role)
         except KeycloakGetError as exc:
-            print(f"!! could not read members of old role '{old_role}': {exc}", file=sys.stderr)
+            print(
+                f"!! could not read members of old role '{old_role}': {exc}",
+                file=sys.stderr,
+            )
             continue
 
         try:
             new_role_rep, kind = resolve_new_role(kc_admin, client_uuid, new_role)
         except KeycloakGetError:
-            print(f"!! new role '{new_role}' does not exist (realm or client) -- skipping '{old_role}'", file=sys.stderr)
+            print(
+                f"!! new role '{new_role}' does not exist (realm or client) -- skipping '{old_role}'",
+                file=sys.stderr,
+            )
             continue
 
         try:
@@ -127,7 +141,9 @@ def main():
 
     print("\nSummary:")
     for role, count in totals.items():
-        print(f"  {role}: {count} user(s) {'would be ' if args.dry_run else ''}migrated")
+        print(
+            f"  {role}: {count} user(s) {'would be ' if args.dry_run else ''}migrated"
+        )
 
 
 if __name__ == "__main__":
