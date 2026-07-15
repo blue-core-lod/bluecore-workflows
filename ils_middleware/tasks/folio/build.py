@@ -244,16 +244,95 @@ def _mode_of_issuance_id(**kwargs) -> tuple:
     return "modeOfIssuanceId", mode_id
 
 
+# Maps a http://id.loc.gov/vocabulary/mnotetype/ code (the LC vocabulary used to
+# type bf:Note resources, which corresponds 1:1 with MARC 5XX note fields) to the
+# name of the matching FOLIO instance note type. Codes with no clear FOLIO
+# equivalent (e.g. structured/fixed-field data like "metaentry" or "number", or
+# ambiguous multi-field codes like "related") are left unmapped and fall back to
+# "General note".
+MNOTETYPE_CODE_TO_FOLIO_NOTE_TYPE = {
+    "action": "Action note",
+    "addphys": "Additional Physical Form Available note",
+    "adminhist": "Biographical or Historical Data",
+    "award": "Awards note",
+    "biblio": "Bibliography note",
+    "binding": "Binding Information note",
+    "biogdata": "Biographical or Historical Data",
+    "citeas": "Preferred Citation of Described Materials note",
+    "computer": "Type of computer file or data note",
+    "credits": "Creation / Production Credits note",
+    "descsource": "Source of Description note",
+    "doc": "Information About Documentation note",
+    "exhibit": "Exhibitions note",
+    "finding": "Cumulative Index / Finding Aides notes",
+    "fundinfo": "Funding Information Note",
+    "geocov": "Geographic Coverage note",
+    "index": "Cumulative Index / Finding Aides notes",
+    "issuance": "Numbering peculiarities note",
+    "issuing": "Issuing Body note",
+    "lang": "Language note",
+    "loc": "Citation / References note",
+    "orig": "Original Version note",
+    "participants": "Participant or Performer note",
+    "refcitation": "Citation / References note",
+    "relnote": "Linking Entry Complexity note",
+    "report": "Type of report and period covered note",
+    "repro": "Reproduction note",
+    "scale": "Cartographic Mathematical Data",
+    "source": "General note",
+    "suppl": "Supplement note",
+    "with": "With note",
+}
+
+
+def _note_type_id_by_name(folio_client, name: str) -> Any:
+    for row in folio_client.instance_note_types:
+        if row["name"] == name:
+            return row["id"]
+    return None
+
+
+def _general_note_type_id(folio_client) -> Any:
+    for row in folio_client.instance_note_types:
+        if row["name"].startswith("General note"):
+            return row["id"]
+    return None
+
+
+def _note_type_id_for_row(folio_client, note_type_uri) -> Any:
+    if note_type_uri:
+        code = str(note_type_uri).rstrip("/").split("/")[-1]
+        name = MNOTETYPE_CODE_TO_FOLIO_NOTE_TYPE.get(code)
+        if name:
+            note_id = _note_type_id_by_name(folio_client, name)
+            if note_id:
+                return note_id
+    return _general_note_type_id(folio_client)
+
+
 def _notes(**kwargs) -> tuple:
     values = kwargs["values"]
     folio_client = kwargs["folio_client"]
+    notes = kwargs["record"].get("notes", [])
+    for row in values:
+        note_type_uri = row[1] if len(row) > 1 else None
+        note_id = _note_type_id_for_row(folio_client, note_type_uri)
+        notes.append(
+            {"instanceNoteTypeId": note_id, "note": row[0], "staffOnly": False}
+        )
+
+    return "notes", notes
+
+
+def _summary_notes(**kwargs) -> tuple:
+    values = kwargs["values"]
+    folio_client = kwargs["folio_client"]
     note_id = None
-    # For now assign every note as a FOLIO "General note"
     for row in folio_client.instance_note_types:
-        if row["name"].startswith("General note"):
+        if row["name"].startswith("Summary"):
             note_id = row["id"]
             break
-    notes = []
+    notes = kwargs["record"].get("notes", [])
     for row in values:
         notes.append(
             {"instanceNoteTypeId": note_id, "note": row[0], "staffOnly": False}
@@ -421,6 +500,8 @@ transforms = {
     "language": _language,
     "modeOfIssuanceId": _mode_of_issuance_id,
     "notes": _notes,
+    "notes.work": _notes,
+    "notes.summary": _summary_notes,
     "physical_description": _physical_descriptions,
     "publication": _publication,
     "publication_frequency": _publication_frequency,

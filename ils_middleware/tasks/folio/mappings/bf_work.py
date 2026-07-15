@@ -113,6 +113,34 @@ WHERE {{
 }}
 """
 
+summary = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?summary
+WHERE {{
+    <{bf_work}> a bf:Work .
+    <{bf_work}> bf:summary ?summary_bnode .
+    ?summary_bnode a bf:Summary .
+    ?summary_bnode rdfs:label ?summary .
+}}
+"""
+
+note = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
+PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
+
+SELECT DISTINCT ?note ?note_type
+WHERE {{
+    <{bf_work}> a bf:Work .
+    <{bf_work}> bf:note ?note_bnode .
+    ?note_bnode a bf:Note .
+    ?note_bnode rdfs:label ?note .
+    OPTIONAL {{
+        ?note_bnode a ?note_type .
+        FILTER(STRSTARTS(STR(?note_type), "http://id.loc.gov/vocabulary/mnotetype/"))
+    }}
+}}
+"""
+
 series_uncontrolled = """PREFIX bf: <http://id.loc.gov/ontologies/bibframe/>
 PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#>
 
