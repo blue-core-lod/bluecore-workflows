@@ -60,6 +60,10 @@ x-keycloak-env: &keycloak-env
   KEYCLOAK_ADMIN_PASSWORD: admin
   # ----------------------------------
   KC_HOSTNAME_STRICT: 'false'
+  # Public base URL Keycloak stamps into its OIDC discovery document (authorization_endpoint,
+  # end_session_endpoint, etc.) - must be browser-reachable regardless of how the Airflow
+  # containers reach Keycloak internally (see KEYCLOAK_INTERNAL_URL below).
+  KC_HOSTNAME: 'http://localhost:8081/keycloak/'
   KEYCLOAK_REALM: 'bluecore'
   KEYCLOAK_INTERNAL_URL: 'http://keycloak:8080/keycloak/'
   KEYCLOAK_EXTERNAL_URL: 'http://localhost:8081/keycloak/'
@@ -87,7 +91,7 @@ x-airflow-common:
     &airflow-common-env
     <<: *keycloak-env
     AIRFLOW__CORE__EXECUTOR: CeleryExecutor
-    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.fab.auth_manager.fab_auth_manager.FabAuthManager
+    AIRFLOW__CORE__AUTH_MANAGER: airflow.providers.keycloak.auth_manager.keycloak_auth_manager.KeycloakAuthManager
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__RESULT_BACKEND: db+postgresql://airflow:airflow@postgres/airflow
     AIRFLOW__CELERY__BROKER_URL: redis://:@redis:6379/0
@@ -97,11 +101,14 @@ x-airflow-common:
     AIRFLOW__CORE__LOAD_EXAMPLES: 'false'
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: 'http://airflow-apiserver:8080/execution/'
     AIRFLOW__WEBSERVER__SHOW_TRIGGER_FORM_IF_NO_PARAMS: 'true'
-    AIRFLOW__API__AUTH_BACKEND: 'airflow.api.auth.backend.basic_auth,airflow.api.auth.backend.session'
     AIRFLOW_VAR_SINOPIA_ENV: ${AIRFLOW_VAR_SINOPIA_ENV:-dev}
     AIRFLOW_VAR_KEYCLOAK_URL: 'http://keycloak:8080'
     AIRFLOW_VAR_BLUECORE_URL: 'http://localhost:3000/'
     AIRFLOW_CONN_BLUECORE_DB: 'postgresql+psycopg2://airflow:airflow@postgres:5432/bluecore'
+    AIRFLOW__KEYCLOAK_AUTH_MANAGER__CLIENT_ID: ${AIRFLOW_KEYCLOAK_CLIENT_ID:-bluecore_workflows}  
+    AIRFLOW__KEYCLOAK_AUTH_MANAGER__CLIENT_SECRET: ${AIRFLOW_KEYCLOAK_CLIENT_SECRET}
+    AIRFLOW__KEYCLOAK_AUTH_MANAGER__SERVER_URL: ${KEYCLOAK_INTERNAL_URL:-http://keycloak:8080/keycloak/}
+    AIRFLOW__KEYCLOAK_AUTH_MANAGER__REALM: ${KEYCLOAK_REALM:-bluecore}
     # yamllint disable rule:line-length
     # Use simple http server on scheduler for health checks
     # See https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/logging-monitoring/check-health.html#scheduler-health-check-server
@@ -355,9 +362,6 @@ services:
     environment:
       <<: *airflow-common-env
       _AIRFLOW_DB_MIGRATE: 'true'
-      _AIRFLOW_WWW_USER_CREATE: 'true'
-      _AIRFLOW_WWW_USER_USERNAME: ${AIRFLOW_WWW_USER_USERNAME:-airflow}
-      _AIRFLOW_WWW_USER_PASSWORD: ${AIRFLOW_WWW_USER_PASSWORD:-airflow}
       _PIP_ADDITIONAL_REQUIREMENTS: ''
     user: "0:0"
 
