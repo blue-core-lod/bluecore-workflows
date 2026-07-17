@@ -5,17 +5,11 @@ import uuid
 from datetime import datetime
 
 from airflow.sdk import dag, task, get_current_context
-from ils_middleware.tasks.bluecore import (
-    delete_upload,
-    get_bluecore_db,
-    load
-)
-from ils_middleware.tasks.general.marc import (
-    convert_to_xml,
-    xslt_marc_to_bf
-)
+from ils_middleware.tasks.bluecore import delete_upload
+from ils_middleware.tasks.general.marc import convert_to_xml, xslt_marc_to_bf
 
 logger = logging.getLogger(__name__)
+
 
 @dag(
     schedule=None,
@@ -37,11 +31,10 @@ def marc_to_bibframe():
         ingest = params.get("ingest", False)
         source_base_uri = params.get("source_base_uri", "http://id.loc.gov/resources")
         return {
-            "marc_file": marc_file, 
+            "marc_file": marc_file,
             "ingest": ingest,
-            "source_base_uri": source_base_uri
+            "source_base_uri": source_base_uri,
         }
-
 
     @task
     def to_xml(marc_file: str) -> str:
@@ -59,7 +52,6 @@ def marc_to_bibframe():
             case _:
                 raise ValueError(f"Unknown MARC file format: {marc_path.suffix}")
         return raw_xml
-    
 
     @task
     def transform_to_bf(marc_xml: str, source_base_uri: str) -> str:
@@ -68,18 +60,29 @@ def marc_to_bibframe():
         """
         bf_rdf_xml = xslt_marc_to_bf(marc_xml, source_base_uri)
         return bf_rdf_xml
-    
+
+    @task
+    def save_output(bf_rdf_xml: str, outputs_dir: str = "/opt/airflow/outputs") -> str:
+        """
+        Saves the generated BIBFRAME RDF to the outputs volume so it can be
+        delivered back to the calling application.
+        """
+        outputs_path = pathlib.Path(outputs_dir)
+        output_file = outputs_path / f"{uuid.uuid4()}.xml"
+        output_file.write_text(bf_rdf_xml)
+        logger.info(f"Saved BIBFRAME RDF output to {output_file}")
+        return str(output_file)
 
     @task.branch
     def should_ingest(ingest: bool) -> str:
         if ingest:
             return "ingest"
         return "finish"
-    
+
     @task
     def ingest(bf_rdf_xml: str, uploads_dir: str = "/opt/airflow/uploads"):
         """
-        Saves BIBFRAME RDF to a temp file and loads into  
+        Saves BIBFRAME RDF to a temp file and loads into
         """
         uploads_path = pathlib.Path(uploads_dir)
         upload_file = uploads_path / f"{uuid.uuid4()}.xml"
@@ -93,27 +96,19 @@ def marc_to_bibframe():
         logger.info(f"Removing MARC file {marc_file}")
         delete_upload(marc_file)
         if bf_file:
-            logger.info(f"Removing temp BIBFRAME file")
+            logger.info("Removing temp BIBFRAME file")
             delete_upload(bf_file)
-
 
     workflow_params = setup()
     marc_xml = to_xml(workflow_params["marc_file"])
     bf_xml = transform_to_bf(marc_xml, workflow_params["source_base_uri"])
+    bf_output_file = save_output(bf_xml)
     chosen_branch = should_ingest(workflow_params["ingest"])
     bf_file_ingest = ingest(bf_xml)
     finish_task = finish(workflow_params["marc_file"], bf_file_ingest)
 
-    bf_xml >> chosen_branch >> [bf_file_ingest, finish_task]
-
-    
-marc_to_bibframe()
+    bf_xml >> [bf_output_file, chosen_branch]
+    chosen_branch >> [bf_file_ingest, finish_task]
 
 
-
-
-
-
-
-
-
+marc_to_bibframe_dag = marc_to_bibframe()

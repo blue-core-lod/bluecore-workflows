@@ -4,7 +4,10 @@ import pathlib
 import lxml.etree as ET
 import pymarc
 
-MARC2BIBFRAME2_XSL = "ils_middleware/tasks/general/xslt/marc2bibframe2/xsl/marc2bibframe2.xsl"
+MARC2BIBFRAME2_XSL = (
+    "ils_middleware/tasks/general/xslt/marc2bibframe2/xsl/marc2bibframe2.xsl"
+)
+
 
 def convert_to_xml(marc_file: str) -> str:
     """
@@ -15,13 +18,16 @@ def convert_to_xml(marc_file: str) -> str:
         marc_reader = pymarc.MARCReader(fo)
         marc_records = [r for r in marc_reader]
         if len(marc_records) != 1:
-            raise ValueError(f"Number of MARC records {len(marc_records)} should only be 1")
+            raise ValueError(
+                f"Number of MARC records {len(marc_records)} should only be 1"
+            )
         marc_record = marc_records[0]
     memory = io.BytesIO()
     writer = pymarc.XMLWriter(memory)
     writer.write(marc_record)
     writer.close(close_fh=False)
     return memory.getvalue().decode("utf-8")
+
 
 def xslt_marc_to_bf(marc_xml: str, source_base_uri: str) -> str:
     """
