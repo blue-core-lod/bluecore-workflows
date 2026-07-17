@@ -88,7 +88,7 @@ def marc_to_bibframe():
         return str(upload_file)
 
     @task(trigger_rule="none_failed_min_one_success")
-    def finish(marc_file: str, bf_file: str | None):
+    def finish(marc_file: str, bf_file: str | None = None):
         logger.info("Finished converting MARC to BIBFRAME")
         logger.info(f"Removing MARC file {marc_file}")
         delete_upload(marc_file)
@@ -102,11 +102,12 @@ def marc_to_bibframe():
     bf_xml = transform_to_bf(marc_xml, workflow_params["source_base_uri"])
     chosen_branch = should_ingest(workflow_params["ingest"])
     bf_file_ingest = ingest(bf_xml)
+    finish_task = finish(workflow_params["marc_file"], bf_file_ingest)
 
-    chosen_branch >> [bf_file_ingest >> finish(workflow_params["marc_file"], bf_file_ingest), finish(workflow_params["marc_file"])]
+    bf_xml >> chosen_branch >> [bf_file_ingest, finish_task]
 
     
-
+marc_to_bibframe()
 
 
 

@@ -21,15 +21,15 @@ def convert_to_xml(marc_file: str) -> str:
     writer = pymarc.XMLWriter(memory)
     writer.write(marc_record)
     writer.close(close_fh=False)
-    return memory.getvalue()
+    return memory.getvalue().decode("utf-8")
 
-def xslt_marc_to_bf(marc_xml: str) -> str:
+def xslt_marc_to_bf(marc_xml: str, source_base_uri: str) -> str:
     """
     Takes MARC XML and transforms into BIBFRAME RDF XML using the Library of
     Congress marc2bibframe2 at https://github.com/lcnetdev/marc2bibframe2/
     """
-    marc_record = ET.fromstring(marc_xml)
+    marc_record = ET.fromstring(marc_xml.encode("utf-8"))
     xslt = ET.parse(MARC2BIBFRAME2_XSL)
     transform = ET.XSLT(xslt)
-    bf_rdf_xml = transform(marc_record)
-    return ET.tostring(bf_rdf_xml, pretty_print=True, encoding="utf-8")
+    bf_rdf_xml = transform(marc_record, baseuri=ET.XSLT.strparam(source_base_uri))
+    return ET.tostring(bf_rdf_xml, pretty_print=True, encoding="unicode")
