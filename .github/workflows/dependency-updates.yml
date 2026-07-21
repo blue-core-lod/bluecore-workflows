@@ -61,6 +61,10 @@ jobs:
           sed -i "s/^version = \"[0-9]*\.[0-9]*\.[0-9]*\"/version = \"$NEW_VERSION\"/" pyproject.toml
           echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
+      - name: Sync lockfile with bumped version
+        if: steps.check_changes.outputs.changed == 'true'
+        run: uv lock
+
       - name: Create Pull Request
         id: create_pr
         if: steps.check_changes.outputs.changed == 'true' && success()
