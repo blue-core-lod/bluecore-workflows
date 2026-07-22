@@ -117,19 +117,24 @@ def load(file_path: str, user_uid: str, bluecore_db: str):
 
     # create the database session maker
     engine = create_engine(bluecore_db)
-    session_maker = sessionmaker(bind=engine)
+    try:
+        session_maker = sessionmaker(bind=engine)
 
-    # parse the RDF into a graph
-    graph = rdflib.Graph()
-    graph.parse(file_path, format="json-ld")
+        # parse the RDF into a graph
+        graph = rdflib.Graph()
+        graph.parse(file_path, format="json-ld")
 
-    # get the bluecore namespace, ideally we would use Airflow's Variable
-    # here but we are running in a virtualenv without Airflow installed
-    bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
+        # get the bluecore namespace, ideally we would use Airflow's Variable
+        # here but we are running in a virtualenv without Airflow installed
+        bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
 
-    # save the graph and return the number of triples processed
-    bc_graph = save_graph(session_maker, graph, namespace=bc_url)
-    logger.info(f"processed {len(bc_graph)} triples")
+        # save the graph and return the number of triples processed
+        bc_graph = save_graph(session_maker, graph, namespace=bc_url)
+        logger.info(f"processed {len(bc_graph)} triples")
+    finally:
+        # release the engine's pooled connections rather than leaving them open
+        # until this (long-lived Celery worker) process garbage-collects the engine
+        engine.dispose()
 
 
 def load_cbd_files(
@@ -149,42 +154,47 @@ def load_cbd_files(
     bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
 
     engine = create_engine(bluecore_db, pool_pre_ping=True)
-    session_maker = sessionmaker(bind=engine)
+    try:
+        session_maker = sessionmaker(bind=engine)
 
-    errors = []
+        errors = []
 
-    logger.info(f"Starting load of {len(cbd_files):,} files")
+        logger.info(f"Starting load of {len(cbd_files):,} files")
 
-    with tarfile.open(archived_file_path, "r") as cbd_archived_file:
-        for i, name in enumerate(cbd_files):
-            if pathlib.Path(name).name.startswith("._"):
-                continue
-            graph_format = rdflib.util.guess_format(name)
-            if graph_format is None:
-                continue
-            graph = rdflib.Graph()
-            cbd_file_buf = cbd_archived_file.extractfile(name)
-            if cbd_file_buf is None:
-                errors.append(name)
-                continue
-            graph.parse(data=cbd_file_buf.read(), format=graph_format)
-            # If deadlock occurs, try saving the graph again by sleep up to 2 seconds
-            # to see if deadlock continues
-            for attempt in range(3):
-                try:
-                    save_graph(session_maker, graph, namespace=bc_url)
-                    break
-                except OperationalError as e:
-                    if attempt == 2:
-                        raise
-                    logger.error(f"Operational Error {e} for {name}")
-                    time.sleep(2**attempt)
-                except Exception as e:
-                    logger.error(f"Error {e} for {name}")
+        with tarfile.open(archived_file_path, "r") as cbd_archived_file:
+            for i, name in enumerate(cbd_files):
+                if pathlib.Path(name).name.startswith("._"):
+                    continue
+                graph_format = rdflib.util.guess_format(name)
+                if graph_format is None:
+                    continue
+                graph = rdflib.Graph()
+                cbd_file_buf = cbd_archived_file.extractfile(name)
+                if cbd_file_buf is None:
                     errors.append(name)
-                    break
+                    continue
+                graph.parse(data=cbd_file_buf.read(), format=graph_format)
+                # If deadlock occurs, try saving the graph again by sleep up to 2 seconds
+                # to see if deadlock continues
+                for attempt in range(3):
+                    try:
+                        save_graph(session_maker, graph, namespace=bc_url)
+                        break
+                    except OperationalError as e:
+                        if attempt == 2:
+                            raise
+                        logger.error(f"Operational Error {e} for {name}")
+                        time.sleep(2**attempt)
+                    except Exception as e:
+                        logger.error(f"Error {e} for {name}")
+                        errors.append(name)
+                        break
 
-            if i > 0 and not i % 100:
-                logger.info(f"{i:,} graphs saved")
-    logger.info(f"Finished load of {len(cbd_files):,} with {len(errors):,} errors")
-    return errors
+                if i > 0 and not i % 100:
+                    logger.info(f"{i:,} graphs saved")
+        logger.info(f"Finished load of {len(cbd_files):,} with {len(errors):,} errors")
+        return errors
+    finally:
+        # release the engine's pooled connections rather than leaving them open
+        # until this (long-lived Celery worker) process garbage-collects the engine
+        engine.dispose()
