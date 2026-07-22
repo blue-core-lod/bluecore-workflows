@@ -28,11 +28,12 @@ if not logger.handlers:
 
 
 # Pool sizing per engine (i.e. per Celery worker child process). The load tasks
-# save graphs sequentially, so a single connection is enough; overflow gives a
-# little slack. Keep this small: with the default Airflow worker_concurrency of
-# 16, the worst-case bluecore connection count is
-# 16 * (POOL_SIZE + MAX_OVERFLOW), and it shares Postgres max_connections (100)
-# with the Airflow metadata DB and Keycloak.
+# save graphs sequentially, so a single pooled connection is enough; overflow
+# gives a little slack. Keep this small: the worst-case bluecore connection
+# count from a fully-busy worker is worker_concurrency * (POOL_SIZE +
+# MAX_OVERFLOW), and that shares the database server's connection budget with
+# Airflow, Keycloak, and any other clients on the same (often shared/external)
+# Postgres. Bounding it explicitly keeps this workflow's footprint predictable.
 POOL_SIZE = int(os.environ.get("BLUECORE_DB_POOL_SIZE", "1"))
 MAX_OVERFLOW = int(os.environ.get("BLUECORE_DB_MAX_OVERFLOW", "2"))
 # Recycle connections older than this (seconds) so we don't hand out a
