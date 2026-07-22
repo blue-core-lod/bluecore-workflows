@@ -6,6 +6,7 @@ import pytest
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
 
+from ils_middleware.tasks import bluecore
 from ils_middleware.tasks.bluecore import (
     batch_archived_files,
     delete_upload,
@@ -14,6 +15,15 @@ from ils_middleware.tasks.bluecore import (
     load_cbd_files,
     zip_to_tar_gz,
 )
+
+
+@pytest.fixture(autouse=True)
+def clear_engine_cache():
+    """Engines are cached per DB URL at module scope; reset between tests so a
+    mocked engine from one test can't leak into the next."""
+    bluecore._engines.clear()
+    yield
+    bluecore._engines.clear()
 
 
 def test_batch_archived_files_no_file():
@@ -90,6 +100,22 @@ def test_get_bluecore_db(mock_postgres_hook):
     db_string = get_bluecore_db()
 
     assert db_string.startswith("postgresql://bluecore_admin")
+
+
+def test_get_engine_caches_per_url(mocker):
+    create_engine_mock = mocker.patch(
+        "ils_middleware.tasks.bluecore.create_engine",
+        side_effect=lambda url, **kwargs: mocker.MagicMock(name=url),
+    )
+
+    first = bluecore.get_engine("postgresql://host/db_a")
+    again = bluecore.get_engine("postgresql://host/db_a")
+    other = bluecore.get_engine("postgresql://host/db_b")
+
+    # same URL reuses one engine, a different URL gets its own
+    assert first is again
+    assert first is not other
+    assert create_engine_mock.call_count == 2
 
 
 def _build_cbd_archive(tmp_path):

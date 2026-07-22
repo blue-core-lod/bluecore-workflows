@@ -9,6 +9,7 @@ import zipfile
 import rdflib
 
 from sqlalchemy import create_engine
+from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
 from bluecore_models.bluecore_graph import save_graph
@@ -24,6 +25,41 @@ logging.getLogger("bluecore_models").setLevel(logging.ERROR)
 logger = logging.getLogger(__name__)
 if not logger.handlers:
     logging.basicConfig(level=logging.INFO)
+
+
+# Pool sizing per engine (i.e. per Celery worker child process). The load tasks
+# save graphs sequentially, so a single connection is enough; overflow gives a
+# little slack. Keep this small: with the default Airflow worker_concurrency of
+# 16, the worst-case bluecore connection count is
+# 16 * (POOL_SIZE + MAX_OVERFLOW), and it shares Postgres max_connections (100)
+# with the Airflow metadata DB and Keycloak.
+POOL_SIZE = int(os.environ.get("BLUECORE_DB_POOL_SIZE", "1"))
+MAX_OVERFLOW = int(os.environ.get("BLUECORE_DB_MAX_OVERFLOW", "2"))
+# Recycle connections older than this (seconds) so we don't hand out a
+# connection Postgres has already closed server-side.
+POOL_RECYCLE = int(os.environ.get("BLUECORE_DB_POOL_RECYCLE", "1800"))
+
+# Engines are cached per database URL and reused across task invocations within
+# a worker child process, rather than created (and their pools leaked) per task.
+# The cache is populated lazily on first use *inside* each forked child, so no
+# pooled connection is ever shared across processes.
+_engines: dict[str, Engine] = {}
+
+
+def get_engine(bluecore_db: str) -> Engine:
+    """Return a process-local, pooled Engine for the given database URL,
+    creating and caching it on first use."""
+    engine = _engines.get(bluecore_db)
+    if engine is None:
+        engine = create_engine(
+            bluecore_db,
+            pool_pre_ping=True,
+            pool_recycle=POOL_RECYCLE,
+            pool_size=POOL_SIZE,
+            max_overflow=MAX_OVERFLOW,
+        )
+        _engines[bluecore_db] = engine
+    return engine
 
 
 def batch_archived_files(
@@ -115,8 +151,8 @@ def load(file_path: str, user_uid: str, bluecore_db: str):
     except Exception as e:
         logger.error("Failed to set CURRENT_USER_ID: %s", e)
 
-    # create the database session maker
-    engine = create_engine(bluecore_db)
+    # create the database session maker from the cached, process-local engine
+    engine = get_engine(bluecore_db)
     session_maker = sessionmaker(bind=engine)
 
     # parse the RDF into a graph
@@ -148,7 +184,7 @@ def load_cbd_files(
 
     bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
 
-    engine = create_engine(bluecore_db, pool_pre_ping=True)
+    engine = get_engine(bluecore_db)
     session_maker = sessionmaker(bind=engine)
 
     errors = []
