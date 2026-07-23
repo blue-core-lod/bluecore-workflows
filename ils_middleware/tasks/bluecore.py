@@ -172,7 +172,16 @@ def load_cbd_files(
             # to see if deadlock continues
             for attempt in range(3):
                 try:
-                    save_graph(session_maker, graph, namespace=bc_url)
+                    # Bulk load: Works/Instances are authoritative, but the many
+                    # shared Other Resources these records reference are only
+                    # linked, not re-described, on every record (their
+                    # descriptions are maintained by a separate process).
+                    save_graph(
+                        session_maker,
+                        graph,
+                        namespace=bc_url,
+                        update_other_resources=False,
+                    )
                     break
                 except OperationalError as e:
                     if attempt == 2:
