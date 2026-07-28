@@ -1,16 +1,15 @@
 import logging
+from copy import deepcopy
 
 import httpx
-
 from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from rdflib import URIRef, Namespace
-from rdflib.namespace import RDF
-from copy import deepcopy
-from lxml import etree as ET
-from ils_middleware.tasks.amazon.alma_ns import alma_namespaces
-
 from bluecore_models.utils.graph import load_jsonld
+from lxml import etree as ET
+from rdflib import Namespace, URIRef
+from rdflib.namespace import RDF
+
+from ils_middleware.tasks.amazon.alma_ns import alma_namespaces
 
 logger = logging.getLogger(__name__)
 

@@ -1,7 +1,7 @@
-import logging
 import json
-from urllib.parse import urlparse
+import logging
 from os import path
+from urllib.parse import urlparse
 
 from airflow.providers.amazon.aws.hooks.lambda_function import LambdaHook
 

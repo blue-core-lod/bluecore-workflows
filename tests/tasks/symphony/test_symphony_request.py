@@ -2,7 +2,6 @@
 
 import pytest
 import requests  # type: ignore
-
 from airflow.hooks.base import BaseHook  # type: ignore
 from pytest_mock import MockerFixture
 
@@ -31,7 +30,7 @@ def mock_request(monkeypatch, mocker: MockerFixture):
         new_result = mocker.stub(name="post_result")
         new_result.status_code = 200
         new_result.text = "Successful request"
-        new_result.json = lambda: {}
+        new_result.json = dict
         return new_result
 
     monkeypatch.setattr(requests, "post", mock_post)

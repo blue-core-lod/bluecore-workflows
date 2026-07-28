@@ -4,7 +4,7 @@ import logging
 import pathlib
 from datetime import datetime
 
-from airflow.sdk import dag, task, get_current_context
+from airflow.sdk import dag, get_current_context, task
 
 from ils_middleware.tasks.bluecore import (
     batch_archived_files,

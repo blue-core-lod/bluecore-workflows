@@ -7,15 +7,13 @@ import time
 import zipfile
 
 import rdflib
-
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from bluecore_models.bluecore_graph import save_graph
+from bluecore_models.models.version import CURRENT_USER_ID
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
-from bluecore_models.bluecore_graph import save_graph
-from bluecore_models.models.version import CURRENT_USER_ID
-
-from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 BLUECORE_URL = os.environ.get("BLUECORE_URL", "https://bcld.info/")
 
@@ -75,13 +73,13 @@ def batch_archived_files(
     if not archive_file_path.exists():
         raise FileNotFoundError(f"{archive_file_path} does not exist")
 
-    archive_file = tarfile.open(archive_file_path, "r")
-    file_names = [
-        name
-        for name in archive_file.getnames()
-        if rdflib.util.guess_format(name) is not None
-        and not pathlib.Path(name).name.startswith("._")
-    ]
+    with tarfile.open(archive_file_path, "r") as archive_file:
+        file_names = [
+            name
+            for name in archive_file.getnames()
+            if rdflib.util.guess_format(name) is not None
+            and not pathlib.Path(name).name.startswith("._")
+        ]
 
     total_names = len(file_names)
     batch_size = int(total_names / number_of_batches)
@@ -106,9 +104,7 @@ def delete_upload(upload: str, remove_empty_parent: bool = False) -> None:
 
 def is_zip(file_name: str) -> bool:
     """Determines if file is a zip file"""
-    if file_name.endswith(".zip") or file_name.endswith(".gz"):
-        return True
-    return False
+    return bool(file_name.endswith((".zip", ".gz")))
 
 
 def get_bluecore_db() -> str:

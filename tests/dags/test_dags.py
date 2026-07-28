@@ -1,9 +1,9 @@
 import pathlib
-import pytest
 
+import pytest
 from airflow import models
-from airflow.utils.dag_cycle_tester import check_cycle
 from airflow.sdk.definitions.dag import DAG
+from airflow.utils.dag_cycle_tester import check_cycle
 
 DAG_PATHS = [
     p

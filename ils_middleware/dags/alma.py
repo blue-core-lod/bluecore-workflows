@@ -7,22 +7,21 @@ from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.utils.task_group import TaskGroup
 
-from ils_middleware.tasks.amazon.alma_work_s3 import (
-    send_work_to_alma_s3,
-)
+from ils_middleware.tasks.alma.post_bfinstance import NewInstancetoAlma
+from ils_middleware.tasks.alma.post_bfwork import NewWorktoAlma
 from ils_middleware.tasks.amazon.alma_instance_s3 import (
     send_instance_to_alma_s3,
 )
-
-from ils_middleware.tasks.sinopia.local_metadata import new_local_admin_metadata
+from ils_middleware.tasks.amazon.alma_work_s3 import (
+    send_work_to_alma_s3,
+)
+from ils_middleware.tasks.general import message_from_context, parse_messages
 from ils_middleware.tasks.sinopia.email import (
     notify_and_log,
     send_update_success_emails,
 )
+from ils_middleware.tasks.sinopia.local_metadata import new_local_admin_metadata
 from ils_middleware.tasks.sinopia.login import sinopia_login
-from ils_middleware.tasks.alma.post_bfwork import NewWorktoAlma
-from ils_middleware.tasks.alma.post_bfinstance import NewInstancetoAlma
-from ils_middleware.tasks.general import parse_messages, message_from_context
 
 
 def task_failure_callback(ctx_dict) -> None:

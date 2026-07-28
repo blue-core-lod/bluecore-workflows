@@ -1,10 +1,10 @@
 import logging
 import pathlib
 import uuid
-
 from datetime import datetime
 
-from airflow.sdk import dag, task, get_current_context
+from airflow.sdk import dag, get_current_context, task
+
 from ils_middleware.tasks.bluecore import delete_upload
 from ils_middleware.tasks.general.marc import convert_to_xml, xslt_marc_to_bf
 

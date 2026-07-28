@@ -1,12 +1,10 @@
 import pytest
 import requests  # type: ignore
-
 from airflow.hooks.base import BaseHook  # type: ignore
 from pytest_mock import MockerFixture
+from tasks import mock_task_instance, test_task_instance  # noqa: F401
 
 from ils_middleware.tasks.symphony.overlay import overlay_marc_in_symphony
-
-from tasks import test_task_instance, mock_task_instance  # noqa: F401
 
 task_instance = test_task_instance()
 
@@ -64,7 +62,7 @@ def test_missing_catkey(
     mock_new_request,
     mock_connection,
     mock_task_instance,  # noqa: F811
-):  # noqa: F811
+):
     overlay_marc_in_symphony(
         task_instance=task_instance,
         conn_id="symphony_dev_login",

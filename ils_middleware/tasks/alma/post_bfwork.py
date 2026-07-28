@@ -1,12 +1,12 @@
 """POST Work to Alma API"""
 
 import logging
+from urllib.parse import urlparse
+
+import lxml.etree as ET
+import requests  # type: ignore
 from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from urllib.parse import urlparse
-import requests  # type: ignore
-import lxml.etree as ET
-
 
 logger = logging.getLogger(__name__)
 

@@ -1,19 +1,20 @@
 """Tests alma Post BF Instance"""
 
+import os
+from unittest import mock
+from unittest.mock import Mock, patch
+
 import pytest
+from airflow.hooks.base import BaseHook  # type: ignore
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from pytest_mock import MockerFixture
 from tasks import (
     mock_task_instance,
 )
 
-from unittest import mock
-from unittest.mock import patch, Mock
-from pytest_mock import MockerFixture
-from airflow.hooks.base import BaseHook  # type: ignore
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-import os
 from ils_middleware.tasks.alma.post_bfinstance import (
-    get_env_vars,
     NewInstancetoAlma,
+    get_env_vars,
     parse_400,
     putInstanceToAlma,
 )

@@ -1,8 +1,10 @@
 import logging
-from unittest.mock import Mock, patch
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook  # noqa
-from ils_middleware.tasks.amazon.alma_instance_s3 import send_instance_to_alma_s3
 import ssl
+from unittest.mock import Mock, patch
+
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+
+from ils_middleware.tasks.amazon.alma_instance_s3 import send_instance_to_alma_s3
 
 # Configure logging
 logging.basicConfig(level=logging.DEBUG)

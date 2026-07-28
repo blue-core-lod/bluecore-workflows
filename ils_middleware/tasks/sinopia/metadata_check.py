@@ -6,8 +6,6 @@ import logging
 import rdflib
 import requests  # type: ignore
 
-from typing import Optional
-
 logger = logging.getLogger(__name__)
 
 
@@ -34,7 +32,7 @@ def _query_for_ils_info(graph_jsonld: str, uri: str) -> dict:
     return output
 
 
-def _get_retrieve_metadata_resource(uri: str) -> Optional[dict]:
+def _get_retrieve_metadata_resource(uri: str) -> dict | None:
     """Retrieves AdminMetadata resource and extracts any ILS identifiers"""
     metadata_result = requests.get(uri)
     if metadata_result.status_code > 399:
@@ -50,7 +48,7 @@ def _get_retrieve_metadata_resource(uri: str) -> Optional[dict]:
     return _query_for_ils_info(json.dumps(resource.get("data")), uri)
 
 
-def _retrieve_all_metadata(bf_admin_metadata_all: list) -> Optional[list]:
+def _retrieve_all_metadata(bf_admin_metadata_all: list) -> list | None:
     ils_info = []
     for metadata_uri in bf_admin_metadata_all:
         metadata = _get_retrieve_metadata_resource(metadata_uri)

@@ -10,8 +10,8 @@ from ils_middleware.tasks import bluecore
 from ils_middleware.tasks.bluecore import (
     batch_archived_files,
     delete_upload,
-    is_zip,
     get_bluecore_db,
+    is_zip,
     load_cbd_files,
     zip_to_tar_gz,
 )
@@ -34,7 +34,7 @@ def test_batch_archived_files_no_file():
 def test_batch_archived_files(tmp_path):
     test_cbd_files_dir = tmp_path / "data"
     test_cbd_files_dir.mkdir()
-    for i in range(0, 10_000):
+    for i in range(10_000):
         test_cbd_file = test_cbd_files_dir / f"20{i}.cbd.jsonld"
         test_cbd_file.write_text("{}")
     archived_file_path = tmp_path / "cbd.tar.gz"
@@ -80,7 +80,7 @@ def test_is_zip():
     assert not is_zip("test.txt")
 
 
-class MockPostgresHook(object):
+class MockPostgresHook:
     def __init__(self, *args):
         self.sqlalchemy_url = make_url(
             "postgresql://bluecore_admin:bluecore_admin@localhost/bluecore"

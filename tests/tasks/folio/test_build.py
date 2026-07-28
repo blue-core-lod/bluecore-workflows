@@ -8,7 +8,7 @@ from tasks import (
     folio_properties,
     mock_requests_okapi,  # noqa: F401
     mock_task_instance,  # noqa: F401
-    test_task_instance,  # noqa: F401
+    test_task_instance,
 )
 
 import ils_middleware.tasks.folio.build as folio_build
@@ -20,21 +20,21 @@ from ils_middleware.tasks.folio.build import (
     _editions,
     _electronic_access,
     _genre,
-    _nature_of_content,
     _identifiers,
     _instance_format_ids,
     _instance_type_id,
     _inventory_record,
     _language,
     _mode_of_issuance_id,
+    _nature_of_content,
     _non_primary_contributor,
     _notes,
-    _summary_notes,
     _physical_descriptions,
     _publication,
     _publication_frequency,
     _series,
     _subjects,
+    _summary_notes,
     _title,
     _user_folio_id,
     build_records,
@@ -52,7 +52,7 @@ def mock_variable(monkeypatch):
     monkeypatch.setattr(datetime, "datetime", datetime_mock)
 
 
-class MockFolioClient(object):
+class MockFolioClient:
     def __init__(self, *args):
         self.okapi_url = okapi_uri
         self.username = "folio_user"
@@ -165,17 +165,17 @@ def mock_airflow_connection():
 def test_happypath_build_records(
     mocker,
     mock_airflow_connection,
-    mock_folio_client,  # noqa: F811
+    mock_folio_client,
     mock_requests_okapi,  # noqa: F811
     mock_task_instance,  # noqa: F811
-):  # noqa: F811
+):
     mocker.patch(
         "ils_middleware.tasks.folio.build.Connection.get_connection_from_secrets",
         return_value=mock_airflow_connection,
     )
 
     build_records(
-        task_instance=test_task_instance(),  #
+        task_instance=test_task_instance(),
         task_groups_ids=[],
         folio_url=okapi_uri,
         folio_connection_id="stanford_folio",
@@ -309,7 +309,7 @@ def test_inventory_record(mock_task_instance):  # noqa: F811
 
 def test_inventory_record_existing_metadata(
     mock_task_instance,  # noqa: F811
-):  # noqa: F811
+):
     metadata = {
         "createdDate": "2021-12-06T15:45:28.140795",
         "createdByUserId": "9b80f3af-a07a-5e6a-a5fb-3d5723ea94de",
@@ -362,7 +362,7 @@ def test_mode_of_issuance_id():
     assert (mode_of_issuance[1]).startswith("9d18a02f-5897-4c31-9106-c9abb5c7ae8b")
 
 
-def test_notes():  # noqa: F811
+def test_notes():
     notes = _notes(values=[["A great note"]], folio_client=MockFolioClient(), record={})
     assert (notes[0]).startswith("notes")
     assert (notes[1][0]["instanceNoteTypeId"]).startswith(
@@ -372,7 +372,7 @@ def test_notes():  # noqa: F811
     assert notes[1][0]["staffOnly"] is False
 
 
-def test_notes_maps_mnotetype_to_folio_note_type():  # noqa: F811
+def test_notes_maps_mnotetype_to_folio_note_type():
     notes = _notes(
         values=[
             [
@@ -392,7 +392,7 @@ def test_notes_maps_mnotetype_to_folio_note_type():  # noqa: F811
     )
 
 
-def test_notes_falls_back_to_general_note_for_unmapped_type():  # noqa: F811
+def test_notes_falls_back_to_general_note_for_unmapped_type():
     notes = _notes(
         values=[
             [
@@ -408,7 +408,7 @@ def test_notes_falls_back_to_general_note_for_unmapped_type():  # noqa: F811
     )
 
 
-def test_notes_appends_to_existing_notes():  # noqa: F811
+def test_notes_appends_to_existing_notes():
     existing_notes = [
         {
             "instanceNoteTypeId": "d51c86e5-9a72-4a5e-9b6c-3f1f1e4f2e3e",
@@ -426,7 +426,7 @@ def test_notes_appends_to_existing_notes():  # noqa: F811
     assert notes[1][1]["note"].startswith("A great note")
 
 
-def test_summary_notes():  # noqa: F811
+def test_summary_notes():
     notes = _summary_notes(
         values=[["A great summary"]], folio_client=MockFolioClient(), record={}
     )
@@ -438,7 +438,7 @@ def test_summary_notes():  # noqa: F811
     assert notes[1][0]["staffOnly"] is False
 
 
-def test_summary_notes_appends_to_existing_notes():  # noqa: F811
+def test_summary_notes_appends_to_existing_notes():
     existing_notes = [
         {
             "instanceNoteTypeId": "6a2533a7-4de2-4e64-8466-074c2fa9308c",

@@ -1,6 +1,6 @@
 import logging
-import httpx
 
+import httpx
 from airflow.sdk import get_current_context
 
 logger = logging.getLogger(__name__)

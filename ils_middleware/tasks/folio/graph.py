@@ -2,7 +2,6 @@ import logging
 
 import httpx
 import rdflib
-
 from bluecore_models.utils.graph import load_jsonld
 
 logger = logging.getLogger(__name__)

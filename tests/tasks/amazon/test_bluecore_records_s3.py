@@ -3,7 +3,7 @@ import pytest  # noqa
 from ils_middleware.tasks.amazon.bluecore_records_s3 import get_file, httpx
 
 
-class MockHTTPXResponse(object):
+class MockHTTPXResponse:
     def __init__(self, url: str):
         self.content = b"""{ "uri": "https://bluecore-core.lod.io/works/123456" }"""
 
@@ -11,7 +11,7 @@ class MockHTTPXResponse(object):
         return
 
 
-class MockS3Hook(object):
+class MockS3Hook:
     def download_file(self, **kwargs):
         return "/tmp/bluecore_12275150.jsonld"
 

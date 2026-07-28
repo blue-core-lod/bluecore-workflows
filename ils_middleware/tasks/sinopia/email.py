@@ -1,9 +1,8 @@
 """Sinopia Operators and Functions for email notifications."""
 
-from airflow.providers.amazon.aws.hooks.ses import SesHook
-
 import logging
 
+from airflow.providers.amazon.aws.hooks.ses import SesHook
 
 logger = logging.getLogger(__name__)
 

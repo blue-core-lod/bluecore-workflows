@@ -53,4 +53,7 @@ explicit_package_bases = true
 [tool.pytest.ini_options]
 addopts = "-k 'not test_task_instance and not test_parse_institutional_msgs and not test_email'"
 
-
+[tool.ruff.lint]
+ignore = [
+    "DTZ001"
+]

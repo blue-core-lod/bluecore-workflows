@@ -1,22 +1,18 @@
 """Tests metadata checks"""
 
 import datetime
+from unittest.mock import MagicMock
 
 import pytest
 import requests  # type: ignore
-
-from unittest.mock import MagicMock
-
 from pytest_mock import MockerFixture
-
 from tasks import TaskInstanceStub
 
 from ils_middleware.tasks.sinopia.metadata_check import (
-    existing_metadata_check,
     _get_retrieve_metadata_resource,
     _retrieve_all_metadata,
+    existing_metadata_check,
 )
-
 
 task_instance = TaskInstanceStub()
 mock_push_store: dict = {}
@@ -114,7 +110,6 @@ def mock_task_instance(monkeypatch):
         key = kwargs.get("key")
         value = kwargs.get("value")
         mock_push_store[key] = value
-        return None
 
     monkeypatch.setattr(TaskInstanceStub, "xcom_push", mock_xcom_push)
     monkeypatch.setattr(TaskInstanceStub, "xcom_pull", mock_xcom_pull)

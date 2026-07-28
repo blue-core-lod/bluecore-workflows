@@ -7,7 +7,6 @@ See https://s3.amazonaws.com/foliodocs/api/mod-inventory-storage/p/instance-sync
 import logging
 
 import httpx
-
 from airflow.models.connection import Connection
 from folioclient import FolioClient
 

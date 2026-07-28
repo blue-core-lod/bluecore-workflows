@@ -1,12 +1,11 @@
 import json
 
 import pytest
-
-from pytest_mock import MockerFixture
 from airflow.models.taskinstance import TaskInstance
+from pytest_mock import MockerFixture
+from tasks import mock_task_instance, test_task_instance  # noqa: F401
 
-from ils_middleware.tasks.folio.graph import construct_graph, _build_graph
-from tasks import test_task_instance, mock_task_instance  # noqa: F401
+from ils_middleware.tasks.folio.graph import _build_graph, construct_graph
 
 mock_instance_doc = {
     "https://api.stage.sinopia.io/resource/8a2dda53-d3bc-485a-9154-635823045b4f": {
@@ -75,7 +74,7 @@ def test_construct_graph(mock_requests, mock_task_instance):  # noqa: F811
         task_instance=test_task_instance(),
     )
 
-    assert "graph" in test_task_instance().xcom_pull(key="0000-1111-2222-3333").keys()
+    assert "graph" in test_task_instance().xcom_pull(key="0000-1111-2222-3333")
 
     assert (
         test_task_instance().xcom_pull(key="0000-1111-2222-3333").get("work_uri")
