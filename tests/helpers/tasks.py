@@ -44,10 +44,12 @@ def test_uri_region():
 
 def test_xml_response():
     return [
-        ('<?xml version="1.0" encoding="UTF-8" standalone="yes"?">'
-        "<bib>"
-        "<mms_id>9978021305103681</mms_id>"
-        "</bib>"),
+        (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?">'
+            "<bib>"
+            "<mms_id>9978021305103681</mms_id>"
+            "</bib>"
+        ),
     ]
 
 

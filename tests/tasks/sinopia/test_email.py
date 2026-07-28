@@ -92,10 +92,16 @@ def test_send_update_success_emails(
 
     patched_ses_hook_class.assert_called_once_with(aws_conn_id="aws_ses_connection")
     mock_ses_hook_obj.send_email.assert_any_call(
-        mail_from="sinopia-devs@lists.stanford.edu", to="dscully@stanford.edu", subject="successfully published https://api.development.sinopia.io/resource/0000-1111-2222-3333", html_content="You have successfully published https://api.development.sinopia.io/resource/0000-1111-2222-3333 from Sinopia to stanford ils"
+        mail_from="sinopia-devs@lists.stanford.edu",
+        to="dscully@stanford.edu",
+        subject="successfully published https://api.development.sinopia.io/resource/0000-1111-2222-3333",
+        html_content="You have successfully published https://api.development.sinopia.io/resource/0000-1111-2222-3333 from Sinopia to stanford ils",
     )
     mock_ses_hook_obj.send_email.assert_any_call(
-        mail_from="sinopia-devs@lists.stanford.edu", to="fmulder@stanford.edu", subject="successfully published https://api.development.sinopia.io/resource/4444-5555-6666-7777", html_content="You have successfully published https://api.development.sinopia.io/resource/4444-5555-6666-7777 from Sinopia to yale ils"
+        mail_from="sinopia-devs@lists.stanford.edu",
+        to="fmulder@stanford.edu",
+        subject="successfully published https://api.development.sinopia.io/resource/4444-5555-6666-7777",
+        html_content="You have successfully published https://api.development.sinopia.io/resource/4444-5555-6666-7777 from Sinopia to yale ils",
     )
     assert mock_ses_hook_obj.send_email.call_count == 2
 
@@ -131,5 +137,8 @@ def test_send_task_failure_notifications(
     patched_ses_hook_class.assert_called_with(aws_conn_id="aws_ses_connection")
     expected_uri = "https://api.development.sinopia.io/resource/8888-9999-0000-1111"
     mock_ses_hook_obj.send_email.assert_called_once_with(
-        mail_from="sinopia-devs@lists.stanford.edu", to="fmulder@stanford.edu", subject="Error executing Sinopia to ILS task on your behalf", html_content=f"Error processing resource_uri (if available): {expected_uri} / group (if available): yale"
+        mail_from="sinopia-devs@lists.stanford.edu",
+        to="fmulder@stanford.edu",
+        subject="Error executing Sinopia to ILS task on your behalf",
+        html_content=f"Error processing resource_uri (if available): {expected_uri} / group (if available): yale",
     )
