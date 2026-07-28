@@ -119,17 +119,19 @@ def zip_to_tar_gz(zip_file: str) -> str:
     zip_path = pathlib.Path(zip_file)
     tar_path = zip_path.parent / f"{zip_path.stem}.tar.gz"
 
-    with zipfile.ZipFile(zip_path) as cbd_zip_file:
-        with tarfile.open(tar_path, "w:gz") as cbd_tar_file:
-            for zip_info in cbd_zip_file.infolist():
-                if zip_info.is_dir():
-                    continue
-                tar_info = tarfile.TarInfo(name=zip_info.filename)
-                tar_info.size = zip_info.file_size
-                with cbd_zip_file.open(zip_info.filename) as infile:
-                    cbd_tar_file.addfile(
-                        tarinfo=tar_info, fileobj=io.BytesIO(infile.read())
-                    )
+    with (
+        zipfile.ZipFile(zip_path) as cbd_zip_file,
+        tarfile.open(tar_path, "w:gz") as cbd_tar_file,
+    ):
+        for zip_info in cbd_zip_file.infolist():
+            if zip_info.is_dir():
+                continue
+            tar_info = tarfile.TarInfo(name=zip_info.filename)
+            tar_info.size = zip_info.file_size
+            with cbd_zip_file.open(zip_info.filename) as infile:
+                cbd_tar_file.addfile(
+                    tarinfo=tar_info, fileobj=io.BytesIO(infile.read())
+                )
     zip_path.unlink()
     return str(tar_path)
 
@@ -145,7 +147,7 @@ def load(file_path: str, user_uid: str, bluecore_db: str):
         """
         CURRENT_USER_ID.set(user_uid)
         logger.info("Using CURRENT_USER_ID: %s", user_uid)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 -- must not abort the load over this
         logger.error("Failed to set CURRENT_USER_ID: %s", e)
 
     # create the database session maker from the cached, process-local engine
@@ -176,7 +178,7 @@ def load_cbd_files(
     try:
         CURRENT_USER_ID.set(user_uid)
         logger.info("Using CURRENT_USER_ID: %s", user_uid)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 -- must not abort the load over this
         logger.error("Failed to set CURRENT_USER_ID: %s", e)
 
     bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
@@ -212,7 +214,7 @@ def load_cbd_files(
                         raise
                     logger.error(f"Operational Error {e} for {name}")
                     time.sleep(2**attempt)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001 -- one bad file shouldn't abort the batch
                     logger.error(f"Error {e} for {name}")
                     errors.append(name)
                     break

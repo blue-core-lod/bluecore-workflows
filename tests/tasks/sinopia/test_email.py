@@ -51,8 +51,8 @@ def test_send_notification_emails(mocker: MockerFixture):
         return_value=True,
     )
     send_notification_emails(task_instance=test_task_instance())
-    patched_send_update_success_emails.assert_called_once
-    patched_send_task_failure_notifications.assert_called_once
+    patched_send_update_success_emails.assert_called_once()
+    patched_send_task_failure_notifications.assert_called_once()
 
 
 @pytest.fixture

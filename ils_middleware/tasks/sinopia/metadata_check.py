@@ -37,7 +37,7 @@ def _get_retrieve_metadata_resource(uri: str) -> dict | None:
     metadata_result = requests.get(uri)
     if metadata_result.status_code > 399:
         msg = f"{uri} retrieval failed {metadata_result.status_code}\n{metadata_result.text}"
-        logging.error(msg)
+        logger.error(msg)
         return None
 
     resource = metadata_result.json()
@@ -68,7 +68,7 @@ def _retrieve_all_resource_refs(resources: list) -> dict:
         result = requests.get(f"{resource_uri}/relationships")
         if result.status_code > 399:
             msg = f"Failed to retrieve {resource_uri}: {result.status_code}\n{result.text}"
-            logging.error(msg)
+            logger.error(msg)
             continue
 
         metadata_uris = result.json().get("sinopiaHasLocalAdminMetadataInferredRefs")

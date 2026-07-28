@@ -82,7 +82,7 @@ def create_admin_metadata(**kwargs) -> str:
         if identifier:
             ident_bnode = _add_local_system_id(graph, identifier, ils)
             graph.add((local_admin_metadata, BF.identifier, ident_bnode))
-    export_date = datetime.datetime.utcnow().isoformat()
+    export_date = datetime.datetime.now(datetime.UTC).isoformat()
     graph.add((local_admin_metadata, SINOPIA.exportDate, rdflib.Literal(export_date)))
     return graph.serialize(format="json-ld")
 

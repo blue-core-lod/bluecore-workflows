@@ -20,7 +20,7 @@ def symphony_requests(http_verb, uri, data, headers):
     if result.status_code > 399:
         msg = f"Symphony Web Service Call to {uri} Failed with {result.status_code}\n{result.text}"
         logger.error(msg)
-        raise Exception(msg)
+        raise RuntimeError(msg)
     return result
 
 

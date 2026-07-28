@@ -209,7 +209,7 @@ def test_putWorkToAlma_failure():
     with patch("requests.put", return_value=mock_response):
         # Call the function with mock arguments and expect it to raise an exception
         task_instance = Mock()
-        with pytest.raises(Exception):
+        with pytest.raises(RuntimeError):
             putWorkToAlma(
                 alma_update_uri="https://example.com",
                 data="<root></root>",
@@ -227,7 +227,9 @@ def test_putWorkToAlma_internal_server_error():
     with patch("requests.put", return_value=mock_response):
         # Call the function with mock arguments and expect it to raise an exception
         task_instance = Mock()
-        with pytest.raises(Exception, match="Internal server error from Alma API: 500"):
+        with pytest.raises(
+            RuntimeError, match="Internal server error from Alma API: 500"
+        ):
             putWorkToAlma(
                 alma_update_uri="https://example.com",
                 data="<root>1234567</root>",
@@ -246,7 +248,7 @@ def test_putWorkToAlma_unexpected_status_code():
         # Call the function with mock arguments and expect it to raise an exception
         task_instance = Mock()
         with pytest.raises(
-            Exception,
+            RuntimeError,
             match=f"Unexpected status code from Alma API: {mock_response.status_code}",
         ):
             putWorkToAlma(

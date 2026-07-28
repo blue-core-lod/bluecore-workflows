@@ -23,7 +23,8 @@ def test_convert_to_xml_no_records(tmp_path):
 
 
 def test_convert_to_xml_multiple_records(tmp_path):
-    single_record = open(RECORD_MAR, "rb").read()
+    with open(RECORD_MAR, "rb") as fo:
+        single_record = fo.read()
     two_records = tmp_path / "two.mrc"
     two_records.write_bytes(single_record + single_record)
 
@@ -32,7 +33,8 @@ def test_convert_to_xml_multiple_records(tmp_path):
 
 
 def test_xslt_marc_to_bf_returns_str():
-    marc_xml = open(RECORD_XML).read()
+    with open(RECORD_XML) as fo:
+        marc_xml = fo.read()
 
     result = xslt_marc_to_bf(marc_xml, "http://example.org/base/")
 
@@ -45,7 +47,8 @@ def test_xslt_marc_to_bf_accepts_xml_declaration():
     # Regression test: convert_to_xml's output (and MARC XML fixtures) include an
     # XML declaration, which lxml.etree.fromstring rejects when given a str. This
     # exercises the fix that re-encodes to bytes before parsing.
-    marc_xml = open(RECORD_XML).read()
+    with open(RECORD_XML) as fo:
+        marc_xml = fo.read()
     assert marc_xml.startswith("<?xml")
 
     result = xslt_marc_to_bf(marc_xml, "http://example.org/base/")
