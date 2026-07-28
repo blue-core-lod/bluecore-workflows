@@ -5,16 +5,14 @@ import uuid
 import pytest
 import rdflib
 import requests  # type: ignore
-
 from airflow.models import Variable
 from pytest_mock import MockerFixture
+from tasks import mock_task_instance, test_task_instance  # noqa: F401
 
 from ils_middleware.tasks.sinopia.local_metadata import (
     create_admin_metadata,
     new_local_admin_metadata,
 )
-
-from tasks import test_task_instance, mock_task_instance  # noqa: F401
 
 
 @pytest.fixture

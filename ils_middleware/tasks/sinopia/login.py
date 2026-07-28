@@ -1,7 +1,6 @@
 """Blue Core Login"""
 
 import httpx
-
 from airflow.models import Variable
 
 

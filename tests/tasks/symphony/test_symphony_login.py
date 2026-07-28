@@ -2,7 +2,6 @@
 
 import pytest
 import requests  # type: ignore
-
 from airflow.hooks.base import BaseHook  # type: ignore
 from pytest_mock import MockerFixture
 

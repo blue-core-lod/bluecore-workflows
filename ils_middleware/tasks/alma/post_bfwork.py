@@ -1,12 +1,11 @@
 """POST Work to Alma API"""
 
 import logging
+
+import lxml.etree as ET
+import requests  # type: ignore
 from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-from urllib.parse import urlparse
-import requests  # type: ignore
-import lxml.etree as ET
-
 
 logger = logging.getLogger(__name__)
 
@@ -35,7 +34,6 @@ def NewWorktoAlma(**kwargs):
     resources = task_instance.xcom_pull(key="resources", task_ids="api-message-parse")
 
     for instance_uri in resources:
-        urlparse(instance_uri).path
         file_content = s3_hook.read_key(
             key=f"alma/{instance_uri}/bfwork_alma.xml",
             bucket_name=Variable.get("marc_s3_bucket"),
@@ -90,7 +88,7 @@ def NewWorktoAlma(**kwargs):
             put_mms_id_str,
         )
     else:
-        raise Exception(f"Unexpected status code from Alma API: {status}")
+        raise RuntimeError(f"Unexpected status code from Alma API: {status}")
 
 
 def putWorkToAlma(
@@ -115,8 +113,10 @@ def putWorkToAlma(
             instance_uuid = instance_uri.split("/")[-1]
             task_instance.xcom_push(key=instance_uuid, value=put_mms_id_str)
         case 500:
-            raise Exception(f"Internal server error from Alma API: {put_update_status}")
+            raise RuntimeError(
+                f"Internal server error from Alma API: {put_update_status}"
+            )
         case _:
-            raise Exception(
+            raise RuntimeError(
                 f"Unexpected status code from Alma API: {put_update_status}"
             )

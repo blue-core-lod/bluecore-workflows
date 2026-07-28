@@ -2,13 +2,11 @@
 
 import pytest
 import requests  # type: ignore
-
 from airflow.hooks.base import BaseHook  # type: ignore
 from pytest_mock import MockerFixture
+from tasks import mock_task_instance, test_task_instance  # noqa: F401
 
 from ils_middleware.tasks.symphony.new import NewMARCtoSymphony
-
-from tasks import test_task_instance, mock_task_instance  # noqa: F401
 
 task_instance = test_task_instance()
 
@@ -41,7 +39,7 @@ def test_NewMARCtoSymphony(
     mock_connection,
     mock_new_request,
     mock_task_instance,  # noqa: F811
-):  # noqa: F811
+):
     """Tests NewMARCtoSymphony"""
     NewMARCtoSymphony(
         task_instance=task_instance,

@@ -1,14 +1,12 @@
 """Test Symphony Operators and functions."""
 
 import io
+
 import pytest
-
-
 from airflow.providers.amazon.aws.hooks.lambda_function import LambdaHook
+from tasks import mock_task_instance, test_task_instance  # noqa: F401
 
 from ils_middleware.tasks.sinopia.rdf2marc import Rdf2Marc
-
-from tasks import test_task_instance, mock_task_instance  # noqa: F401
 
 mock_200_response = {
     "Payload": io.StringIO("{}"),

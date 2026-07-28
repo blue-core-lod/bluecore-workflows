@@ -1,7 +1,7 @@
 import logging
-from urllib.parse import urlparse
 import os
 from os import path
+from urllib.parse import urlparse
 
 from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook

@@ -3,10 +3,10 @@
 # import json
 import datetime
 import logging
-import typing
-# import uuid
 
+# import uuid
 import rdflib
+
 # import requests  # type: ignore
 
 # from airflow.models import Variable
@@ -32,7 +32,7 @@ def _add_local_system_id(
     return id_blank_node
 
 
-def _pull_identifiers(tasks, resource_uri, instance) -> typing.Optional[str]:
+def _pull_identifiers(tasks, resource_uri, instance) -> str | None:
     resource_uuid = resource_uri.split("/")[-1]
     for task_id in tasks:
         value = instance.xcom_pull(key=resource_uuid, task_ids=task_id)
@@ -82,7 +82,7 @@ def create_admin_metadata(**kwargs) -> str:
         if identifier:
             ident_bnode = _add_local_system_id(graph, identifier, ils)
             graph.add((local_admin_metadata, BF.identifier, ident_bnode))
-    export_date = datetime.datetime.utcnow().isoformat()
+    export_date = datetime.datetime.now(datetime.UTC).isoformat()
     graph.add((local_admin_metadata, SINOPIA.exportDate, rdflib.Literal(export_date)))
     return graph.serialize(format="json-ld")
 

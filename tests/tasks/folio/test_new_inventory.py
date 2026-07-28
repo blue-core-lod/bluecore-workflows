@@ -1,23 +1,21 @@
-import httpx
-import pytest
-
-from pytest_mock import MockerFixture
-
 from unittest.mock import MagicMock
 
+import httpx
+import pytest
 from airflow.models import Connection
-
-from tasks import test_task_instance  # noqa: F401
-from tasks import mock_task_instance  # noqa: F401
-from tasks import mock_requests_okapi  # noqa: F401
-
-
-from ils_middleware.tasks.folio.new import (
-    post_folio_records,  # noqa
-    _check_for_existance,  # noqa
-    _put_to_okapi,  # noqa
+from pytest_mock import MockerFixture
+from tasks import (
+    mock_requests_okapi,  # noqa: F401
+    mock_task_instance,  # noqa: F401
+    test_task_instance,
 )
+
 import ils_middleware.tasks.folio.new as new_folio
+from ils_middleware.tasks.folio.new import (
+    _check_for_existance,
+    _put_to_okapi,
+    post_folio_records,
+)
 
 okapi_uri = "https://okapi-folio.dev.edu"
 instance_uri = "https://api.development.sinopia.io/resource/0000-1111-2222-3333"
@@ -59,7 +57,7 @@ def mock_httpx_client(*args, **kwargs):
     return mock_client
 
 
-class MockFolioClient(object):
+class MockFolioClient:
     def __init__(self, *args, **kwargs):
         self.okapi_url = okapi_uri
         self.okapi_headers = {}
@@ -93,7 +91,7 @@ def mock_folio_client(monkeypatch):
 def test_happypath_post_folio_record(
     mocker,
     mock_airflow_connection,
-    mock_folio_client,  # noqa: F811
+    mock_folio_client,
     mock_task_instance,  # noqa: F811
     mock_requests_okapi,  # noqa: F811
 ):
@@ -121,7 +119,7 @@ def test_raised_error(
     mock_folio_client,
     mock_task_instance,  # noqa: F811
     caplog,
-    mocker: MockerFixture,  # noqa: F811
+    mocker: MockerFixture,
 ):
     mocker.patch(
         "ils_middleware.tasks.folio.new.Connection.get_connection_from_secrets",
@@ -151,7 +149,7 @@ def test_check_for_existance_existing_record(mocker, mock_task_instance):  # noq
     assert existing_records[0]["hrid"] == "in00031000"
 
 
-class MockTaskInstance(object):
+class MockTaskInstance:
     def xcom_push(self, *args, **kwargs):
         pass
 

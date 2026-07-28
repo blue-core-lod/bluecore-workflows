@@ -1,18 +1,20 @@
-from unittest.mock import Mock, patch, ANY
+from unittest.mock import ANY, Mock, patch
+
+from lxml import etree as ET
+from rdflib import Graph, Namespace, URIRef
+from rdflib.namespace import RDF
+
 from ils_middleware.tasks.amazon.alma_work_s3 import (
-    get_work_uri,
-    parse_graph,
-    serialize_work_graph,
     find_related_to_elements,
+    get_work_uri,
+    load_to_s3,
+    parse_graph,
     process_related_to_elements,
     process_work_elements,
-    load_to_s3,
     push_to_xcom,
     send_work_to_alma_s3,
+    serialize_work_graph,
 )
-from rdflib import Graph, URIRef, Namespace
-from rdflib.namespace import RDF
-from lxml import etree as ET
 
 
 def test_get_work_uri():

@@ -40,7 +40,7 @@ def overlay_marc_in_symphony(*args, **kwargs):
         payload = {
             "@resource": "/catalog/bib",
             "@key": catkey,
-            "catalogDate": datetime.datetime.now().strftime("%Y-%m-%d"),
+            "catalogDate": datetime.datetime.now(datetime.UTC).strftime("%Y-%m-%d"),
             "bib": marc_json,
         }
 

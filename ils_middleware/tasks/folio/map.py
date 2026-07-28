@@ -206,7 +206,7 @@ def _build_and_query_graph(**kwargs) -> list:
 
     json_ld = task_instance.xcom_pull(key=instance_uuid, task_ids=task_id).get("graph")
     graph.parse(data=json_ld, format="json-ld")
-    logging.info(f"SPARQL:\n{query}")
+    logger.info(f"SPARQL:\n{query}")
     values = []
     for row in graph.query(query):
         values.append(_retrieve_values(row))  # type: ignore

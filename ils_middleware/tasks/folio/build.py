@@ -518,7 +518,7 @@ transforms = {
 def _create_update_metadata(**kwargs) -> dict:
     folio_client = kwargs["folio_client"]
 
-    current_timestamp = datetime.datetime.utcnow().isoformat()
+    current_timestamp = datetime.datetime.now(datetime.UTC).isoformat()
     user_uuid = _user_folio_id(folio_client.okapi_url, folio_client.username)
     metadata = kwargs.get("metadata", {})
     if len(metadata) < 1:
@@ -585,7 +585,10 @@ def _inventory_record(**kwargs: Any) -> dict[str, Any]:
 
 
 def build_records(**kwargs):
-    """ """
+    """
+    Builds FOLIO Inventory Records from SPARQL results run on combined BIBFRAME
+    Graph
+    """
     task_instance = kwargs["task_instance"]
     connection_id = kwargs["folio_connection_id"]
 

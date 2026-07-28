@@ -1,19 +1,20 @@
 """Tests alma Post BF Work"""
 
+import os
+from unittest import mock
+from unittest.mock import Mock, patch
+
 import pytest
+from airflow.hooks.base import BaseHook  # type: ignore
+from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from pytest_mock import MockerFixture
 from tasks import (
     mock_task_instance,
 )
 
-from unittest import mock
-from unittest.mock import patch, Mock
-from pytest_mock import MockerFixture
-from airflow.hooks.base import BaseHook  # type: ignore
-from airflow.providers.amazon.aws.hooks.s3 import S3Hook
-import os
 from ils_middleware.tasks.alma.post_bfwork import (
-    get_env_vars,
     NewWorktoAlma,
+    get_env_vars,
     parse_400,
     putWorkToAlma,
 )
@@ -208,7 +209,7 @@ def test_putWorkToAlma_failure():
     with patch("requests.put", return_value=mock_response):
         # Call the function with mock arguments and expect it to raise an exception
         task_instance = Mock()
-        with pytest.raises(Exception):
+        with pytest.raises(RuntimeError):
             putWorkToAlma(
                 alma_update_uri="https://example.com",
                 data="<root></root>",
@@ -226,7 +227,9 @@ def test_putWorkToAlma_internal_server_error():
     with patch("requests.put", return_value=mock_response):
         # Call the function with mock arguments and expect it to raise an exception
         task_instance = Mock()
-        with pytest.raises(Exception, match="Internal server error from Alma API: 500"):
+        with pytest.raises(
+            RuntimeError, match="Internal server error from Alma API: 500"
+        ):
             putWorkToAlma(
                 alma_update_uri="https://example.com",
                 data="<root>1234567</root>",
@@ -245,7 +248,7 @@ def test_putWorkToAlma_unexpected_status_code():
         # Call the function with mock arguments and expect it to raise an exception
         task_instance = Mock()
         with pytest.raises(
-            Exception,
+            RuntimeError,
             match=f"Unexpected status code from Alma API: {mock_response.status_code}",
         ):
             putWorkToAlma(

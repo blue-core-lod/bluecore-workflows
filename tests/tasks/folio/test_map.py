@@ -2,10 +2,9 @@
 
 import pytest
 import rdflib
+from tasks import TaskInstanceStub, test_task_instance
 
 from ils_middleware.tasks.folio.map import map_to_folio
-
-from tasks import test_task_instance, TaskInstanceStub
 
 instance_uri = (
     "https://api.stage.sinopia.io/resource/b0319047-acd0-4f30-bd8b-98e6c1bac6b0"
@@ -38,13 +37,12 @@ def mock_task_instance(monkeypatch, test_graph: rdflib.Graph):
         key = kwargs.get("key")
         value = kwargs.get("value")
         mock_push_store[key] = [str(value[0][0]), str(value[0][1])]
-        return None
 
     monkeypatch.setattr(TaskInstanceStub, "xcom_pull", mock_xcom_pull)
     monkeypatch.setattr(TaskInstanceStub, "xcom_push", mock_xcom_push)
 
 
-def test_folio(mock_task_instance, test_graph: rdflib.Graph):  # noqa: F811
+def test_folio(mock_task_instance, test_graph: rdflib.Graph):
     """Test map_to_folio."""
     map_to_folio(
         task_instance=test_task_instance(),
@@ -62,7 +60,7 @@ def test_folio(mock_task_instance, test_graph: rdflib.Graph):  # noqa: F811
     assert title_list[1].startswith("raccontere la diaspora")
 
 
-def test_folio_work(mock_task_instance, test_graph: rdflib.Graph):  # noqa: F811
+def test_folio_work(mock_task_instance, test_graph: rdflib.Graph):
     map_to_folio(
         task_instance=test_task_instance(),
         folio_field="contributor.primary.Person",

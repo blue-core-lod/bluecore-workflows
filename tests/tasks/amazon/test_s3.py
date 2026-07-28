@@ -1,14 +1,18 @@
 """Test the AWS S3 tasks properly name and load files."""
 
 import json
-import pytest
 from unittest import mock
 
+import pytest
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from tasks import (  # noqa
+    TaskInstanceStub,
+    marc_as_json,
+    mock_task_instance,
+    test_task_instance,
+)
 
 from ils_middleware.tasks.amazon.s3 import get_from_s3, send_to_s3
-
-from tasks import test_task_instance, mock_task_instance, marc_as_json, TaskInstanceStub  # noqa
 
 
 @pytest.fixture
@@ -49,7 +53,7 @@ def test_send_to_s3(mock_env_vars, mock_s3_load_string, mock_task_instance):  # 
     """Test sending a file to s3"""
 
     send_to_s3(task_instance=test_task_instance())
-    mock_s3_load_string.call_count == 2
+    assert mock_s3_load_string.call_count == 2
     marc_json = marc_as_json()
     assert (
         json.loads(test_task_instance().xcom_pull(key="0000-1111-2222-3333"))

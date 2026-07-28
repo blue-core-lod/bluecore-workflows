@@ -1,9 +1,9 @@
 import typing
+
 import pytest  # noqa: F401
 import rdflib
 
 import ils_middleware.tasks.folio.mappings.bf_work as bf_work_map
-
 
 work_uri = "https://api.stage.sinopia.io/resource/c96d8b55-e0ac-48a5-9a9b-b0684758c99e"
 

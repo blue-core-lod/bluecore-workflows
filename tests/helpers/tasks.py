@@ -1,7 +1,7 @@
-import pytest
 import json
-import requests  # type: ignore
 
+import pytest
+import requests  # type: ignore
 from pytest_mock import MockerFixture
 
 
@@ -44,10 +44,12 @@ def test_uri_region():
 
 def test_xml_response():
     return [
-        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?">'
-        "<bib>"
-        "<mms_id>9978021305103681</mms_id>"
-        "</bib>",
+        (
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?">'
+            "<bib>"
+            "<mms_id>9978021305103681</mms_id>"
+            "</bib>"
+        ),
     ]
 
 
@@ -278,7 +280,6 @@ def mock_task_instance(monkeypatch, tmp_path):
         key = kwargs.get("key")
         value = kwargs.get("value")
         mock_push_store[key] = value
-        return None
 
     monkeypatch.setattr(TaskInstanceStub, "xcom_pull", mock_xcom_pull)
     monkeypatch.setattr(TaskInstanceStub, "xcom_push", mock_xcom_push)

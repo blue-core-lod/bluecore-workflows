@@ -1,5 +1,4 @@
 import pytest
-
 from airflow.providers.keycloak.auth_manager.keycloak_auth_manager import (
     KeycloakAuthManager,
 )

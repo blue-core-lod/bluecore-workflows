@@ -7,15 +7,13 @@ import time
 import zipfile
 
 import rdflib
-
+from airflow.providers.postgres.hooks.postgres import PostgresHook
+from bluecore_models.bluecore_graph import save_graph
+from bluecore_models.models.version import CURRENT_USER_ID
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import sessionmaker
-from bluecore_models.bluecore_graph import save_graph
-from bluecore_models.models.version import CURRENT_USER_ID
-
-from airflow.providers.postgres.hooks.postgres import PostgresHook
 
 BLUECORE_URL = os.environ.get("BLUECORE_URL", "https://bcld.info/")
 
@@ -75,13 +73,13 @@ def batch_archived_files(
     if not archive_file_path.exists():
         raise FileNotFoundError(f"{archive_file_path} does not exist")
 
-    archive_file = tarfile.open(archive_file_path, "r")
-    file_names = [
-        name
-        for name in archive_file.getnames()
-        if rdflib.util.guess_format(name) is not None
-        and not pathlib.Path(name).name.startswith("._")
-    ]
+    with tarfile.open(archive_file_path, "r") as archive_file:
+        file_names = [
+            name
+            for name in archive_file.getnames()
+            if rdflib.util.guess_format(name) is not None
+            and not pathlib.Path(name).name.startswith("._")
+        ]
 
     total_names = len(file_names)
     batch_size = int(total_names / number_of_batches)
@@ -106,9 +104,7 @@ def delete_upload(upload: str, remove_empty_parent: bool = False) -> None:
 
 def is_zip(file_name: str) -> bool:
     """Determines if file is a zip file"""
-    if file_name.endswith(".zip") or file_name.endswith(".gz"):
-        return True
-    return False
+    return bool(file_name.endswith((".zip", ".gz")))
 
 
 def get_bluecore_db() -> str:
@@ -123,17 +119,19 @@ def zip_to_tar_gz(zip_file: str) -> str:
     zip_path = pathlib.Path(zip_file)
     tar_path = zip_path.parent / f"{zip_path.stem}.tar.gz"
 
-    with zipfile.ZipFile(zip_path) as cbd_zip_file:
-        with tarfile.open(tar_path, "w:gz") as cbd_tar_file:
-            for zip_info in cbd_zip_file.infolist():
-                if zip_info.is_dir():
-                    continue
-                tar_info = tarfile.TarInfo(name=zip_info.filename)
-                tar_info.size = zip_info.file_size
-                with cbd_zip_file.open(zip_info.filename) as infile:
-                    cbd_tar_file.addfile(
-                        tarinfo=tar_info, fileobj=io.BytesIO(infile.read())
-                    )
+    with (
+        zipfile.ZipFile(zip_path) as cbd_zip_file,
+        tarfile.open(tar_path, "w:gz") as cbd_tar_file,
+    ):
+        for zip_info in cbd_zip_file.infolist():
+            if zip_info.is_dir():
+                continue
+            tar_info = tarfile.TarInfo(name=zip_info.filename)
+            tar_info.size = zip_info.file_size
+            with cbd_zip_file.open(zip_info.filename) as infile:
+                cbd_tar_file.addfile(
+                    tarinfo=tar_info, fileobj=io.BytesIO(infile.read())
+                )
     zip_path.unlink()
     return str(tar_path)
 
@@ -149,7 +147,7 @@ def load(file_path: str, user_uid: str, bluecore_db: str):
         """
         CURRENT_USER_ID.set(user_uid)
         logger.info("Using CURRENT_USER_ID: %s", user_uid)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 -- must not abort the load over this
         logger.error("Failed to set CURRENT_USER_ID: %s", e)
 
     # create the database session maker from the cached, process-local engine
@@ -180,7 +178,7 @@ def load_cbd_files(
     try:
         CURRENT_USER_ID.set(user_uid)
         logger.info("Using CURRENT_USER_ID: %s", user_uid)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 -- must not abort the load over this
         logger.error("Failed to set CURRENT_USER_ID: %s", e)
 
     bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
@@ -216,7 +214,7 @@ def load_cbd_files(
                         raise
                     logger.error(f"Operational Error {e} for {name}")
                     time.sleep(2**attempt)
-                except Exception as e:
+                except Exception as e:  # noqa: BLE001 -- one bad file shouldn't abort the batch
                     logger.error(f"Error {e} for {name}")
                     errors.append(name)
                     break

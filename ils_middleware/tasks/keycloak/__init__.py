@@ -2,7 +2,6 @@ import os
 
 import httpx
 
-
 KEYCLOAK_EXTERNAL_URL = os.environ.get(
     "KEYCLOAK_INTERNAL_URL", "http://localhost/keycloak"
 ).rstrip("/")

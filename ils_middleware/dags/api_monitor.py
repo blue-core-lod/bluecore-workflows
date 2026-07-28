@@ -1,10 +1,8 @@
 import logging
-
 from datetime import datetime
 
-from airflow.sdk import dag, task
 from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
-from airflow.sdk import get_current_context
+from airflow.sdk import dag, get_current_context, task
 
 from ils_middleware.dags.alma import institutions
 from ils_middleware.tasks.keycloak import get_user_profile
