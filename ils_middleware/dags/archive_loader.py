@@ -63,7 +63,7 @@ def archived_file_loader():
     @task
     def batch_cbd_files(archive_file: str) -> list:
         """Extracts list of CBD files from zip and creates batches of filenames"""
-        return batch_archived_files(archive_file)
+        return batch_archived_files(archive_file, 10)
 
     @task
     def bluecore_db_info() -> str:
@@ -79,7 +79,7 @@ def archived_file_loader():
         remove_empty_parent = current_path.parent.name != "uploads"
         delete_upload(upload=archive_file_path, remove_empty_parent=remove_empty_parent)
 
-    @task
+    @task(max_active_tis_per_dagrun=3)
     def cbd_file_loader(**kwargs):
         return load_cbd_files(
             bluecore_db=kwargs["bluecore_db"],
