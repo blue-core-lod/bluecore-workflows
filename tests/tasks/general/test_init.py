@@ -47,8 +47,33 @@ def test_parse_messages(mocker, mock_keycloak):  # noqa: F811
 
     assert result.startswith("completed_parse")
     assert xcoms[0]["key"].endswith("7922d096-9b45-4235-be9a-a89d390bee83")
+    assert xcoms[0]["value"]["local_id"] is None
     assert xcoms[1]["value"][0].startswith("https://bcld.info/instance/7922d096")
     assert xcoms[2]["value"] == []
+
+
+def test_parse_messages_with_local_id(mocker, mock_keycloak):  # noqa: F811
+    mock_task_instance = mocker
+    xcoms = []
+    mock_task_instance.xcom_push = lambda key, value: xcoms.append(
+        {"key": key, "value": value}
+    )
+
+    message = {
+        "user": {
+            "username": "dev_op",
+            "email": "dev_op@bluecore.org",
+            "id": "48bac4b4-a4f1-4008-9f16-7dc0b51fd85e",
+            "groups": ["stanford"],
+        },
+        "resource": "https://bcld.info/instance/7922d096-9b45-4235-be9a-a89d390bee83",
+        "local_id": "a123456",
+    }
+
+    result = parse_messages(task_instance=mock_task_instance, message=message)
+
+    assert result.startswith("completed_parse")
+    assert xcoms[0]["value"]["local_id"] == "a123456"
 
 
 def test_get_resource(mocker):

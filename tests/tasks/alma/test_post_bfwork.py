@@ -15,6 +15,7 @@ from tasks import (
 from ils_middleware.tasks.alma.post_bfwork import (
     NewWorktoAlma,
     get_env_vars,
+    lookup_mms_id_by_identifier,
     parse_400,
     putWorkToAlma,
 )
@@ -170,6 +171,132 @@ def test_NewWorktoAlma_post_request(mocker: MockerFixture):
         dag=Mock(dag_id="penn"),
         task_instance=mock_task_instance,
     )
+
+
+def test_lookup_mms_id_by_identifier_found(mocker: MockerFixture):
+    mock_response = Mock()
+    mock_response.status_code = 200
+    mock_response.content = b"<bibs><bib><mms_id>9988776655</mms_id></bib></bibs>"
+    mocker.patch("requests.get", return_value=mock_response)
+
+    mms_id = lookup_mms_id_by_identifier(
+        "local-123", "https://alma.example.edu", "apikey123"
+    )
+
+    assert mms_id == "9988776655"
+
+
+def test_lookup_mms_id_by_identifier_not_found(mocker: MockerFixture):
+    mock_response = Mock()
+    mock_response.status_code = 400
+    mocker.patch("requests.get", return_value=mock_response)
+
+    mms_id = lookup_mms_id_by_identifier(
+        "unknown-id", "https://alma.example.edu", "apikey123"
+    )
+
+    assert mms_id is None
+
+
+def test_NewWorktoAlma_local_id_overlay_puts_directly(mocker: MockerFixture):
+    mock_get_env_vars = Mock()
+    mock_get_env_vars.side_effect = lambda x: (
+        ("uri_region", "alma_api_key") if x == "penn" else (None, None)
+    )
+    mocker.patch(
+        "ils_middleware.tasks.alma.post_bfwork.get_env_vars", new=mock_get_env_vars
+    )
+
+    mock_variable_getter = Mock()
+    mock_variable_getter.side_effect = lambda x: (
+        "bucket_name" if x == "marc_s3_bucket" else None
+    )
+    mocker.patch("airflow.models.Variable.get", new=mock_variable_getter)
+
+    mocker.patch(
+        "airflow.providers.amazon.aws.hooks.s3.S3Hook.read_key",
+        return_value="file_content",
+    )
+
+    mock_lookup_response = Mock()
+    mock_lookup_response.status_code = 200
+    mock_lookup_response.content = b"<bibs><bib><mms_id>555000111</mms_id></bib></bibs>"
+    mocker.patch("requests.get", return_value=mock_lookup_response)
+
+    mock_put_response = Mock()
+    mock_put_response.status_code = 200
+    mock_put_response.text = "<bib><mms_id>555000111</mms_id></bib>"
+    mocker.patch("requests.put", return_value=mock_put_response)
+
+    mock_post = mocker.patch("requests.post")
+
+    task_instance = Mock()
+
+    def fake_xcom_pull(*args, **kwargs):
+        if kwargs.get("key") == "resources":
+            return ["https://bcld.info/instance/aaaa-bbbb-cccc-dddd"]
+        if kwargs.get("task_ids") == "api-message-parse":
+            return {"local_id": "local-999"}
+        return None
+
+    task_instance.xcom_pull.side_effect = fake_xcom_pull
+
+    NewWorktoAlma(dag=Mock(dag_id="penn"), task_instance=task_instance)
+
+    mock_post.assert_not_called()
+    task_instance.xcom_push.assert_called_once_with(
+        key="aaaa-bbbb-cccc-dddd", value="555000111"
+    )
+
+
+def test_NewWorktoAlma_local_id_not_found_skips_and_notifies(mocker: MockerFixture):
+    mock_get_env_vars = Mock()
+    mock_get_env_vars.side_effect = lambda x: (
+        ("uri_region", "alma_api_key") if x == "penn" else (None, None)
+    )
+    mocker.patch(
+        "ils_middleware.tasks.alma.post_bfwork.get_env_vars", new=mock_get_env_vars
+    )
+
+    mock_variable_getter = Mock()
+    mock_variable_getter.side_effect = lambda x: (
+        "bucket_name" if x == "marc_s3_bucket" else None
+    )
+    mocker.patch("airflow.models.Variable.get", new=mock_variable_getter)
+
+    mocker.patch(
+        "airflow.providers.amazon.aws.hooks.s3.S3Hook.read_key",
+        return_value="file_content",
+    )
+
+    mock_lookup_response = Mock()
+    mock_lookup_response.status_code = 400
+    mocker.patch("requests.get", return_value=mock_lookup_response)
+
+    mock_post = mocker.patch("requests.post")
+    mock_put = mocker.patch("requests.put")
+    mock_send_email = mocker.patch(
+        "ils_middleware.tasks.alma.post_bfwork.send_local_id_not_found_email"
+    )
+
+    message = {"email": "researcher@example.edu", "local_id": "local-999"}
+    task_instance = Mock()
+
+    def fake_xcom_pull(*args, **kwargs):
+        if kwargs.get("key") == "resources":
+            return ["https://bcld.info/instance/aaaa-bbbb-cccc-dddd"]
+        if kwargs.get("task_ids") == "api-message-parse":
+            return message
+        return None
+
+    task_instance.xcom_pull.side_effect = fake_xcom_pull
+
+    NewWorktoAlma(dag=Mock(dag_id="penn"), task_instance=task_instance)
+
+    mock_post.assert_not_called()
+    mock_put.assert_not_called()
+    task_instance.xcom_push.assert_not_called()
+    mock_send_email.assert_called_once_with(message, "local-999")
 
 
 def test_parse_400():

@@ -13,6 +13,7 @@ from tasks import (
 import ils_middleware.tasks.folio.new as new_folio
 from ils_middleware.tasks.folio.new import (
     _check_for_existance,
+    _notify_local_id_not_found,
     _put_to_okapi,
     post_folio_records,
 )
@@ -43,6 +44,24 @@ def mock_httpx_client(*args, **kwargs):
         pass
 
     def mock_get(*args, **kwargs):
+        if args[0].endswith("/inventory/instances"):
+            query_response = MagicMock()
+            query = kwargs.get("params", {}).get("query", "")
+            query_response.status_code = 200
+            if 'hrid=="in000555"' in query:
+                query_response.json = lambda: {
+                    "instances": [
+                        {
+                            "id": "aaaa1111-2222-3333-4444-555566667777",
+                            "hrid": "in000555",
+                            "_version": "3",
+                        }
+                    ]
+                }
+            else:
+                query_response.json = lambda: {"instances": []}
+            return query_response
+
         post_response = MagicMock()
         post_response.status_code = 404
         if args[0].endswith("f85ea17b-4861-426d-a681-e24f0b44b57f"):
@@ -142,11 +161,104 @@ def test_check_for_existance_existing_record(mocker, mock_task_instance):  # noq
         return_value=mock_airflow_connection,
     )
     records = [{"id": "f85ea17b-4861-426d-a681-e24f0b44b57f"}]
-    _, existing_records = _check_for_existance(
+    _, existing_records, unmatched_local_ids = _check_for_existance(
         records=records, folio_client=MockFolioClient()
     )
 
     assert existing_records[0]["hrid"] == "in00031000"
+    assert not unmatched_local_ids
+
+
+def test_check_for_existance_local_id_overlay(mocker):
+    mocker.patch(
+        "ils_middleware.tasks.folio.new.Connection.get_connection_from_secrets",
+        return_value=mock_airflow_connection,
+    )
+    records = [
+        {
+            "id": "computed-uuid-not-used",
+            "sourceUri": "https://bcld.info/instance/aaaa-bbbb",
+        }
+    ]
+    new_records, existing_records, unmatched_local_ids = _check_for_existance(
+        records=records,
+        folio_client=MockFolioClient(),
+        local_ids={"aaaa-bbbb": "in000555"},
+    )
+
+    assert not new_records
+    assert not unmatched_local_ids
+    assert existing_records[0]["id"] == "aaaa1111-2222-3333-4444-555566667777"
+    assert existing_records[0]["hrid"] == "in000555"
+    assert existing_records[0]["_version"] == "3"
+
+
+def test_check_for_existance_local_id_not_found(mocker):
+    mocker.patch(
+        "ils_middleware.tasks.folio.new.Connection.get_connection_from_secrets",
+        return_value=mock_airflow_connection,
+    )
+    records = [
+        {
+            "id": "computed-uuid-not-used",
+            "sourceUri": "https://bcld.info/instance/cccc-dddd",
+        }
+    ]
+    new_records, existing_records, unmatched_local_ids = _check_for_existance(
+        records=records,
+        folio_client=MockFolioClient(),
+        local_ids={"cccc-dddd": "unknown-local-id"},
+    )
+
+    assert not existing_records
+    assert not new_records
+    assert unmatched_local_ids[0]["record"]["id"] == "computed-uuid-not-used"
+    assert unmatched_local_ids[0]["local_id"] == "unknown-local-id"
+
+
+def test_notify_local_id_not_found_sends_email(mocker):
+    mock_send_email = mocker.patch(
+        "ils_middleware.tasks.folio.new.send_local_id_not_found_email"
+    )
+    task_instance = mocker.Mock()
+    task_instance.xcom_pull.return_value = {
+        "email": "researcher@example.edu",
+        "resource_uri": "https://bcld.info/instance/cccc-dddd",
+    }
+
+    _notify_local_id_not_found(
+        [
+            {
+                "record": {"sourceUri": "https://bcld.info/instance/cccc-dddd"},
+                "local_id": "unknown-local-id",
+            }
+        ],
+        task_instance,
+    )
+
+    mock_send_email.assert_called_once_with(
+        task_instance.xcom_pull.return_value, "unknown-local-id"
+    )
+
+
+def test_notify_local_id_not_found_skips_when_no_message(mocker):
+    mock_send_email = mocker.patch(
+        "ils_middleware.tasks.folio.new.send_local_id_not_found_email"
+    )
+    task_instance = mocker.Mock()
+    task_instance.xcom_pull.return_value = None
+
+    _notify_local_id_not_found(
+        [
+            {
+                "record": {"sourceUri": "https://bcld.info/instance/cccc-dddd"},
+                "local_id": "unknown-local-id",
+            }
+        ],
+        task_instance,
+    )
+
+    mock_send_email.assert_not_called()
 
 
 class MockTaskInstance:

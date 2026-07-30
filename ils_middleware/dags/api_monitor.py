@@ -18,6 +18,20 @@ def _check_available_institutions(group: str) -> bool:
     return group.casefold() in all_institutions
 
 
+def _build_payload(params: dict) -> dict:
+    """
+    Builds the DAG trigger payload from incoming API call params. local_id is
+    always present and is None unless the export is overlaying an existing
+    catalog record by local identifier (e.g. an HRID or other institution's
+    local system identifier).
+    """
+    return {
+        "resource": params["resource"],
+        "local_id": params.get("local_id"),
+        "user": params["user"],
+    }
+
+
 def _trigger_dags(**kwargs):
     payload: dict = kwargs["payload"]
 
@@ -47,10 +61,7 @@ def monitor_institutions_exports():
         params = context.get("params")
         if params is None:
             raise ValueError("No parameters found in context")
-        return {
-            "resource": params["resource"],
-            "user": params["user"],
-        }
+        return _build_payload(params)
 
     @task
     def retrieve_user(payload: dict) -> dict:

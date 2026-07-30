@@ -7,6 +7,8 @@ import requests  # type: ignore
 from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
 
+from ils_middleware.tasks.sinopia.email import send_local_id_not_found_email
+
 logger = logging.getLogger(__name__)
 
 
@@ -26,6 +28,24 @@ def parse_400(result):
     return put_mms_id_str
 
 
+def lookup_mms_id_by_identifier(identifier, uri_region, alma_api_key):
+    """Looks up an existing Alma bib's MMS ID by an external local identifier (e.g. HRID, catkey)."""
+    lookup_uri = (
+        uri_region
+        + "/almaws/v1/bibs?other_system_id="
+        + identifier
+        + "&apikey="
+        + alma_api_key
+    )
+    result = requests.get(lookup_uri, headers={"Accept": "application/xml"})
+    if result.status_code != 200:
+        logger.info(f"No existing Alma bib found for local identifier {identifier}")
+        return None
+    xml_response = ET.fromstring(result.content)
+    mms_ids = xml_response.xpath("//mms_id/text()")
+    return mms_ids[0] if mms_ids else None
+
+
 def NewWorktoAlma(**kwargs):
     institution = kwargs["dag"].dag_id
     uri_region, alma_api_key = get_env_vars(institution)
@@ -42,6 +62,41 @@ def NewWorktoAlma(**kwargs):
     # convert to bytes
     data = data.encode("utf-8")
     logger.debug(f"file data: {data}")
+
+    instance_uuid = instance_uri.split("/")[-1]
+    message = task_instance.xcom_pull(key=instance_uuid, task_ids="api-message-parse")
+    local_id = message.get("local_id") if isinstance(message, dict) else None
+
+    if local_id:
+        existing_mms_id = lookup_mms_id_by_identifier(
+            local_id, uri_region, alma_api_key
+        )
+        if existing_mms_id:
+            alma_update_uri = (
+                uri_region
+                + "/almaws/v1/bibs/"
+                + existing_mms_id
+                + "?normalization=&validate=false&override_warning=true"
+                + "&override_lock=true&stale_version_check=false&cataloger_level=&check_match=false"
+                + "&apikey="
+                + alma_api_key
+            )
+            putWorkToAlma(
+                alma_update_uri,
+                data,
+                task_instance,
+                instance_uri,
+                existing_mms_id,
+            )
+            return
+
+        logger.warning(
+            f"No existing Alma bib found for local identifier {local_id}; "
+            f"skipping {instance_uri}"
+        )
+        if isinstance(message, dict):
+            send_local_id_not_found_email(message, local_id)
+        return
 
     alma_uri = (
         uri_region
