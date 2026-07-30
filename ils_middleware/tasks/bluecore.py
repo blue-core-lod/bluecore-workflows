@@ -21,8 +21,6 @@ logging.getLogger("rdflib").setLevel(logging.ERROR)
 logging.getLogger("bluecore_models").setLevel(logging.ERROR)
 
 logger = logging.getLogger(__name__)
-if not logger.handlers:
-    logging.basicConfig(level=logging.INFO)
 
 
 # Pool sizing per engine (i.e. per Celery worker child process). The load tasks
