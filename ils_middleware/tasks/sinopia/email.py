@@ -76,6 +76,26 @@ def _email_on_failure_attributes(message: dict) -> dict:
     }
 
 
+def send_local_id_not_found_email(message: dict, local_id: str) -> None:
+    ses_hook = SesHook(aws_conn_id="aws_ses_connection")
+    email_attributes = _email_on_local_id_not_found_attributes(message, local_id)
+    ses_hook.send_email(**email_attributes)
+
+
+def _email_on_local_id_not_found_attributes(message: dict, local_id: str) -> dict:
+    email_addr = message["email"]
+    resource_uri = message["resource_uri"]
+    return {
+        "mail_from": "admin@bcld.info",
+        "to": email_addr,
+        "subject": "No matching catalog record found for your export",
+        "html_content": (
+            f"No existing catalog record was found for local identifier '{local_id}' "
+            f"(resource_uri: {resource_uri}). The overlay export was not completed."
+        ),
+    }
+
+
 def _email_on_success_attributes(message: dict) -> dict:
     logger.info(f"Success email message {message}")
     email_addr = message["email"]

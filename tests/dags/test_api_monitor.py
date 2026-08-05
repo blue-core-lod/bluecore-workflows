@@ -1,3 +1,37 @@
+def test_build_payload_without_local_id(mocker):
+    mocker.patch("airflow.models.Variable.get", return_value="test")
+    from ils_middleware.dags.api_monitor import _build_payload
+
+    payload = _build_payload(
+        {"resource": "https://bcld.info/instance/1111-2222", "user": "uid-1"}
+    )
+
+    assert payload == {
+        "resource": "https://bcld.info/instance/1111-2222",
+        "local_id": None,
+        "user": "uid-1",
+    }
+
+
+def test_build_payload_with_local_id(mocker):
+    mocker.patch("airflow.models.Variable.get", return_value="test")
+    from ils_middleware.dags.api_monitor import _build_payload
+
+    payload = _build_payload(
+        {
+            "resource": "https://bcld.info/instance/1111-2222",
+            "user": "uid-1",
+            "local_id": "a123456",
+        }
+    )
+
+    assert payload == {
+        "resource": "https://bcld.info/instance/1111-2222",
+        "user": "uid-1",
+        "local_id": "a123456",
+    }
+
+
 def test_check_available_institutions(mocker):
     mocker.patch("airflow.models.Variable.get", return_value="test")
     from ils_middleware.dags.api_monitor import _check_available_institutions

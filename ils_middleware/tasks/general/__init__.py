@@ -58,6 +58,7 @@ def parse_messages(**kwargs) -> str:
                 "group": user["groups"][0],
                 "resource_uri": resource_uri,
                 "resource": resource_payload["data"],
+                "local_id": message.get("local_id"),
             },
         )
         resources.append(resource_uri)
