@@ -1,6 +1,6 @@
 [project]
 name = "bluecore-workflows"
-version = "1.0.3"
+version = "1.1.0"
 description = "Blue Core Workflows using Apache Airflow"
 readme = "README.md"
 authors = [{ name = "Jeremy Nelson", email = "jpnelson@stanford.edu"}]
