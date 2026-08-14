@@ -9,6 +9,18 @@ MARC2BIBFRAME2_XSL = (
 )
 
 
+DLC_ORG_URI = "http://id.loc.gov/vocabulary/organizations/dlc"
+CBC_ORG_URI = "http://id.loc.gov/vocabulary/organizations/cbc"
+
+
+def replace_dlc_assigner(bf_rdf_xml: str) -> str:
+    """
+    Replace all occurrences of the DLC organization URI with the CBC
+    organization URI in the BIBFRAME RDF XML output.
+    """
+    return bf_rdf_xml.replace(DLC_ORG_URI, CBC_ORG_URI)
+
+
 def convert_to_xml(marc_file: str) -> str:
     """
     Convert MARC21 to MARC XML

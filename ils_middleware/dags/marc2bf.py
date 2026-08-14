@@ -6,7 +6,11 @@ from datetime import datetime
 from airflow.sdk import dag, get_current_context, task
 
 from ils_middleware.tasks.bluecore import delete_upload
-from ils_middleware.tasks.general.marc import convert_to_xml, xslt_marc_to_bf
+from ils_middleware.tasks.general.marc import (
+    convert_to_xml,
+    replace_dlc_assigner,
+    xslt_marc_to_bf,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +63,7 @@ def marc_to_bibframe():
         Transforms MARC XML to BIBFRAME RDF XML using LOC's marc2bibframe2 XSLT
         """
         bf_rdf_xml = xslt_marc_to_bf(marc_xml, source_base_uri)
-        return bf_rdf_xml
+        return replace_dlc_assigner(bf_rdf_xml)
 
     @task
     def save_output(bf_rdf_xml: str, outputs_dir: str = "/opt/airflow/outputs") -> str:

@@ -1,6 +1,13 @@
 import pytest
 
-from ils_middleware.tasks.general.marc import convert_to_xml, xslt_marc_to_bf
+from ils_middleware.tasks.general.marc import (
+    convert_to_xml,
+    replace_dlc_assigner,
+    xslt_marc_to_bf,
+)
+
+DLC_URI = "http://id.loc.gov/vocabulary/organizations/dlc"
+CBC_URI = "http://id.loc.gov/vocabulary/organizations/cbc"
 
 RECORD_MAR = "tests/fixtures/record.mar"
 RECORD_XML = "tests/fixtures/record.xml"
@@ -63,3 +70,36 @@ def test_convert_to_xml_then_xslt_marc_to_bf_roundtrip():
 
     assert isinstance(bf_rdf_xml, str)
     assert "<rdf:RDF" in bf_rdf_xml
+
+
+def test_replace_dlc_assigner_replaces_dlc_with_cbc():
+    rdf_xml = f'<bf:assigner rdf:resource="{DLC_URI}"/>'
+
+    result = replace_dlc_assigner(rdf_xml)
+
+    assert DLC_URI not in result
+    assert CBC_URI in result
+
+
+def test_replace_dlc_assigner_preserves_other_assigners():
+    other_uri = "http://id.loc.gov/vocabulary/organizations/cst"
+    rdf_xml = f'<bf:assigner rdf:resource="{other_uri}"/>'
+
+    result = replace_dlc_assigner(rdf_xml)
+
+    assert other_uri in result
+    assert CBC_URI not in result
+
+
+def test_replace_dlc_assigner_replaces_all_occurrences():
+    rdf_xml = (
+        f'<bf:assigner rdf:resource="{DLC_URI}"/>\n'
+        f'<bf:Agent rdf:about="{DLC_URI}"/>\n'
+        f'<bf:assigner rdf:resource="http://id.loc.gov/vocabulary/organizations/pu"/>'
+    )
+
+    result = replace_dlc_assigner(rdf_xml)
+
+    assert DLC_URI not in result
+    assert result.count(CBC_URI) == 2
+    assert "http://id.loc.gov/vocabulary/organizations/pu" in result
