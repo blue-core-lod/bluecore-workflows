@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = "==3.12.*"
 
 [[package]]
@@ -529,7 +529,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.26.0"
+version = "0.26.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -538,9 +538,9 @@ dependencies = [
     { name = "rdflib" },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/80/ff/1cd83b205c9a85754c2cc4a58cc76b1ac2629df9fc03e7bcfd71e7c5540b/bluecore_models-0.26.0.tar.gz", hash = "sha256:efb62da705b2355a126ed0c8f68e3d5fd6b7d976b9247c1a0259fd04bc653704", size = 137226, upload-time = "2026-08-13T15:25:53.665Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a3/af/cd1db118936ebeb8a755901c2423fdef342dd2dec549e24b8cef1a6454df/bluecore_models-0.26.1.tar.gz", hash = "sha256:0bbb3154532c9c17b95d60b248bad9165f4c6926ccd356c0eb7f754867ee6044", size = 136448, upload-time = "2026-08-17T12:47:49.479Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/dd/9d/0c4cb7e9162b5be1ca1cf2428e00945e22e6528bacbfd1251a074afa53e5/bluecore_models-0.26.0-py3-none-any.whl", hash = "sha256:4c196b13d58befe48552f314042325d68ac17545d3ab31f4d4829a65cf1753fd", size = 44447, upload-time = "2026-08-13T15:25:52.634Z" },
+    { url = "https://files.pythonhosted.org/packages/5f/bc/3fdb77900dbdbf963be01db80f59f0bd5b4b0c1838abffe0dc0f75bb6f79/bluecore_models-0.26.1-py3-none-any.whl", hash = "sha256:272234d4cc72f52f7f3fa823312c7edfc6ff429407b182627a74e6b144d716df", size = 44447, upload-time = "2026-08-17T12:47:48.358Z" },
 ]
 
 [[package]]
@@ -584,7 +584,7 @@ requires-dist = [
     { name = "apache-airflow", specifier = "==3.2.0" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak", specifier = ">=0.8.1" },
-    { name = "bluecore-models", specifier = ">=0.25.0" },
+    { name = "bluecore-models", specifier = ">=0.26.1" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
