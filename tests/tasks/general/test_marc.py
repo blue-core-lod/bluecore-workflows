@@ -72,8 +72,34 @@ def test_convert_to_xml_then_xslt_marc_to_bf_roundtrip():
     assert "<rdf:RDF" in bf_rdf_xml
 
 
-def test_replace_dlc_assigner_replaces_dlc_with_cbc():
-    rdf_xml = f'<bf:assigner rdf:resource="{DLC_URI}"/>'
+RDF_TEMPLATE = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:bf="http://id.loc.gov/ontologies/bibframe/">
+  {body}
+</rdf:RDF>"""
+
+
+def _admin_metadata_with_assigner(uri):
+    return f"""<bf:adminMetadata>
+      <bf:AdminMetadata>
+        <bf:identifiedBy>
+          <bf:Local>
+            <bf:assigner rdf:resource="{uri}"/>
+          </bf:Local>
+        </bf:identifiedBy>
+      </bf:AdminMetadata>
+    </bf:adminMetadata>"""
+
+
+def _identified_by_with_assigner(uri):
+    return f"""<bf:identifiedBy>
+      <bf:Local>
+        <bf:assigner rdf:resource="{uri}"/>
+      </bf:Local>
+    </bf:identifiedBy>"""
+
+
+def test_replace_dlc_assigner_replaces_dlc_inside_admin_metadata():
+    rdf_xml = RDF_TEMPLATE.format(body=_admin_metadata_with_assigner(DLC_URI))
 
     result = replace_dlc_assigner(rdf_xml)
 
@@ -81,9 +107,18 @@ def test_replace_dlc_assigner_replaces_dlc_with_cbc():
     assert CBC_URI in result
 
 
-def test_replace_dlc_assigner_preserves_other_assigners():
+def test_replace_dlc_assigner_preserves_dlc_outside_admin_metadata():
+    rdf_xml = RDF_TEMPLATE.format(body=_identified_by_with_assigner(DLC_URI))
+
+    result = replace_dlc_assigner(rdf_xml)
+
+    assert DLC_URI in result
+    assert CBC_URI not in result
+
+
+def test_replace_dlc_assigner_preserves_other_assigners_in_admin_metadata():
     other_uri = "http://id.loc.gov/vocabulary/organizations/cst"
-    rdf_xml = f'<bf:assigner rdf:resource="{other_uri}"/>'
+    rdf_xml = RDF_TEMPLATE.format(body=_admin_metadata_with_assigner(other_uri))
 
     result = replace_dlc_assigner(rdf_xml)
 
@@ -91,15 +126,16 @@ def test_replace_dlc_assigner_preserves_other_assigners():
     assert CBC_URI not in result
 
 
-def test_replace_dlc_assigner_replaces_all_occurrences():
-    rdf_xml = (
-        f'<bf:assigner rdf:resource="{DLC_URI}"/>\n'
-        f'<bf:Agent rdf:about="{DLC_URI}"/>\n'
-        f'<bf:assigner rdf:resource="http://id.loc.gov/vocabulary/organizations/pu"/>'
+def test_replace_dlc_assigner_scoped_to_admin_metadata_only():
+    """DLC inside AdminMetadata is replaced; DLC outside is preserved."""
+    body = (
+        _admin_metadata_with_assigner(DLC_URI)
+        + "\n"
+        + _identified_by_with_assigner(DLC_URI)
     )
+    rdf_xml = RDF_TEMPLATE.format(body=body)
 
     result = replace_dlc_assigner(rdf_xml)
 
-    assert DLC_URI not in result
-    assert result.count(CBC_URI) == 2
-    assert "http://id.loc.gov/vocabulary/organizations/pu" in result
+    assert result.count(CBC_URI) == 1
+    assert result.count(DLC_URI) == 1

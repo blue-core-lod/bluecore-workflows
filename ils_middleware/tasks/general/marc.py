@@ -12,13 +12,23 @@ MARC2BIBFRAME2_XSL = (
 DLC_ORG_URI = "http://id.loc.gov/vocabulary/organizations/dlc"
 CBC_ORG_URI = "http://id.loc.gov/vocabulary/organizations/cbc"
 
+BF_NS = "http://id.loc.gov/ontologies/bibframe/"
+RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+
 
 def replace_dlc_assigner(bf_rdf_xml: str) -> str:
     """
-    Replace all occurrences of the DLC organization URI with the CBC
-    organization URI in the BIBFRAME RDF XML output.
+    Replace the DLC organization URI with CBC, but only on bf:assigner
+    elements inside bf:AdminMetadata nodes. Other uses of the DLC URI
+    (e.g. in bf:identifiedBy) are left unchanged.
     """
-    return bf_rdf_xml.replace(DLC_ORG_URI, CBC_ORG_URI)
+    root = ET.fromstring(bf_rdf_xml.encode("utf-8"))
+    for admin_md in root.iter(f"{{{BF_NS}}}AdminMetadata"):
+        for assigner in admin_md.iter(f"{{{BF_NS}}}assigner"):
+            resource = assigner.get(f"{{{RDF_NS}}}resource")
+            if resource == DLC_ORG_URI:
+                assigner.set(f"{{{RDF_NS}}}resource", CBC_ORG_URI)
+    return ET.tostring(root, pretty_print=True, encoding="unicode")
 
 
 def convert_to_xml(marc_file: str) -> str:
