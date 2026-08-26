@@ -1,6 +1,13 @@
 import pytest
 
-from ils_middleware.tasks.general.marc import convert_to_xml, xslt_marc_to_bf
+from ils_middleware.tasks.general.marc import (
+    convert_to_xml,
+    replace_dlc_assigner,
+    xslt_marc_to_bf,
+)
+
+DLC_URI = "http://id.loc.gov/vocabulary/organizations/dlc"
+CBC_URI = "http://id.loc.gov/vocabulary/organizations/cbc"
 
 RECORD_MAR = "tests/fixtures/record.mar"
 RECORD_XML = "tests/fixtures/record.xml"
@@ -63,3 +70,72 @@ def test_convert_to_xml_then_xslt_marc_to_bf_roundtrip():
 
     assert isinstance(bf_rdf_xml, str)
     assert "<rdf:RDF" in bf_rdf_xml
+
+
+RDF_TEMPLATE = """<rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+         xmlns:bf="http://id.loc.gov/ontologies/bibframe/">
+  {body}
+</rdf:RDF>"""
+
+
+def _admin_metadata_with_assigner(uri):
+    return f"""<bf:adminMetadata>
+      <bf:AdminMetadata>
+        <bf:identifiedBy>
+          <bf:Local>
+            <bf:assigner rdf:resource="{uri}"/>
+          </bf:Local>
+        </bf:identifiedBy>
+      </bf:AdminMetadata>
+    </bf:adminMetadata>"""
+
+
+def _identified_by_with_assigner(uri):
+    return f"""<bf:identifiedBy>
+      <bf:Local>
+        <bf:assigner rdf:resource="{uri}"/>
+      </bf:Local>
+    </bf:identifiedBy>"""
+
+
+def test_replace_dlc_assigner_replaces_dlc_inside_admin_metadata():
+    rdf_xml = RDF_TEMPLATE.format(body=_admin_metadata_with_assigner(DLC_URI))
+
+    result = replace_dlc_assigner(rdf_xml)
+
+    assert DLC_URI not in result
+    assert CBC_URI in result
+
+
+def test_replace_dlc_assigner_preserves_dlc_outside_admin_metadata():
+    rdf_xml = RDF_TEMPLATE.format(body=_identified_by_with_assigner(DLC_URI))
+
+    result = replace_dlc_assigner(rdf_xml)
+
+    assert DLC_URI in result
+    assert CBC_URI not in result
+
+
+def test_replace_dlc_assigner_preserves_other_assigners_in_admin_metadata():
+    other_uri = "http://id.loc.gov/vocabulary/organizations/cst"
+    rdf_xml = RDF_TEMPLATE.format(body=_admin_metadata_with_assigner(other_uri))
+
+    result = replace_dlc_assigner(rdf_xml)
+
+    assert other_uri in result
+    assert CBC_URI not in result
+
+
+def test_replace_dlc_assigner_scoped_to_admin_metadata_only():
+    """DLC inside AdminMetadata is replaced; DLC outside is preserved."""
+    body = (
+        _admin_metadata_with_assigner(DLC_URI)
+        + "\n"
+        + _identified_by_with_assigner(DLC_URI)
+    )
+    rdf_xml = RDF_TEMPLATE.format(body=body)
+
+    result = replace_dlc_assigner(rdf_xml)
+
+    assert result.count(CBC_URI) == 1
+    assert result.count(DLC_URI) == 1
