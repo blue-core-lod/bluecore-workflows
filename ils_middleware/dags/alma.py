@@ -1,11 +1,8 @@
 from datetime import datetime, timedelta
 
-from airflow import DAG
-
-#  from airflow.models import Variable
 from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.providers.standard.operators.python import PythonOperator
-from airflow.utils.task_group import TaskGroup
+from airflow.sdk import DAG, TaskGroup
 
 from ils_middleware.tasks.alma.post_bfinstance import NewInstancetoAlma
 from ils_middleware.tasks.alma.post_bfwork import NewWorktoAlma
