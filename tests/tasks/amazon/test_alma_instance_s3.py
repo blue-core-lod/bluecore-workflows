@@ -24,7 +24,7 @@ def mock_httpx_get():
 @patch.dict(
     "os.environ", {"AWS_ACCESS_KEY_ID": "test", "AWS_SECRET_ACCESS_KEY": "test"}
 )
-@patch("airflow.models.Variable.get")
+@patch("airflow.sdk.Variable.get")
 @patch("airflow.providers.amazon.aws.hooks.s3.S3Hook.get_connection")
 @patch("airflow.providers.amazon.aws.hooks.s3.S3Hook")
 @patch("rdflib.Graph")

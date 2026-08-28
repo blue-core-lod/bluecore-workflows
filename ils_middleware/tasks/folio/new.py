@@ -7,7 +7,7 @@ See https://s3.amazonaws.com/foliodocs/api/mod-inventory-storage/p/instance-sync
 import logging
 
 import httpx
-from airflow.models.connection import Connection
+from airflow.sdk import Connection
 from folioclient import FolioClient
 
 from ils_middleware.tasks.sinopia.email import send_local_id_not_found_email
@@ -125,7 +125,7 @@ def post_folio_records(**kwargs):
     connection_id = kwargs["folio_connection_id"]
 
     task_groups = ".".join(kwargs["task_groups_ids"])
-    connection = Connection.get_connection_from_secrets(connection_id)
+    connection = Connection.get(connection_id)
 
     task_id = "build-folio"
 

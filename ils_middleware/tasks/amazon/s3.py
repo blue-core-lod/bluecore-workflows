@@ -3,8 +3,8 @@ import os
 from os import path
 from urllib.parse import urlparse
 
-from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.sdk import Variable
 from pymarc import MARCReader
 
 logger = logging.getLogger(__name__)

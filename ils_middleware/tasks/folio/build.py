@@ -5,7 +5,7 @@ import datetime
 import logging
 from typing import Any
 
-from airflow.models.connection import Connection
+from airflow.sdk import Connection
 from folio_uuid import FOLIONamespaces, FolioUUID
 from folioclient import FolioClient
 
@@ -592,7 +592,7 @@ def build_records(**kwargs):
     task_instance = kwargs["task_instance"]
     connection_id = kwargs["folio_connection_id"]
 
-    connection = Connection.get_connection_from_secrets(connection_id)
+    connection = Connection.get(connection_id)
 
     folio_client = FolioClient(
         connection.host,
