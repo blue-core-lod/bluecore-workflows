@@ -4,13 +4,11 @@ import uuid
 from datetime import datetime
 
 from airflow.sdk import dag, get_current_context, task
+from bluecore_models.utils.marc import replace_dlc_assigner
+from marc_bibframe import marcxml_to_graph
 
 from ils_middleware.tasks.bluecore import delete_upload
-from ils_middleware.tasks.general.marc import (
-    convert_to_xml,
-    replace_dlc_assigner,
-    xslt_marc_to_bf,
-)
+from ils_middleware.tasks.general.marc import convert_to_xml
 
 logger = logging.getLogger(__name__)
 
@@ -60,10 +58,12 @@ def marc_to_bibframe():
     @task
     def transform_to_bf(marc_xml: str, source_base_uri: str) -> str:
         """
-        Transforms MARC XML to BIBFRAME RDF XML using LOC's marc2bibframe2 XSLT
+        Transforms MARC XML to BIBFRAME RDF XML with marc-bibframe, then
+        applies Blue Core policy to the result.
         """
-        bf_rdf_xml = xslt_marc_to_bf(marc_xml, source_base_uri)
-        return replace_dlc_assigner(bf_rdf_xml)
+        graph = marcxml_to_graph(marc_xml, baseuri=source_base_uri)
+        replace_dlc_assigner(graph)
+        return graph.serialize(format="xml")
 
     @task
     def save_output(bf_rdf_xml: str, outputs_dir: str = "/opt/airflow/outputs") -> str:
