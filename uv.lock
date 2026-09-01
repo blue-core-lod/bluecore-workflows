@@ -529,7 +529,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.27.0"
+version = "0.29.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -538,9 +538,9 @@ dependencies = [
     { name = "rdflib" },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/2a/49/8dcff2f59f24fcb4613b0c4d6bda1d8836f3bcc1e673d61e025c6c12059a/bluecore_models-0.27.0.tar.gz", hash = "sha256:290149f78a74f7518167077e8006096a301f0a173bd1dba91900bf5686e22866", size = 142943, upload-time = "2026-08-21T16:06:45.315Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/06/0c/74317e9cec85e4c8d11409a8298de4f3c394706bd782bbf0a70e58dca437/bluecore_models-0.29.0.tar.gz", hash = "sha256:1ea4d65bdce2e3724e6f1dd24b44d8c0b0efe4e78a5d9ab3b1ada0652e755abd", size = 164170, upload-time = "2026-09-01T20:28:44.321Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/1a/3c/f264610e3af7758456cdaaf5b8c9da49d0d404b81783c03cde1fe76bde63/bluecore_models-0.27.0-py3-none-any.whl", hash = "sha256:5bc926c4d53983307cb14d1bdcc772e68d87958551d41ea22e31f430d17fd71e", size = 48307, upload-time = "2026-08-21T16:06:44.418Z" },
+    { url = "https://files.pythonhosted.org/packages/57/d6/15a0a22954b42406d4c8ce870456e9eaff5e5f4c4d1115beae4d5e588bcf/bluecore_models-0.29.0-py3-none-any.whl", hash = "sha256:4984a76098b8449722f62a1140bffabed018b8f4810b9f26bc36ea8e7d2a8a2c", size = 56295, upload-time = "2026-09-01T20:28:43.432Z" },
 ]
 
 [[package]]
@@ -556,6 +556,7 @@ dependencies = [
     { name = "folio-uuid" },
     { name = "folioclient" },
     { name = "lxml" },
+    { name = "marc-bibframe" },
     { name = "numpy" },
     { name = "pendulum" },
     { name = "psycopg2-binary" },
@@ -584,11 +585,12 @@ requires-dist = [
     { name = "apache-airflow", specifier = "==3.2.0" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak", specifier = ">=0.8.1" },
-    { name = "bluecore-models", specifier = ">=0.26.1" },
+    { name = "bluecore-models", specifier = ">=0.29.0" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
     { name = "lxml" },
+    { name = "marc-bibframe", specifier = ">=0.2.1" },
     { name = "numpy" },
     { name = "pendulum" },
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
@@ -1384,6 +1386,20 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/2a/12/b5fa2353e2754cd67fb9f83793fa48ff42c213a5da7e719869d2301f6ab8/mako-1.4.1.tar.gz", hash = "sha256:d7904710b662996425a21627710c4777c45053146942cf8a7aebf757c92b8c27", size = 410165, upload-time = "2026-08-05T06:10:56.611Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/a5/54/12ed58d458474aaab5c3d180173e745a4fe131bb330370596876d19ff60f/mako-1.4.1-py3-none-any.whl", hash = "sha256:a359d9a94a541213958742b2698d0a7757bb83551767bc468a74b9905aba9617", size = 80010, upload-time = "2026-08-05T06:10:58.248Z" },
+]
+
+[[package]]
+name = "marc-bibframe"
+version = "0.2.1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "lxml" },
+    { name = "pymarc" },
+    { name = "rdflib" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/51/be/323fc38857b850985ade8ec5f8f3fae63ca39d4a39dabc351bea6d59f58c/marc_bibframe-0.2.1.tar.gz", hash = "sha256:8a5b7d475fdc72269c959bcd8c4c82dedb439cbcd743d4529897736e6e4e01a9", size = 160221, upload-time = "2026-09-01T18:50:41.522Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/3c/4f/8e5eb6dd4117f7e822b7b16af2c16a37cd9219d5ee44b056b6f2af8de231/marc_bibframe-0.2.1-py3-none-any.whl", hash = "sha256:b71e206a514597c3be912df833665193b3e1b14de885cff7e0ba89b5712b58cf", size = 159407, upload-time = "2026-09-01T18:50:39.944Z" },
 ]
 
 [[package]]

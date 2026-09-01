@@ -1,34 +1,6 @@
-import io
 import pathlib
 
-import lxml.etree as ET
-import pymarc
-
-MARC2BIBFRAME2_XSL = (
-    "ils_middleware/tasks/general/xslt/marc2bibframe2/xsl/marc2bibframe2.xsl"
-)
-
-
-DLC_ORG_URI = "http://id.loc.gov/vocabulary/organizations/dlc"
-CBC_ORG_URI = "http://id.loc.gov/vocabulary/organizations/cbc"
-
-BF_NS = "http://id.loc.gov/ontologies/bibframe/"
-RDF_NS = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-
-
-def replace_dlc_assigner(bf_rdf_xml: str) -> str:
-    """
-    Replace the DLC organization URI with CBC, but only on bf:assigner
-    elements inside bf:AdminMetadata nodes. Other uses of the DLC URI
-    (e.g. in bf:identifiedBy) are left unchanged.
-    """
-    root = ET.fromstring(bf_rdf_xml.encode("utf-8"))
-    for admin_md in root.iter(f"{{{BF_NS}}}AdminMetadata"):
-        for assigner in admin_md.iter(f"{{{BF_NS}}}assigner"):
-            resource = assigner.get(f"{{{RDF_NS}}}resource")
-            if resource == DLC_ORG_URI:
-                assigner.set(f"{{{RDF_NS}}}resource", CBC_ORG_URI)
-    return ET.tostring(root, pretty_print=True, encoding="unicode")
+from marc_bibframe import marc_to_marcxml
 
 
 def convert_to_xml(marc_file: str) -> str:
@@ -36,28 +8,10 @@ def convert_to_xml(marc_file: str) -> str:
     Convert MARC21 to MARC XML
     """
     marc_path = pathlib.Path(marc_file)
-    with marc_path.open("rb") as fo:
-        marc_reader = pymarc.MARCReader(fo)
-        marc_records = [r for r in marc_reader]
-        if len(marc_records) != 1:
-            raise ValueError(
-                f"Number of MARC records {len(marc_records)} should only be 1"
-            )
-        marc_record = marc_records[0]
-    memory = io.BytesIO()
-    writer = pymarc.XMLWriter(memory)
-    writer.write(marc_record)
-    writer.close(close_fh=False)
-    return memory.getvalue().decode("utf-8")
-
-
-def xslt_marc_to_bf(marc_xml: str, source_base_uri: str) -> str:
-    """
-    Takes MARC XML and transforms into BIBFRAME RDF XML using the Library of
-    Congress marc2bibframe2 at https://github.com/lcnetdev/marc2bibframe2/
-    """
-    marc_record = ET.fromstring(marc_xml.encode("utf-8"))
-    xslt = ET.parse(MARC2BIBFRAME2_XSL)
-    transform = ET.XSLT(xslt)
-    bf_rdf_xml = transform(marc_record, baseuri=ET.XSLT.strparam(source_base_uri))
-    return ET.tostring(bf_rdf_xml, pretty_print=True, encoding="unicode")
+    marcxml = marc_to_marcxml(marc_path.read_bytes())
+    # The upload is a single record; more than one means the caller sent
+    # something we are not set up to handle downstream.
+    count = marcxml.count(b"<record>")
+    if count != 1:
+        raise ValueError(f"Number of MARC records {count} should only be 1")
+    return marcxml.decode("utf-8")
