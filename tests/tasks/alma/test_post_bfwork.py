@@ -5,8 +5,8 @@ from unittest import mock
 from unittest.mock import Mock, patch
 
 import pytest
-from airflow.hooks.base import BaseHook  # type: ignore
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.sdk import BaseHook
 from pytest_mock import MockerFixture
 from tasks import (
     mock_task_instance,
@@ -47,7 +47,7 @@ def test_get_env_vars():
     mock_variable_getter = Mock()
     mock_variable_getter.side_effect = ["uri_region", "alma_api_key"]
 
-    with patch("airflow.models.Variable.get", new=mock_variable_getter):
+    with patch("airflow.sdk.Variable.get", new=mock_variable_getter):
         # Call the function with mock arguments
         uri_region, alma_api_key = get_env_vars(institution="penn")
 
@@ -90,11 +90,6 @@ def mock_env_vars(monkeypatch) -> None:
     monkeypatch.setenv(
         "AIRFLOW_VAR_ALMA_URI_REGION_PENN", "https://api-na.hosted.exlibrisgroup.com"
     )
-
-
-@pytest.fixture
-def mock_hook(mocker: mock.Mock) -> mock.Mock:
-    return mocker.patch("airflow.hooks.base_hook.BaseHook")
 
 
 @pytest.fixture
@@ -155,7 +150,7 @@ def test_NewWorktoAlma_post_request(mocker: MockerFixture):
     mock_variable_getter.side_effect = lambda x: (
         "bucket_name" if x == "marc_s3_bucket" else None
     )
-    mocker.patch("airflow.models.Variable.get", new=mock_variable_getter)
+    mocker.patch("airflow.sdk.Variable.get", new=mock_variable_getter)
 
     # Mock the s3_hook.read_key method
     mock_s3_hook = Mock()
