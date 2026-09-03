@@ -14,10 +14,7 @@ from ils_middleware.tasks.folio.new import post_folio_records
 from ils_middleware.tasks.general import message_from_context, parse_messages
 from ils_middleware.tasks.sinopia.email import (
     notify_and_log,
-    send_notification_emails,
 )
-from ils_middleware.tasks.sinopia.local_metadata import new_local_admin_metadata
-from ils_middleware.tasks.sinopia.login import sinopia_login
 
 
 def task_failure_callback(ctx_dict) -> None:
@@ -103,35 +100,6 @@ with DAG(
         task_id="processed_sinopia", dag=dag, trigger_rule="none_failed"
     )
 
-    with TaskGroup(group_id="update_sinopia") as sinopia_update_group:
-        # Sinopia Login
-        login_sinopia = PythonOperator(
-            task_id="sinopia-login",
-            python_callable=sinopia_login,
-            op_kwargs={},
-        )
-
-        # Adds localAdminMetadata
-        local_admin_metadata = PythonOperator(
-            task_id="sinopia-new-metadata",
-            python_callable=new_local_admin_metadata,
-            op_kwargs={
-                "jwt": "{{ task_instance.xcom_pull(task_ids='update_sinopia.sinopia-login', key='return_value') }}",
-                "ils_tasks": {
-                    "FOLIO": ["process_folio.new-or-upsert-folio-records"],
-                },
-            },
-        )
-
-        login_sinopia >> local_admin_metadata
-
-    notify_sinopia_updated = PythonOperator(
-        task_id="sinopia_update_notification",
-        dag=dag,
-        trigger_rule="none_failed",
-        python_callable=send_notification_emails,
-    )
-
     processing_complete = EmptyOperator(
         task_id="processing_complete", dag=dag, trigger_rule="one_success"
     )
@@ -141,5 +109,4 @@ with DAG(
 get_messages >> messages_received
 messages_received >> process_message
 process_message >> folio_task_group >> processed_sinopia
-processed_sinopia >> sinopia_update_group >> notify_sinopia_updated
-notify_sinopia_updated >> processing_complete
+processed_sinopia >> processing_complete
