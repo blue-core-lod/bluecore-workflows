@@ -64,6 +64,30 @@ To add any new DAGs to `blue-core-lod/bluecore-workflows:latest` image, you can 
 while commenting out the previous line `image: ${AIRFLOW_IMAGE_NAME:-blue-core-lod/bluecore-workflows:latest}`.
 ---
 
+## 🔌 Airflow Plugins
+Plugin code lives in `ils_middleware/plugins`, so it is importable, tested, and
+typechecked with the rest of the package. Airflow only discovers plugins by
+importing the modules in its plugins folder, so each plugin also needs a module
+in `plugins/` that imports its `AirflowPlugin` subclass.
+
+Airflow gives every plugin its own FastAPI app under its own URL prefix, so
+there is no single origin to hang assets off. `plugins/shared.py` holds what
+each plugin would otherwise repeat --- where Airflow is served from, the Jinja
+environment, and a `static` mount --- and `templates/base.html` holds the page
+chrome, so a plugin template only needs:
+
+```jinja
+{% extends "base.html" %}
+{% block content %}...{% endblock %}
+```
+
+Each plugin mounts a
+FastAPI app alongside the Airflow REST API (sharing its authentication) and
+registers an [external view][EXTERNAL_VIEW] so that it shows up in the Airflow
+navigation for logged in users, rendered in an iframe at `/plugin/<url_route>`.
+
+---
+
 ## 📦 Dependency Management and Packaging
 We are using [uv][UV] to manage dependency updates.\
 Once you have uv installed, you can install the other project dependencies by running:
@@ -102,3 +126,4 @@ To have Black apply formatting: `uv run ruff format .`
 [MYPY]: https://mypy.readthedocs.io/en/stable/
 [UV]: https://docs.astral.sh/uv/
 [RUFF]: https://docs.astral.sh/ruff/
+[EXTERNAL_VIEW]: https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/plugins.html#external-views

@@ -1,0 +1,23 @@
+{#
+  Page chrome shared by every Blue Core plugin page. A plugin template extends
+  this and fills in the content block:
+
+    {% extends "base.html" %}
+    {% block content %}...{% endblock %}
+
+  `static_url` comes from ils_middleware.plugins.shared.context.
+#}
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{{ title }}</title>
+    <link rel="stylesheet" href="{{ static_url('bluecore.css') }}" />
+    <script src="{{ static_url('bluecore.js') }}"></script>
+    {% block head %}{% endblock %}
+  </head>
+  <body class="{% block body_class %}{% endblock %}">
+    {% block content %}{% endblock %}
+  </body>
+</html>
