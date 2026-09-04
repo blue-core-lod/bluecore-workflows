@@ -8,6 +8,7 @@ ENV PYTHONPATH "${PYTHONPATH}:/opt/airflow/"
 
 COPY --chown=airflow:root README.md uv.lock pyproject.toml /opt/airflow/
 COPY --chown=airflow:root ./ils_middleware /opt/airflow/ils_middleware
+COPY --chown=airflow:root ./plugins /opt/airflow/plugins
 
 RUN uv build
 RUN uv pip install --no-cache-dir "apache-airflow==${AIRFLOW_VERSION}" dist/*.whl

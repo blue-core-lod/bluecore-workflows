@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"
+     fill="none" stroke="#e2e8f0" stroke-width="2" stroke-linecap="round"
+     stroke-linejoin="round" role="img" aria-label="A page of text">
+  <path d="M5 3 H14 L19 8 V21 H5 Z" />
+  <path d="M14 3 V8 H19" />
+  <path d="M8 12 H16" />
+  <path d="M8 16 H16" />
+</svg>
