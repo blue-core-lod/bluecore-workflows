@@ -1,9 +1,7 @@
 import pathlib
 
 import pytest
-from airflow import models
-from airflow.sdk.definitions.dag import DAG
-from airflow.utils.dag_cycle_tester import check_cycle
+from airflow.sdk import DAG, Variable
 
 DAG_PATHS = [
     p
@@ -19,7 +17,7 @@ def mock_variable(monkeypatch):
         if key == "sqs_url":
             return "http://aws.com/12345/"
 
-    monkeypatch.setattr(models.Variable, "get", mock_get)
+    monkeypatch.setattr(Variable, "get", mock_get)
 
 
 @pytest.mark.parametrize("dag_path", DAG_PATHS)
@@ -31,7 +29,7 @@ def test_dag_integrity(dag_path, mock_variable):
 
     # For every DAG object, test for cycles
     for dag in dag_objects:
-        check_cycle(dag)
+        dag.check_cycle()
 
 
 def _import_file(module_name, module_path):

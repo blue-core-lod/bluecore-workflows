@@ -3,7 +3,7 @@ import json
 from unittest.mock import MagicMock
 
 import pytest
-from airflow.models import Connection
+from airflow.sdk import Connection
 from tasks import (
     folio_properties,
     mock_requests_okapi,  # noqa: F401
@@ -158,7 +158,8 @@ def mock_airflow_connection():
         host=okapi_uri,
         login="folio_user",
         password="pass",
-        extra={"tenant": "sul "},
+        # Airflow stores connection `extra` as a JSON string, not a dict.
+        extra=json.dumps({"tenant": "sul "}),
     )
 
 
@@ -170,7 +171,7 @@ def test_happypath_build_records(
     mock_task_instance,  # noqa: F811
 ):
     mocker.patch(
-        "ils_middleware.tasks.folio.build.Connection.get_connection_from_secrets",
+        "ils_middleware.tasks.folio.build.Connection.get",
         return_value=mock_airflow_connection,
     )
 

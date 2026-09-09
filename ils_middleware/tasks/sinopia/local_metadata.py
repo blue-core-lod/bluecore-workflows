@@ -9,7 +9,6 @@ import rdflib
 
 # import requests  # type: ignore
 
-# from airflow.models import Variable
 
 logger = logging.getLogger(__name__)
 
