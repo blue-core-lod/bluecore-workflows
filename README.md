@@ -68,13 +68,18 @@ while commenting out the previous line `image: ${AIRFLOW_IMAGE_NAME:-blue-core-l
 The `bulk_update` DAG applies one SPARQL UPDATE to each of the Blue Core Works,
 Instances or Hubs listed in a CSV. Trigger it from the Airflow UI with:
 
-* **file** --- a CSV in the uploads volume whose first column holds Blue Core
-  resource URIs, with or without a header row.
+* **file** --- a CSV in the uploads volume with a header row naming a `uri`
+  column of Blue Core resource URIs. Other columns are ignored, so the list can
+  carry a local identifier or a note about why a resource is on it.
 * **query** --- the SPARQL UPDATE. It runs against each resource's own triples,
   with `?resource` bound to the resource being updated. `GRAPH`, `WITH`,
-  `SERVICE`, `LOAD`, `DROP`, `CLEAR`, `ADD`, `MOVE` and `COPY` are rejected, and
-  so is any update that would delete a resource, change its `rdf:type` or
-  `bf:adminMetadata`, or start describing a different resource.
+  `USING`, `SERVICE`, `LOAD`, `DROP`, `CLEAR`, `ADD`, `MOVE` and `COPY` are
+  rejected --- `USING` and `SERVICE` would have rdflib fetch another graph, once
+  per resource in the run. A resource is skipped and reported, rather than
+  saved, if the update would delete it, change its `rdf:type` or anything under
+  its `bf:adminMetadata`, start describing a different resource, change how it
+  relates to another Work or Instance, or add triples bluecore-models discards
+  on the way to the database.
 * **dry_run** --- on by default: report the triples that would be added and
   removed for each resource without writing anything. Turn it off to apply the
   update, which records a version per resource against the user who triggered

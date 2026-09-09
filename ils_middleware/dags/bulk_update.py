@@ -24,8 +24,9 @@ logger = logging.getLogger(__name__)
 DOC_MD = f"""
 Applies one SPARQL UPDATE to each of the Blue Core resources listed in a CSV.
 
-- **file** is a CSV in the uploads directory whose first column holds Blue Core
-  Work, Instance or Hub URIs, with or without a header row. At most
+- **file** is a CSV in the uploads directory with a header row naming a `uri`
+  column, holding Blue Core Work, Instance or Hub URIs. Any other columns are
+  ignored, so the list can carry a local identifier or a note. At most
   {MAX_RESOURCES:,} resources per run.
 - **query** is a single SPARQL UPDATE, applied to each resource's own triples.
   `?resource` is bound to the resource being updated, so a query can be written
@@ -35,10 +36,14 @@ Applies one SPARQL UPDATE to each of the Blue Core resources listed in a CSV.
       DELETE {{ ?resource bf:note ?note }}
       WHERE  {{ ?resource bf:note ?note }}
 
-  `GRAPH`, `WITH`, `SERVICE`, `LOAD`, `DROP`, `CLEAR`, `ADD`, `MOVE` and `COPY`
-  are rejected: there is one graph here, the resource's own. A query that would
-  delete a resource, change its `rdf:type` or `bf:adminMetadata`, or start
-  describing some other resource is refused for that resource and reported.
+  `GRAPH`, `WITH`, `USING`, `SERVICE`, `LOAD`, `DROP`, `CLEAR`, `ADD`, `MOVE`
+  and `COPY` are rejected: there is one graph here, the resource's own, and
+  `USING` and `SERVICE` would fetch another. A resource is skipped and reported,
+  rather than saved, if the update would delete it, change its `rdf:type` or
+  anything under its `bf:adminMetadata`, start describing some other resource,
+  change how it relates to another Work or Instance (`bf:hasInstance`,
+  `bf:instanceOf`, `bf:hasExpression`, `bf:expressionOf`), or add triples the
+  database does not keep (`dcterms:`, `lclocal:`, OCLC numbers).
 - **dry_run** (on by default) reports the triples the update would add and
   remove for every resource, without writing anything. Turn it off to apply it.
 
@@ -60,7 +65,7 @@ triggered the run. The run's report is written to the reports volume, under
             "",
             type="string",
             title="CSV file",
-            description="Path to a CSV whose first column holds Blue Core resource URIs.",
+            description="Path to a CSV with a header row naming a uri column of Blue Core resource URIs.",
         ),
         "query": Param(
             "",
@@ -127,12 +132,17 @@ def bulk_update():
             dry_run=bool(params.get("dry_run", True)),
         )
 
-    @task
+    # all_done, not the default all_success: if a batch dies outright -- an out
+    # of memory worker, a failure building the engine -- the resources the other
+    # batches did update still need reporting. Without this the report task is
+    # skipped as upstream_failed and the run says nothing about what it did.
+    @task(trigger_rule="all_done")
     def report(reports: list[dict]) -> str:
         """
-        Write the run's report, then fail if any resource errored -- a bulk
-        operation that only partly worked shouldn't look like one that worked.
-        Resources that were deliberately skipped are not errors.
+        Write the run's report, then fail if any resource errored, or if a batch
+        failed before it could report -- a bulk operation that only partly
+        worked shouldn't look like one that worked. Resources that were
+        deliberately skipped are not errors.
         """
         context = get_current_context()
         dag_run = context.get("dag_run")
@@ -146,15 +156,36 @@ def bulk_update():
             summary=summary,
             sections=sections,
         )
-        if merged["errors"]:
+        # A batch that failed outright returns nothing, so count the gaps too --
+        # merge_reports drops them, and they are resources nobody has heard
+        # about rather than resources that were left alone.
+        missing = sum(1 for report in reports if not report)
+        if merged["errors"] or missing:
             raise AirflowException(
-                f"{len(merged['errors']):,} resources errored, see {path}"
+                f"{len(merged['errors']):,} resources errored and {missing:,} "
+                f"batches did not report, see {path}"
             )
         return path
 
     batches = plan()
     user_uid = get_keycloak_user_uid()
     bluecore_db = bluecore_db_info()
+
+    # One mapped task per batch, which Airflow runs in parallel up to its own
+    # concurrency limits, and each batch updates its resources one at a time.
+    #
+    # Batching rather than one task per resource, because a task instance is not
+    # free: each one is a queued message, a task runner process, a row in
+    # task_instance, an XCom, and a fresh database engine in the worker child
+    # that picks it up -- all to do a single save_graph. A thousand of those
+    # would spend most of the run on scheduling rather than on updating.
+    #
+    # Batching rather than one task for the whole list, because a batch is a
+    # useful unit to retry, has a log of its own to read, and reports separately
+    # -- and because batch_size is then the knob for how much write concurrency
+    # this run puts on the database: one batch is fully sequential, ten run at
+    # once. Sequential is the gentler setting if a run ever contends with
+    # ingest.
     results = update_batch.partial(bluecore_db=bluecore_db, user_uid=user_uid).expand(
         uris=batches
     )

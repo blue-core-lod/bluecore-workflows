@@ -8,6 +8,7 @@ from bluecore_models.utils.graph import load_jsonld
 from ils_middleware.tasks import bulk_update
 from ils_middleware.tasks.bulk_update import (
     BulkUpdateError,
+    _triples,
     batch_uris,
     check_query,
     merge_reports,
@@ -126,6 +127,37 @@ def test_check_query_allows_update_forms(query):
             "INSERT DATA { GRAPH <http://example.com/g> { <http://x> <http://y> 'z' } }",
             "GRAPH",
         ),
+        # SERVICE is the one rejected form that really does reach the network:
+        # rdflib evaluates it from inside the WHERE clause, so this would call
+        # the endpoint once per resource in the run.
+        (
+            (
+                "PREFIX bf: <http://id.loc.gov/ontologies/bibframe/> "
+                "INSERT { ?resource bf:note 'x' } "
+                "WHERE { SERVICE <http://example.com/sparql> { ?resource ?p ?o } }"
+            ),
+            "SERVICE",
+        ),
+        # USING names the graph the WHERE clause reads from, and rdflib fetches
+        # it -- an http url or a local file -- so it is a way into the resource
+        # for data from outside. It is a key on the operation, not a node in the
+        # WHERE clause, so the algebra walk alone does not catch it.
+        (
+            (
+                "PREFIX ex: <http://example.org/> "
+                "INSERT { ?resource ex:injected ?v } "
+                "USING <http://example.com/side.ttl> "
+                "WHERE { ?resource ex:injected ?v }"
+            ),
+            "USING is not allowed",
+        ),
+        (
+            (
+                "INSERT { ?s <http://x/> 1 } "
+                "USING NAMED <http://example.com/g> WHERE { ?s ?p ?o }"
+            ),
+            "USING is not allowed",
+        ),
         # a forbidden operation hiding behind an allowed one
         ("INSERT DATA { <http://x> <http://y> 'z' }; DROP ALL", "Drop is not allowed"),
     ],
@@ -141,19 +173,45 @@ def test_check_query_rejects(query, message):
 def test_read_uris(tmp_path):
     csv_file = tmp_path / "uris.csv"
     csv_file.write_text(
-        f"uri,note\n{WORK_URI},keep this\n\n{INSTANCE_URI}\n{WORK_URI}\n"
+        f"uri,note\n{WORK_URI},keep this\n\n{INSTANCE_URI},\n{WORK_URI},again\n"
     )
 
-    # the header is dropped, the blank line ignored, the second column left
-    # alone, and the repeated uri only listed once
+    # the uri column is read by name, the blank line ignored, the note column
+    # left alone, and the repeated uri only listed once
     assert read_uris(str(csv_file)) == [WORK_URI, INSTANCE_URI]
 
 
-def test_read_uris_without_header(tmp_path):
+def test_read_uris_reads_the_column_by_name(tmp_path):
+    """The uri column doesn't have to be first, and its case doesn't matter."""
+    csv_file = tmp_path / "uris.csv"
+    csv_file.write_text(f"Local ID,URI\na1234,{WORK_URI}\nb5678,{INSTANCE_URI}\n")
+
+    assert read_uris(str(csv_file)) == [WORK_URI, INSTANCE_URI]
+
+
+def test_read_uris_ignores_a_byte_order_mark(tmp_path):
+    """A CSV saved by a spreadsheet often starts with one."""
+    csv_file = tmp_path / "uris.csv"
+    csv_file.write_text(f"uri\n{WORK_URI}\n", encoding="utf-8-sig")
+
+    assert read_uris(str(csv_file)) == [WORK_URI]
+
+
+def test_read_uris_requires_a_header(tmp_path):
+    """A bare list of URIs is refused: the file has to say what it holds."""
     csv_file = tmp_path / "uris.csv"
     csv_file.write_text(f"{WORK_URI}\n{INSTANCE_URI}\n")
 
-    assert read_uris(str(csv_file)) == [WORK_URI, INSTANCE_URI]
+    with pytest.raises(BulkUpdateError, match="has no uri column"):
+        read_uris(str(csv_file))
+
+
+def test_read_uris_names_the_columns_it_found(tmp_path):
+    csv_file = tmp_path / "uris.csv"
+    csv_file.write_text(f"resource,note\n{WORK_URI},a note\n")
+
+    with pytest.raises(BulkUpdateError, match="no uri column, only note, resource"):
+        read_uris(str(csv_file))
 
 
 def test_read_uris_no_file():
@@ -168,6 +226,14 @@ def test_read_uris_missing_file(tmp_path):
 
 def test_read_uris_empty_file(tmp_path):
     csv_file = tmp_path / "uris.csv"
+    csv_file.write_text("")
+
+    with pytest.raises(BulkUpdateError, match="is empty"):
+        read_uris(str(csv_file))
+
+
+def test_read_uris_header_but_no_rows(tmp_path):
+    csv_file = tmp_path / "uris.csv"
     csv_file.write_text("uri\n\n")
 
     with pytest.raises(BulkUpdateError, match="No resource URIs found"):
@@ -176,16 +242,18 @@ def test_read_uris_empty_file(tmp_path):
 
 def test_read_uris_not_a_uri(tmp_path):
     csv_file = tmp_path / "uris.csv"
-    csv_file.write_text(f"{WORK_URI}\n1234\n")
+    csv_file.write_text(f"uri\n{WORK_URI}\n1234\n")
 
-    with pytest.raises(BulkUpdateError, match="1234 is not a URI"):
+    # row 3, as a spreadsheet would number it
+    with pytest.raises(BulkUpdateError, match="row 3: 1234 is not a URI"):
         read_uris(str(csv_file))
 
 
 def test_read_uris_too_many(tmp_path, monkeypatch):
     monkeypatch.setattr(bulk_update, "MAX_RESOURCES", 2)
     csv_file = tmp_path / "uris.csv"
-    csv_file.write_text("".join(f"https://bcld.info/works/{i}\n" for i in range(3)))
+    rows = "".join(f"https://bcld.info/works/{i}\n" for i in range(3))
+    csv_file.write_text(f"uri\n{rows}")
 
     with pytest.raises(BulkUpdateError, match="exceeds the 2 allowed"):
         read_uris(str(csv_file))
@@ -255,6 +323,28 @@ def test_postcondition_refuses_an_admin_metadata_change():
     )
 
 
+def test_postcondition_refuses_rewriting_inside_admin_metadata():
+    """
+    The provenance is a blank node, so an update can leave the bf:adminMetadata
+    arc alone while rewriting what it says.
+    """
+    before, after = apply(
+        "PREFIX bf: <http://id.loc.gov/ontologies/bibframe/> "
+        "DELETE { ?admin bf:assigner ?assigner } "
+        "INSERT { ?admin bf:assigner <http://example.org/forged> } "
+        "WHERE  { ?resource bf:adminMetadata ?admin . ?admin bf:assigner ?assigner }"
+    )
+
+    # the arc itself is untouched, so this is only caught by comparing the
+    # blank node's contents
+    assert _triples(before, rdflib.URIRef(WORK_URI), BF.adminMetadata) == _triples(
+        after, rdflib.URIRef(WORK_URI), BF.adminMetadata
+    )
+    assert "adminMetadata" in bulk_update._postcondition_failure(
+        WORK_URI, before, after
+    )
+
+
 def test_postcondition_refuses_describing_another_resource():
     before, after = apply(
         "PREFIX bf: <http://id.loc.gov/ontologies/bibframe/> "
@@ -266,6 +356,73 @@ def test_postcondition_refuses_describing_another_resource():
     assert failure == (
         "update would start describing other resources: https://bcld.info/works/9999"
     )
+
+
+def test_postcondition_refuses_a_relationship_change():
+    """
+    Asserting bf:hasInstance about another resource re-parents it when
+    bluecore-models saves, so a bulk update is not allowed to.
+    """
+    before, after = apply(
+        "PREFIX bf: <http://id.loc.gov/ontologies/bibframe/> "
+        "INSERT { ?resource bf:hasInstance <https://bcld.info/instances/999> } "
+        "WHERE  { ?resource a bf:Work }"
+    )
+
+    assert bulk_update._postcondition_failure(WORK_URI, before, after) == (
+        "update would change how this resource relates to others: hasInstance"
+    )
+
+
+def test_postcondition_refuses_removing_a_relationship():
+    data = dict(WORK_DATA, instanceOf={"@id": INSTANCE_URI})
+    before, after = apply(
+        "PREFIX bf: <http://id.loc.gov/ontologies/bibframe/> "
+        "DELETE { ?resource bf:instanceOf ?instance } "
+        "WHERE  { ?resource bf:instanceOf ?instance }",
+        data=data,
+    )
+
+    assert "instanceOf" in bulk_update._postcondition_failure(WORK_URI, before, after)
+
+
+def test_postcondition_refuses_triples_the_write_would_discard():
+    """
+    generate_entity_graph drops dcterms and lclocal triples, so a preview
+    promising one would be a preview of something that never happens.
+    """
+    before, after = apply(
+        "PREFIX bf: <http://id.loc.gov/ontologies/bibframe/> "
+        "PREFIX dcterms: <http://purl.org/dc/terms/> "
+        "INSERT { ?resource dcterms:modified '2026-09-09' } "
+        "WHERE  { ?resource a bf:Work }"
+    )
+
+    assert bulk_update._postcondition_failure(WORK_URI, before, after) == (
+        "update would add triples Blue Core does not store: modified"
+    )
+
+
+def test_postcondition_refuses_an_excluded_triple_type():
+    """bluecore-models strips bf:identifiedBy blank nodes typed bf:OclcNumber."""
+    before, after = apply(
+        "PREFIX bf: <http://id.loc.gov/ontologies/bibframe/> "
+        "INSERT { ?resource bf:identifiedBy [ a bf:OclcNumber ; rdf:value '12345' ] } "
+        "WHERE  { ?resource a bf:Work }"
+    )
+
+    assert "identifiedBy" in bulk_update._postcondition_failure(WORK_URI, before, after)
+
+
+def test_postcondition_allows_an_ordinary_insert():
+    """The new checks don't get in the way of a plain field edit."""
+    before, after = apply(
+        "PREFIX bf: <http://id.loc.gov/ontologies/bibframe/> "
+        "INSERT { ?resource bf:summary [ a bf:Summary ; rdfs:label 'a summary' ] } "
+        "WHERE  { ?resource a bf:Work }"
+    )
+
+    assert bulk_update._postcondition_failure(WORK_URI, before, after) is None
 
 
 # --- update_resources -------------------------------------------------------
@@ -297,10 +454,9 @@ def test_update_resources_applied(fake_db, rows):
     fake_db.assert_called_once()
     graph = fake_db.call_args.args[1]
     assert (rdflib.URIRef(WORK_URI), BF.note, None) not in graph
-    # only the listed resource is authoritatively written, and the Other
-    # Resources it references are left alone
+    # naming the kind being written is what keeps save_graph to this resource
+    # and leaves the descriptions it only references alone
     assert fake_db.call_args.kwargs["primary_class"] == BF.Work
-    assert fake_db.call_args.kwargs["update_other_resources"] is False
 
 
 def test_update_resources_applied_instance(fake_db, rows):

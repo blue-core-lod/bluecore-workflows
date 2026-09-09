@@ -20,12 +20,12 @@ import os
 import pathlib
 
 import rdflib
-from bluecore_models.bluecore_graph import save_graph
+from bluecore_models.bluecore_graph import EXCLUDED_TRIPLE_TYPES, save_graph
 from bluecore_models.models import OtherResource, ResourceBase
 from bluecore_models.models.version import CURRENT_USER_ID
-from bluecore_models.namespaces import BF, RDF
+from bluecore_models.namespaces import BF, LCLOCAL, RDF
 from bluecore_models.utils.graph import load_jsonld
-from rdflib import URIRef
+from rdflib import DCTERMS, BNode, URIRef
 from rdflib.plugins.sparql import prepareUpdate
 from rdflib.plugins.sparql.sparql import Update
 from sqlalchemy.orm import sessionmaker
@@ -51,8 +51,17 @@ PRIMARY_CLASSES = {
 # single stored resource -- but rdflib will happily execute them.
 ALLOWED_OPERATIONS = frozenset({"Modify", "DeleteWhere", "InsertData", "DeleteData"})
 
-# Algebra nodes that reach outside the resource's own graph.
-FORBIDDEN_NODES = frozenset({"Graph", "Service", "ServiceGraphPattern"})
+# Algebra nodes that reach outside the resource's own graph, by the names rdflib
+# gives them once a query is parsed: "ServiceGraphPattern" is a SERVICE clause,
+# "Graph" is a GRAPH clause.
+#
+# SERVICE really does go to the network. rdflib evaluates it from inside an
+# update's WHERE clause, so an endpoint named there would be called once per
+# resource in the run. GRAPH cannot -- rdflib raises on it, because a single
+# Graph is not a dataset -- but it is rejected too, so that a query naming a
+# graph is turned away once, in plan, instead of failing every resource in the
+# run with rdflib's message about ConjunctiveGraphs.
+FORBIDDEN_NODES = frozenset({"Graph", "ServiceGraphPattern"})
 
 # The most resources one run will accept, per the bulk operations epic. A
 # too-large CSV fails in setup rather than part way through the fan-out.
@@ -67,9 +76,25 @@ DEFAULT_BATCH_SIZE = int(os.environ.get("BLUECORE_BULK_UPDATE_BATCH_SIZE", "100"
 # This is a preview: the counts are always exact, the listing is a sample.
 MAX_DIFF_TRIPLES = 10
 
-# Column names a CSV may use for the URI column, so a spreadsheet exported with
-# a header row works without editing.
-URI_HEADERS = frozenset({"uri", "url", "resource", "resource_uri"})
+# How a Work, Instance or Hub is tied to another one. bluecore-models acts on
+# these when it saves: _infer reads a bf:hasInstance and adds the bf:instanceOf
+# to match, and _link then writes the foreign key -- so asserting one of these
+# about another resource re-parents it, or creates a row for it. Rewiring that
+# structure is not a field edit, and a bulk update leaves it alone.
+RELATIONSHIP_PREDICATES = frozenset(
+    {BF.hasInstance, BF.instanceOf, BF.hasExpression, BF.expressionOf}
+)
+
+# Namespaces bluecore-models drops on the way to the database: generate_entity_graph
+# skips a triple whose predicate or object is in either (see its
+# _check_for_namespace). An update inserting these would show up in a dry run's
+# diff and then be discarded by the write, so it is refused instead.
+DISCARDED_NAMESPACES = (LCLOCAL, DCTERMS)
+
+# The column a CSV has to have, matched case insensitively. Any other columns
+# are ignored, so a spreadsheet can carry whatever else is useful to whoever
+# maintains it -- a local identifier, a note about why a resource is in the list.
+URI_COLUMN = "uri"
 
 
 class BulkUpdateError(Exception):
@@ -105,6 +130,18 @@ def check_query(query: str) -> Update:
             raise BulkUpdateError(
                 "WITH is not allowed in a bulk update: the update always applies "
                 "to the resource being updated"
+            )
+        # USING names the graph the WHERE clause reads from, and rdflib honours
+        # it by fetching that IRI -- an http URL or a local file -- evaluating
+        # the WHERE against those triples and inserting the result into the
+        # resource. It is a way to pull in data from outside, once per resource
+        # in the run, so it is turned away with the rest of them. (It is a key
+        # on the operation rather than a node in the WHERE clause, so
+        # _check_no_named_graphs doesn't see it.)
+        if dict.get(operation, "using") is not None:
+            raise BulkUpdateError(
+                "USING is not allowed in a bulk update: the update reads and "
+                "writes the resource's own triples, not another graph"
             )
         _check_no_named_graphs(operation)
 
@@ -149,10 +186,19 @@ def _check_no_named_graphs(node, seen: set[int] | None = None) -> None:
 
 def read_uris(csv_file: str) -> list[str]:
     """
-    Read the resource URIs from a CSV, which may or may not have a header row.
-    Only the first column is read; anything else in the row (a note, a local
-    identifier) is left alone. Duplicates are dropped, keeping the first
-    occurrence, so a resource is never updated twice in one run.
+    Read the resource URIs from a CSV.
+
+    The first row has to be a header row naming a `uri` column, and the URIs are
+    read from that column by name. Any other columns are ignored, so a list can
+    carry a local identifier or a note about why a resource is on it.
+
+    Requiring the header means the file says what it holds: nothing has to guess
+    whether row one is a heading or a resource, a column can't be read by
+    position and turn out to be the wrong one, and a file that isn't the list
+    someone meant to use is turned away instead of being read as URIs.
+
+    Duplicates are dropped, keeping the first occurrence, so a resource is never
+    updated twice in one run.
     """
     if not csv_file:
         raise BulkUpdateError("Missing CSV file")
@@ -163,15 +209,33 @@ def read_uris(csv_file: str) -> list[str]:
 
     uris: list[str] = []
     seen: set[str] = set()
-    with csv_path.open(newline="") as fh:
-        for row in csv.reader(fh):
-            if not row:
-                continue
-            value = row[0].strip()
-            if not value or value.lower() in URI_HEADERS:
+    # utf-8-sig: a CSV saved by a spreadsheet often starts with a byte order
+    # mark, which would otherwise become part of the first column's name.
+    with csv_path.open(newline="", encoding="utf-8-sig") as fh:
+        reader = csv.DictReader(fh)
+        columns = {
+            name.strip().lower(): name for name in (reader.fieldnames or []) if name
+        }
+        if not columns:
+            raise BulkUpdateError(
+                f"{csv_path} is empty: the first row must name a {URI_COLUMN} column"
+            )
+        if URI_COLUMN not in columns:
+            found = ", ".join(sorted(columns))
+            raise BulkUpdateError(
+                f"{csv_path} has no {URI_COLUMN} column, only {found}. The first "
+                f"row must be a header row naming a {URI_COLUMN} column."
+            )
+        column = columns[URI_COLUMN]
+
+        # start at 2: row 1 is the header, so this is the row number a person
+        # editing the file in a spreadsheet would see.
+        for number, row in enumerate(reader, start=2):
+            value = (row.get(column) or "").strip()
+            if not value:
                 continue
             if not value.startswith("http"):
-                raise BulkUpdateError(f"{value} is not a URI")
+                raise BulkUpdateError(f"{csv_path} row {number}: {value} is not a URI")
             if value in seen:
                 logger.info(f"skipping duplicate {value}")
                 continue
@@ -248,6 +312,32 @@ def _triples(graph: rdflib.Graph, subject: URIRef, predicate) -> set:
     return set(graph.triples((subject, predicate, None)))
 
 
+def _admin_metadata(graph: rdflib.Graph, subject: URIRef) -> set:
+    """
+    Every triple that makes up the resource's bf:adminMetadata: the arcs from
+    the resource, and everything hanging off the blank nodes they point at.
+
+    The provenance is a blank node, so comparing only the arc would let an
+    update rewrite what the record says about who catalogued it and when while
+    leaving the arc itself untouched. Only blank nodes are followed, the way
+    generate_entity_graph does -- a URI object is a reference to a resource
+    described elsewhere, not part of this one.
+    """
+    triples = set(graph.triples((subject, BF.adminMetadata, None)))
+    queue = [o for _, _, o in triples if isinstance(o, BNode)]
+    seen: set = set()
+    while queue:
+        node = queue.pop()
+        if node in seen:
+            continue
+        seen.add(node)
+        for triple in graph.triples((node, None, None)):
+            triples.add(triple)
+            if isinstance(triple[2], BNode):
+                queue.append(triple[2])
+    return triples
+
+
 def _uri_subjects(graph: rdflib.Graph) -> set[URIRef]:
     return {s for s in graph.subjects() if isinstance(s, URIRef)}
 
@@ -275,9 +365,7 @@ def _postcondition_failure(
     if _triples(before, subject, RDF.type) != _triples(after, subject, RDF.type):
         return "update would change the resource's rdf:type"
 
-    if _triples(before, subject, BF.adminMetadata) != _triples(
-        after, subject, BF.adminMetadata
-    ):
+    if _admin_metadata(before, subject) != _admin_metadata(after, subject):
         return "update would change the resource's bf:adminMetadata"
 
     introduced = _uri_subjects(after) - _uri_subjects(before)
@@ -285,7 +373,57 @@ def _postcondition_failure(
         described = ", ".join(sorted(str(s) for s in introduced))
         return f"update would start describing other resources: {described}"
 
+    changed = _relationships(before) ^ _relationships(after)
+    if changed:
+        names = ", ".join(sorted({_short(p) for _, p, _ in changed}))
+        return f"update would change how this resource relates to others: {names}"
+
+    discarded = _discarded_by_save(set(after) - set(before), after)
+    if discarded:
+        names = ", ".join(sorted({_short(p) for _, p, _ in discarded}))
+        return f"update would add triples Blue Core does not store: {names}"
+
     return None
+
+
+def _short(predicate) -> str:
+    """A predicate as a person would say it, for a message about it."""
+    return str(predicate).rsplit("/", 1)[-1].rsplit("#", 1)[-1]
+
+
+def _relationships(graph: rdflib.Graph) -> set:
+    """
+    Every triple in the graph tying one Work, Instance or Hub to another --
+    wherever it sits, since the assertion can be made in either direction.
+    """
+    return {t for t in graph if t[1] in RELATIONSHIP_PREDICATES}
+
+
+def _discarded_by_save(added: set, after: rdflib.Graph) -> set:
+    """
+    Which of the added triples the write is going to throw away.
+
+    A preview that promises a triple the database won't keep is worse than no
+    preview, so an update that adds one is refused rather than half applied.
+    """
+    discarded = set()
+    for triple in added:
+        _, predicate, obj = triple
+        if any(
+            predicate in namespace or obj in namespace
+            for namespace in DISCARDED_NAMESPACES
+        ):
+            discarded.add(triple)
+            continue
+        # EXCLUDED_TRIPLE_TYPES: bluecore-models strips these (predicate,
+        # rdf:type) pairs, e.g. so an OCLC number is never persisted.
+        for excluded_predicate, excluded_type in EXCLUDED_TRIPLE_TYPES:
+            if (
+                predicate == excluded_predicate
+                and (obj, RDF.type, excluded_type) in after
+            ):
+                discarded.add(triple)
+    return discarded
 
 
 def _diff(added: set, removed: set) -> dict:
@@ -338,11 +476,12 @@ def update_resources(
     prepared = check_query(query)
     report = new_report(dry_run)
 
-    if user_uid:
-        # so the version bluecore-models writes for each update records who
-        # asked for it (see bluecore_models.utils.db.add_version)
-        CURRENT_USER_ID.set(user_uid)
-        logger.info("Using CURRENT_USER_ID: %s", user_uid)
+    # Set unconditionally, even to None: this is a ContextVar, and a worker
+    # child process is reused across tasks, so leaving a previous run's value in
+    # place would attribute this run's versions to whoever triggered that one.
+    # (The version is written by bluecore_models.utils.db.add_version.)
+    CURRENT_USER_ID.set(user_uid)
+    logger.info("Using CURRENT_USER_ID: %s", user_uid)
 
     bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
     session_maker = sessionmaker(bind=get_engine(bluecore_db))
@@ -431,10 +570,12 @@ def _update_resource(
             session_maker,
             graph,
             namespace=bc_url,
+            # Naming the kind we are writing is what keeps a bulk update to
+            # the resource it was given: save_graph upserts resources of this
+            # kind and treats every other kind as a reference, created if
+            # absent but never overwritten. (Not update_other_resources, which
+            # save_graph only consults when primary_class is None.)
             primary_class=primary_class,
-            # A bulk update rewrites the listed resource. Everything it links to
-            # is only referenced, so leave those descriptions alone.
-            update_other_resources=False,
             source=f"bulk_update:{uri}",
         )
         logger.info(f"updated {uri}")

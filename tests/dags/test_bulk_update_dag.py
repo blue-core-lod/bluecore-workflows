@@ -49,7 +49,7 @@ def test_dag_structure():
 
 def test_plan(context, tmp_path):
     csv_file = tmp_path / "uris.csv"
-    csv_file.write_text(f"{WORK_URI}\nhttps://bcld.info/works/5678\n")
+    csv_file.write_text(f"uri\n{WORK_URI}\nhttps://bcld.info/works/5678\n")
     context["params"] = {
         "file": str(csv_file),
         "query": "DELETE WHERE { ?resource <http://id.loc.gov/ontologies/bibframe/note> ?n }",
@@ -99,6 +99,28 @@ def test_report_fails_the_run_when_a_resource_errored(context, tmp_path, monkeyp
         callable_for("report")(reports)
 
     assert (tmp_path / "bulk_update" / "manual__2026-09-08" / "index.html").exists()
+
+
+def test_report_still_written_when_a_batch_dies(context, tmp_path, monkeypatch):
+    """A batch that failed outright reports nothing; the rest still get a report."""
+    monkeypatch.setenv("BLUECORE_REPORTS_DIR", str(tmp_path))
+    reports = [
+        new_report(dry_run=False) | {"processed": 1, "updated": [WORK_URI]},
+        None,
+    ]
+
+    with pytest.raises(AirflowException, match="1 batches did not report"):
+        callable_for("report")(reports)
+
+    written = (
+        tmp_path / "bulk_update" / "manual__2026-09-08" / "report.json"
+    ).read_text()
+    assert WORK_URI in written
+
+
+def test_report_runs_even_if_a_batch_failed():
+    """Hence all_done: the default all_success would skip it."""
+    assert bulk_update_dag.get_task("report").trigger_rule == "all_done"
 
 
 def test_report_does_not_fail_the_run_for_skipped_resources(
