@@ -64,6 +64,37 @@ To add any new DAGs to `blue-core-lod/bluecore-workflows:latest` image, you can 
 while commenting out the previous line `image: ${AIRFLOW_IMAGE_NAME:-blue-core-lod/bluecore-workflows:latest}`.
 ---
 
+## 🧾 Bulk updates
+The `bulk_update` DAG applies one SPARQL UPDATE to each of the Blue Core Works,
+Instances or Hubs listed in a CSV. Trigger it from the Airflow UI with:
+
+* **file** --- a CSV in the uploads volume whose first column holds Blue Core
+  resource URIs, with or without a header row.
+* **query** --- the SPARQL UPDATE. It runs against each resource's own triples,
+  with `?resource` bound to the resource being updated. `GRAPH`, `WITH`,
+  `SERVICE`, `LOAD`, `DROP`, `CLEAR`, `ADD`, `MOVE` and `COPY` are rejected, and
+  so is any update that would delete a resource, change its `rdf:type` or
+  `bf:adminMetadata`, or start describing a different resource.
+* **dry_run** --- on by default: report the triples that would be added and
+  removed for each resource without writing anything. Turn it off to apply the
+  update, which records a version per resource against the user who triggered
+  the run.
+
+## 📊 DAG run reports
+A DAG that reports on its run writes the report to the reports volume, one
+directory per DAG and one per run inside it, as JSON alongside a plain HTML
+rendering:
+
+```
+reports/<dag_id>/<run_id>/report.json
+reports/<dag_id>/<run_id>/index.html
+```
+
+`ils_middleware/tasks/report.py` writes them, and `BLUECORE_REPORTS_DIR`
+overrides the location for a local run. Serving these through an Airflow plugin
+is [issue #191](https://github.com/blue-core-lod/bluecore-workflows/issues/191).
+---
+
 ## 📦 Dependency Management and Packaging
 We are using [uv][UV] to manage dependency updates.\
 Once you have uv installed, you can install the other project dependencies by running:
