@@ -21,6 +21,7 @@ logger = logging.getLogger(__name__)
     schedule=None,
     start_date=datetime(2026, 3, 29),
     catchup=False,
+    max_active_runs=3,
     tags=["ingest", "record", "zip"],
     default_args={"owner": "airflow"},
 )
