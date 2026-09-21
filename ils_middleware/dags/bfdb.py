@@ -2,8 +2,8 @@
 
 import logging
 import pathlib
-from datetime import datetime
 
+import pendulum
 from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
 from airflow.sdk import dag, task
 
@@ -28,7 +28,7 @@ def _resource_loader_conf(file_path: str) -> dict[str, str]:
 # schedule="0 0 * * *",
 @dag(
     schedule=None,
-    start_date=datetime(2026, 9, 11),
+    start_date=pendulum.datetime(2026, 9, 11, tz="America/New_York"),
     catchup=False,
     tags=["bfdb", "activity-streams"],
     default_args={"owner": "airflow"},

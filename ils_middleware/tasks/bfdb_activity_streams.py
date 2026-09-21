@@ -1,8 +1,9 @@
 import json
 import pathlib
 import uuid
-from datetime import UTC, datetime
+from datetime import date, datetime, timedelta
 from urllib.parse import urlparse
+from zoneinfo import ZoneInfo
 
 import httpx
 from sqlalchemy import create_engine, text
@@ -17,6 +18,8 @@ from tenacity import (
 from ils_middleware.tasks.bfdb.schema.schema_feed import ActivityStreamsFeed, FeedItem
 
 BFDB_CURSOR_PREFIX = "bfdb_"
+BFDB_TIMEZONE = ZoneInfo("America/New_York")
+STALE_PAGE_LIMIT = 2
 RETRY_ATTEMPTS = 3
 FEED_FILE_SUFFIXES = {
     "hubs": "hub",
@@ -86,7 +89,7 @@ def _combine_json_arrays(
 
 
 def current_run_date() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%d")
+    return str(datetime.now(BFDB_TIMEZONE).date() - timedelta(days=1))
 
 
 def cursor_name_for(feed_name: str) -> str:
@@ -148,7 +151,7 @@ def process_activity_stream_feed(
         url, run_id, feed_name, cursor, current_date, airflow_path
     )
     if newest_published is not None:
-        save_cursor(bluecore_db, cursor_name, newest_published)
+        save_cursor(bluecore_db, cursor_name, max(cursor, newest_published))
     return downloaded_files
 
 
@@ -160,8 +163,7 @@ def ingest_activity_stream_feed(
     current_date: str,
     airflow_path: str = "/opt/airflow",
 ) -> tuple[list[str], str | None]:
-    """Download feed objects published after the cursor and on or before the run date."""
-    # Without a cursor there is no stop condition, so paging would walk the whole feed.
+    """Download objects published after the cursor through the run date."""
     if not cursor:
         raise ValueError(
             f"No cursor found for {cursor_name_for(feed_name)}; "
@@ -172,32 +174,41 @@ def ingest_activity_stream_feed(
     run_path.mkdir(parents=True, exist_ok=True)
 
     used_file_names: set[str] = set()
+    downloaded_object_ids: set[str] = set()
     downloaded_files: list[str] = []
     newest_published: str | None = None
     next_url: str | None = url
     visited_urls: set[str] = set()
+    cursor_date = date.fromisoformat(cursor)
+    window_end = date.fromisoformat(current_date)
+    stale_pages = 0
 
     while next_url and next_url not in visited_urls:
         visited_urls.add(next_url)
         feed = _fetch_feed(next_url)
-        reached_cursor = False
+        eligible_dates: list[date] = []
 
         for item in feed.orderedItems:
-            # published is ISO-8601, so its leading date compares correctly as a string.
-            published_date = item.published[:10]
-            # LC posts future-dated entries at the head of the feed, so skip past them.
-            if published_date > current_date:
+            published_date = date.fromisoformat(item.published[:10])
+            if published_date > window_end:
                 continue
-            # Entries are newest first, so the first one at or before the cursor ends the feed.
-            if published_date <= cursor:
-                reached_cursor = True
-                break
+            eligible_dates.append(published_date)
+            if published_date <= cursor_date:
+                continue
+            if item.object.id in downloaded_object_ids:
+                continue
+            downloaded_object_ids.add(item.object.id)
             file_path = _download_feed_item(item, feed_name, run_path, used_file_names)
             downloaded_files.append(str(file_path))
-            if newest_published is None or published_date > newest_published:
-                newest_published = published_date
+            published = str(published_date)
+            if newest_published is None or published > newest_published:
+                newest_published = published
 
-        if reached_cursor:
+        if eligible_dates and max(eligible_dates) <= cursor_date:
+            stale_pages += 1
+        else:
+            stale_pages = 0
+        if stale_pages >= STALE_PAGE_LIMIT:
             break
         next_url = feed.next
 
