@@ -352,11 +352,11 @@ def _feed_payload(
 
 
 def _feed_request_url(url: str) -> str:
-    return f"{bfdb_activity_streams._local(url)}.json"
+    return bfdb_activity_streams._translate_url(url)
 
 
 def _object_request_url(url: str) -> str:
-    return f"{bfdb_activity_streams._local(url)}.bibframe.json"
+    return bfdb_activity_streams._translate_url(url, "bibframe.json")
 
 
 def test_ingest_activity_stream_feed_downloads_item_objects(mocker, tmp_path):

@@ -215,16 +215,8 @@ def ingest_activity_stream_feed(
     return downloaded_files, newest_published
 
 
-# def _fetch_feed(url: str) -> ActivityStreamsFeed:
-#     response = httpx.get(url + ".json")
-#     response.raise_for_status()
-#     return ActivityStreamsFeed.model_validate(response.json())
-
-
-def _local(url: str) -> str:
-    return url.replace("https://", "http://").replace(
-        "id.loc.gov/resources", "nginx/bfdb"
-    )
+def _translate_url(url: str, format: str = "json") -> str:
+    return url.replace("https://", "http://") + "." + format
 
 
 @retry(
@@ -234,19 +226,9 @@ def _local(url: str) -> str:
     reraise=True,
 )
 def _fetch_feed(url: str) -> ActivityStreamsFeed:
-    response = httpx.get(_local(url) + ".json")
+    response = httpx.get(_translate_url(url))
     response.raise_for_status()
     return ActivityStreamsFeed.model_validate(response.json())
-
-
-# def _download_feed_item(
-#     item: FeedItem, run_path: pathlib.Path, used_file_names: set[str]
-# ) -> pathlib.Path:
-#     response = httpx.get(item.object.id.replace("http://", "https://") + ".json")
-#     response.raise_for_status()
-#     file_path = run_path / _local_file_name(item.object.id, used_file_names)
-#     file_path.write_bytes(response.content)
-#     return file_path
 
 
 @retry(
@@ -258,7 +240,7 @@ def _fetch_feed(url: str) -> ActivityStreamsFeed:
 def _download_feed_item(
     item: FeedItem, feed_name: str, run_path: pathlib.Path, used_file_names: set[str]
 ) -> pathlib.Path:
-    response = httpx.get(_local(item.object.id) + ".bibframe.json")
+    response = httpx.get(_translate_url(item.object.id, "bibframe.json"))
     response.raise_for_status()
     file_path = run_path / _local_file_name(
         item.object.id, FEED_FILE_SUFFIXES[feed_name], used_file_names
