@@ -2,10 +2,13 @@
 
 import logging
 import pathlib
+from typing import cast
 
 import pendulum
-from airflow.providers.standard.operators.trigger_dagrun import TriggerDagRunOperator
-from airflow.sdk import dag, task
+from airflow.providers.standard.operators.trigger_dagrun import (
+    TriggerDagRunOperator,
+)
+from airflow.sdk import Context, dag, task
 
 from ils_middleware.tasks.bfdb_activity_streams import (
     ACTIVITY_STREAM_FEEDS,
@@ -77,7 +80,7 @@ def process_activity_streams():
             conf=_resource_loader_conf(file_path),
             wait_for_completion=True,
             poke_interval=30,
-        ).execute(kwargs)
+        ).execute(context=cast(Context, kwargs))
 
     activity_stream_run_id = create_run_id()
     bluecore_db = bluecore_db_info()

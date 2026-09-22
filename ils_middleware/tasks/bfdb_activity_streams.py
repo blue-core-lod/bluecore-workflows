@@ -96,7 +96,7 @@ def cursor_name_for(feed_name: str) -> str:
     return f"{BFDB_CURSOR_PREFIX}{feed_name}"
 
 
-def get_last_cursor(bluecore_db: str, cursor_name: str) -> str | None:
+def get_last_cursor(bluecore_db: str, cursor_name: str) -> str:
     """Return the most recent cursor recorded for the given cursor name."""
     engine = create_engine(bluecore_db)
     try:
@@ -108,7 +108,7 @@ def get_last_cursor(bluecore_db: str, cursor_name: str) -> str | None:
                 ),
                 {"cursor_name": cursor_name},
             )
-            return result.scalar()
+            return result.scalar() or ""
     finally:
         engine.dispose()
 
@@ -150,7 +150,7 @@ def process_activity_stream_feed(
     downloaded_files, newest_published = ingest_activity_stream_feed(
         url, run_id, feed_name, cursor, current_date, airflow_path
     )
-    if newest_published is not None:
+    if newest_published:
         save_cursor(bluecore_db, cursor_name, max(cursor, newest_published))
     return downloaded_files
 
@@ -159,10 +159,10 @@ def ingest_activity_stream_feed(
     url: str,
     run_id: str,
     feed_name: str,
-    cursor: str | None,
+    cursor: str,
     current_date: str,
     airflow_path: str = "/opt/airflow",
-) -> tuple[list[str], str | None]:
+) -> tuple[list[str], str]:
     """Download objects published after the cursor through the run date."""
     if not cursor:
         raise ValueError(
@@ -212,11 +212,11 @@ def ingest_activity_stream_feed(
             break
         next_url = feed.next
 
-    return downloaded_files, newest_published
+    return downloaded_files, newest_published or ""
 
 
 def _translate_url(url: str, format: str = "json") -> str:
-    return url.replace("https://", "http://") + "." + format
+    return url.replace("http://", "https://") + "." + format
 
 
 @retry(
