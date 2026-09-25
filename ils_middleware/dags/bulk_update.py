@@ -121,7 +121,7 @@ def bulk_update():
     def bluecore_db_info() -> str:
         return get_bluecore_db()
 
-    @task
+    @task(max_active_tis_per_dag=5)
     def update_batch(uris: list[str], bluecore_db: str, user_uid: str | None) -> dict:
         params = get_current_context().get("params") or {}
         return update_resources(
