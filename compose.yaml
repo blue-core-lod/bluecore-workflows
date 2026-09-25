@@ -124,6 +124,7 @@ x-airflow-common:
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - ./uploads:/opt/airflow/uploads
+    - ./reports:/opt/airflow/reports
     - ./config:/opt/airflow/config
 
   user: "${AIRFLOW_UID:-50000}:0"

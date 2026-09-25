@@ -133,3 +133,4 @@ dmypy.json
 !/logs/.keep
 .idea/
 /uploads*
+/reports*
