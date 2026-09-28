@@ -20,6 +20,10 @@ one resource and a list on the next, and a consumer had to check the type of
 every value it touched. Rows written since that change have the new shape; this
 brings the rest up to date.
 
+Profiles are left alone. They are stored in the same table, but bluecore-models
+never frames them -- sinopia-editor requires a profile's data in its own shape --
+so framing one would corrupt it rather than re-serialise it.
+
 **It changes no triples.** The JSON says the same thing either way -- a one-value
 list and a bare value are the same statement in JSON-LD -- so this records no
 versions and writes through SQLAlchemy Core rather than the ORM, whose

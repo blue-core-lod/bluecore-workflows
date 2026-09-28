@@ -1,4 +1,4 @@
-"""Re-serialise every resource's stored JSON-LD, without changing what it says.
+"""Re-serialise every framed resource's stored JSON-LD, without changing what it says.
 
 bluecore-models used to frame a resource's `data` and leave a property with one
 value as a bare value, so the same property arrived as a scalar on one resource
@@ -6,6 +6,9 @@ and a list on the next -- and often both on one resource. `frame_jsonld` now
 coerces every property to a list. Rows written after that change get the new
 shape; rows already in the database keep the old one until they are re-framed,
 which is what this does.
+
+Profiles are not included: they share `resource_base` with the rest but are
+never framed on the way in either. See REFRAMABLE_TYPES.
 
 Three things follow from re-framing changing no triples, and they shape the whole
 module.
@@ -50,6 +53,18 @@ BATCH_SIZE = int(os.environ.get("BLUECORE_REFRAME_BATCH_SIZE", "500"))
 # reintroduce the ORM events this exists to avoid.
 TABLE = "resource_base"
 
+# The polymorphic types this sweep covers, matched against `resource_base.type`.
+#
+# Profiles live in the same table and must not be re-framed: `set_jsonld` in
+# bluecore-models returns a Profile's data untouched, because sinopia-editor
+# requires it in its own shape -- a top-level JSON-LD array of Sinopia vocabulary
+# nodes rather than a framed BIBFRAME document. Framing one would not re-serialise
+# it, it would replace it with something the editor cannot read.
+#
+# An allowlist rather than an exclusion of profiles, so that a resource type added
+# later has to opt in rather than being swept up by a sweep that has never seen it.
+REFRAMABLE_TYPES = ("works", "instances", "hubs", "other_resources")
+
 
 class Batch(NamedTuple):
     """One window of rows, and what re-framing them would do.
@@ -92,6 +107,13 @@ def reframe(data: dict[str, Any] | None, uri: str) -> dict[str, Any] | None:
     """
     if data is None:
         return None
+    if not isinstance(data, dict):
+        # `dict()` is not a safe way to find this out. Given a list of JSON-LD
+        # node objects it reads each one as a key/value pair, which a node with
+        # exactly two keys satisfies, so it half-consumes the document before
+        # raising on the first larger node -- an error about a "dictionary update
+        # sequence" that says nothing about the resource being the wrong shape.
+        raise TypeError(f"expected a JSON-LD object, got {type(data).__name__}")
     document = dict(data)
     if "@context" not in document:
         document["@context"] = CONTEXT
@@ -108,11 +130,18 @@ def batches(
     Keyset rather than OFFSET: OFFSET makes the database count past every row it
     has already skipped, so a sweep gets slower the further it gets, and a row
     inserted mid-run shifts the window underneath it.
+
+    Only REFRAMABLE_TYPES are read, so a profile is never seen rather than being
+    seen and failing.
     """
     after: int | None = None
 
     while True:
-        query = select(table.c.id, table.c.uri, table.c.data).order_by(table.c.id)
+        query = (
+            select(table.c.id, table.c.uri, table.c.data)
+            .where(table.c.type.in_(REFRAMABLE_TYPES))
+            .order_by(table.c.id)
+        )
         if after is not None:
             query = query.where(table.c.id > after)
         with engine.connect() as connection:
