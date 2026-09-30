@@ -2,13 +2,9 @@
 
 import logging
 import pathlib
-from typing import cast
 
 import pendulum
-from airflow.providers.standard.operators.trigger_dagrun import (
-    TriggerDagRunOperator,
-)
-from airflow.sdk import Context, dag, task
+from airflow.sdk import dag, task
 
 from ils_middleware.tasks.bfdb_activity_streams import (
     ACTIVITY_STREAM_FEEDS,
@@ -17,15 +13,16 @@ from ils_middleware.tasks.bfdb_activity_streams import (
     current_run_date,
     process_activity_stream_feed,
 )
-from ils_middleware.tasks.bluecore import get_bluecore_db
+from ils_middleware.tasks.bluecore import (
+    batch_files,
+    delete_upload,
+    get_bluecore_db,
+    load_files,
+)
 
 logger = logging.getLogger(__name__)
 
 BFDB_AGENT_USER_UID = "BFDB Agent"
-
-
-def _resource_loader_conf(file_path: str) -> dict[str, str]:
-    return {"file": file_path, "user_uid": BFDB_AGENT_USER_UID}
 
 
 # schedule="0 0 * * *",
@@ -71,16 +68,32 @@ def process_activity_streams():
     def collect_downloads(feed_downloads: list[list[str]]) -> list[str]:
         return combine_downloads(feed_downloads)
 
-    @task(map_index_template="Load {{ task.op_kwargs['file_path'] }}")
-    def trigger_resource_loader(file_path: str, **kwargs):
-        logger.info(f"Triggering resource_loader for {file_path}")
-        TriggerDagRunOperator(
-            task_id=f"resource-loader-{pathlib.Path(file_path).stem}",
-            trigger_dag_id="resource_loader",
-            conf=_resource_loader_conf(file_path),
-            wait_for_completion=True,
-            poke_interval=30,
-        ).execute(context=cast(Context, kwargs))
+    @task
+    def delete_file_path(files: list[str], errors: list[str]):
+        if not files:
+            return
+
+        if len(errors) > 0:
+            msg = f"Errors exist; keeping {files}"
+            logger.error(msg)
+            return
+
+        current_path = pathlib.Path(files[0])
+        remove_empty_parent = current_path.parent.name != "uploads"
+        delete_upload(upload=files, remove_empty_parent=remove_empty_parent)
+
+    @task
+    def bfdb_batch_files(files: list[str]) -> list[list[str]]:
+        """Extracts list of CBD files from zip and creates batches of filenames"""
+        return batch_files(files)
+
+    @task
+    def bfdb_file_loader(**kwargs):
+        return load_files(
+            bluecore_db=kwargs["bluecore_db"],
+            user_uid=kwargs["user_uid"],
+            files=kwargs["files"],
+        )
 
     activity_stream_run_id = create_run_id()
     bluecore_db = bluecore_db_info()
@@ -91,9 +104,14 @@ def process_activity_streams():
         current_date=current_date,
     ).expand(feed_config=ACTIVITY_STREAM_FEEDS)
 
-    # TODO: Change triggering resource loader DAG to bulk upload DAG when it is complete.
-
-    trigger_resource_loader.expand(file_path=collect_downloads(feed_downloads))
+    files = collect_downloads(feed_downloads)
+    bfdb_batches = bfdb_batch_files(files=files)
+    errors = bfdb_file_loader.partial(
+        bluecore_db=bluecore_db,
+        user_uid=BFDB_AGENT_USER_UID,
+    ).expand(files=bfdb_batches)
+    delete_task = delete_file_path(files=files, errors=errors)
+    errors >> delete_task
 
 
 process_activity_streams_dag = process_activity_streams()

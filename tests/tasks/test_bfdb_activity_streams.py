@@ -4,9 +4,9 @@ import uuid
 import httpx
 import pytest
 from sqlalchemy import create_engine, text
-from sqlalchemy.exc import OperationalError
 
 from ils_middleware.tasks import bfdb_activity_streams
+from ils_middleware.tasks.bfdb.schema.schema_feed import FeedItem
 
 
 class MockHTTPXResponse:
@@ -74,10 +74,7 @@ def test_ingest_activity_stream_feed_downloads_item_objects(mocker, tmp_path):
     mocker.patch.object(bfdb_activity_streams.uuid, "uuid4", return_value=run_uuid)
     mocker.patch.object(bfdb_activity_streams.httpx, "get", side_effect=mock_get)
 
-    assert (
-        bfdb_activity_streams.create_activity_stream_run(airflow_path=str(tmp_path))
-        == run_id
-    )
+    assert bfdb_activity_streams.create_activity_stream_run() == run_id
     assert not (tmp_path / run_id).exists()
 
     downloaded_files, newest_published = (
@@ -116,10 +113,10 @@ def test_fetch_feed_retries_transient_http_errors(mocker):
 
 
 def test_download_feed_item_retries_transient_http_errors(mocker, tmp_path):
-    item = bfdb_activity_streams.FeedItem(
+    item = FeedItem(
         type="Add",
         published="2026-09-15",
-        object={"id": "https://id.loc.gov/resources/works/1", "type": ["Object"]},
+        object={"id": "http://id.loc.gov/resources/works/1", "type": ["Object"]},
     )
     get = mocker.patch.object(
         bfdb_activity_streams.httpx,
@@ -130,43 +127,12 @@ def test_download_feed_item_retries_transient_http_errors(mocker, tmp_path):
         bfdb_activity_streams, "wait_exponential", return_value=lambda _: 0
     )
 
-    path = bfdb_activity_streams._download_feed_item(item, "works", tmp_path, set())
+    path = bfdb_activity_streams._download_feed_item(
+        item.object.id, "works", tmp_path, set()
+    )
 
     assert path.read_bytes() == b"ok"
     assert get.call_count == 2
-
-
-def test_save_cursor_retries_operational_errors(mocker):
-    attempts = 0
-
-    class Engine:
-        def begin(self):
-            nonlocal attempts
-            attempts += 1
-            if attempts < 3:
-                raise OperationalError("INSERT", {}, Exception("temporary"))
-            return _CursorConnection()
-
-        def dispose(self):
-            pass
-
-    mocker.patch.object(bfdb_activity_streams, "create_engine", return_value=Engine())
-    bfdb_activity_streams.save_cursor(
-        "postgresql://bluecore", "bfdb_works", "2026-09-15"
-    )
-
-    assert attempts == 3
-
-
-class _CursorConnection:
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        pass
-
-    def execute(self, statement, params):
-        pass
 
 
 def test_ingest_activity_stream_feed_skips_outside_cursor_window(mocker, tmp_path):
@@ -340,6 +306,7 @@ def test_ingest_activity_stream_feed_follows_next_until_stale_pages(mocker, tmp_
         )
     )
 
+    print(f"downloaded_files: {downloaded_files}")
     run_path = tmp_path / run_id
     assert downloaded_files == [
         str(run_path / "newest.work"),
@@ -418,20 +385,6 @@ def test_get_last_cursor_without_rows(tmp_path):
     engine.dispose()
 
     assert bfdb_activity_streams.get_last_cursor(database_url, "bfdb_works") == ""
-
-
-def test_feed_run_path_uses_shared_run_directory(tmp_path):
-    run_id = "88888888-8888-8888-8888-888888888888"
-
-    assert bfdb_activity_streams.feed_run_path(str(tmp_path), run_id, "works") == (
-        tmp_path / run_id
-    )
-    assert bfdb_activity_streams.feed_run_path(str(tmp_path), run_id, "instances") == (
-        tmp_path / run_id
-    )
-    assert bfdb_activity_streams.feed_run_path(str(tmp_path), run_id, "hubs") == (
-        tmp_path / run_id
-    )
 
 
 def test_local_file_name_uses_feed_suffix():

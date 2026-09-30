@@ -5,6 +5,7 @@ import pathlib
 import tarfile
 import time
 import zipfile
+from contextlib import nullcontext
 
 import rdflib
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -79,23 +80,40 @@ def batch_archived_files(
             and not pathlib.Path(name).name.startswith("._")
         ]
 
-    total_names = len(file_names)
-    batch_size = int(total_names / number_of_batches)
-    batches = []
-    for i in range(0, total_names, batch_size):
-        batch = file_names[i : i + batch_size]
+    return batch_files(file_names, number_of_batches)
+
+
+def batch_files(files: list[str], number_of_batches: int = 5) -> list[list[str]]:
+    """
+    Batches a list of files into smaller lists.
+    """
+    total_files = len(files)
+    batch_size = int(total_files / number_of_batches)
+    if batch_size == 0:
+        batch_size = 1
+    batches: list[list[str]] = []
+    for i in range(0, total_files, batch_size):
+        batch = files[i : i + batch_size]
         batches.append(batch)
     return batches
 
 
-def delete_upload(upload: str, remove_empty_parent: bool = False) -> None:
+def delete_upload(upload: str | list[str], remove_empty_parent: bool = False) -> None:
     """
     Deletes upload file
     """
-    upload_path = pathlib.Path(upload)
-    upload_path.unlink()
+    if not upload:
+        return
+
+    if isinstance(upload, str):
+        upload = [upload]
+
+    for to_remove in upload:
+        upload_path = pathlib.Path(to_remove)
+        upload_path.unlink()
+
     if remove_empty_parent:
-        parent_dir = upload_path.parent
+        parent_dir = pathlib.Path(upload[0]).parent
         if parent_dir.exists() and not any(parent_dir.iterdir()):
             parent_dir.rmdir()
 
@@ -230,3 +248,88 @@ def load_cbd_files(
                 logger.info(f"{i:,} graphs saved")
     logger.info(f"Finished load of {len(cbd_files):,} with {len(errors):,} errors")
     return errors
+
+
+def load_files(
+    files: list[str],
+    bluecore_db: str,
+    user_uid: str,
+    archived_file_path: str | None = None,
+    update_other_resources: bool = False,
+):
+    """
+    Load files
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        CURRENT_USER_ID.set(user_uid)
+        logger.info("Using CURRENT_USER_ID: %s", user_uid)
+    except Exception as e:  # noqa: BLE001 -- must not abort the load over this
+        logger.error("Failed to set CURRENT_USER_ID: %s", e)
+
+    bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
+
+    engine = get_engine(bluecore_db)
+    session_maker = sessionmaker(bind=engine)
+
+    errors: list[str] = []
+
+    logger.info(f"Starting load of {len(files):,} files")
+
+    with (
+        tarfile.open(archived_file_path, "r")
+        if archived_file_path is not None
+        else nullcontext(None)
+    ) as archive:
+        for i, name in enumerate(files):
+            if pathlib.Path(name).name.startswith("._"):
+                continue
+            graph_format = rdflib.util.guess_format(name)
+            if graph_format is None:
+                continue
+
+            source = get_file(name, archive)
+            if source is None:
+                errors.append(name)
+                continue
+
+            with source:
+                graph = rdflib.Graph()
+                graph.parse(data=source.read(), format=graph_format)
+
+                # If deadlock occurs, try saving the graph again by sleep up to 2 seconds
+                # to see if deadlock continues
+                for attempt in range(3):
+                    try:
+                        # Bulk load: Works/Instances are authoritative, but the many
+                        # shared Other Resources these records reference are only
+                        # linked, not re-described, on every record (their
+                        # descriptions are maintained by a separate process).
+                        save_graph(
+                            session_maker,
+                            graph,
+                            namespace=bc_url,
+                            update_other_resources=update_other_resources,
+                        )
+                        break
+                    except OperationalError as e:
+                        if attempt == 2:
+                            raise
+                        logger.error(f"Operational Error {e} for {name}")
+                        time.sleep(2**attempt)
+                    except Exception as e:  # noqa: BLE001 -- one bad file shouldn't abort the batch
+                        logger.error(f"Error {e} for {name}")
+                        errors.append(name)
+                        break
+
+                if i > 0 and not i % 100:
+                    logger.info(f"{i:,} graphs saved")
+    logger.info(f"Finished load of {len(files):,} with {len(errors):,} errors")
+    return errors
+
+
+def get_file(file: str, tar_file: tarfile.TarFile | None):
+    if tar_file is not None:
+        return tar_file.extractfile(file)
+    return pathlib.Path(file).open("rb")

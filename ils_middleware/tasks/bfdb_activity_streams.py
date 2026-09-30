@@ -6,8 +6,11 @@ from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
 import httpx
-from sqlalchemy import create_engine, text
+from bluecore_models.models.activity_streams_cursor import ActivityStreamsCursor
+from sqlalchemy import func, select
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import sessionmaker
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -15,7 +18,8 @@ from tenacity import (
     wait_exponential,
 )
 
-from ils_middleware.tasks.bfdb.schema.schema_feed import ActivityStreamsFeed, FeedItem
+from ils_middleware.tasks.bfdb.schema.schema_feed import ActivityStreamsFeed
+from ils_middleware.tasks.bluecore import get_engine
 
 BFDB_CURSOR_PREFIX = "bfdb_"
 BFDB_TIMEZONE = ZoneInfo("America/New_York")
@@ -43,12 +47,12 @@ ACTIVITY_STREAM_FEEDS = [
 ]
 
 
-def create_activity_stream_run(airflow_path: str = "/opt/airflow/uploads") -> str:
+def create_activity_stream_run() -> str:
     run_id = str(uuid.uuid4())
     return run_id
 
 
-def feed_run_path(airflow_path: str, run_id: str, feed_name: str) -> pathlib.Path:
+def feed_run_path(airflow_path: str, run_id: str) -> pathlib.Path:
     return pathlib.Path(airflow_path) / run_id
 
 
@@ -98,19 +102,14 @@ def cursor_name_for(feed_name: str) -> str:
 
 def get_last_cursor(bluecore_db: str, cursor_name: str) -> str:
     """Return the most recent cursor recorded for the given cursor name."""
-    engine = create_engine(bluecore_db)
-    try:
-        with engine.connect() as connection:
-            result = connection.execute(
-                text(
-                    'SELECT max("cursor") FROM activity_streams_cursor '
-                    "WHERE cursor_name = :cursor_name"
-                ),
-                {"cursor_name": cursor_name},
-            )
-            return result.scalar() or ""
-    finally:
-        engine.dispose()
+    engine = get_engine(bluecore_db)
+    session_maker = sessionmaker(bind=engine)
+    with session_maker() as session:
+        stmt = select(func.max(ActivityStreamsCursor.cursor)).where(
+            ActivityStreamsCursor.cursor_name == cursor_name
+        )
+        result = session.execute(stmt)
+        return result.scalar() or ""
 
 
 @retry(
@@ -120,19 +119,19 @@ def get_last_cursor(bluecore_db: str, cursor_name: str) -> str:
     reraise=True,
 )
 def save_cursor(bluecore_db: str, cursor_name: str, cursor: str) -> None:
-    engine = create_engine(bluecore_db)
-    try:
-        with engine.begin() as connection:
-            connection.execute(
-                text(
-                    'INSERT INTO activity_streams_cursor (cursor_name, "cursor") '
-                    "VALUES (:cursor_name, :cursor) ON CONFLICT (cursor_name) "
-                    'DO UPDATE SET "cursor" = excluded."cursor"'
-                ),
-                {"cursor_name": cursor_name, "cursor": cursor},
+    engine = get_engine(bluecore_db)
+    session_maker = sessionmaker(bind=engine)
+    with session_maker() as session:
+        stmt = (
+            insert(ActivityStreamsCursor)
+            .values(cursor_name=cursor_name, cursor=cursor)
+            .on_conflict_do_update(
+                index_elements=["cursor_name"],
+                set_={"cursor": cursor},
             )
-    finally:
-        engine.dispose()
+        )
+        session.execute(stmt)
+        session.commit()
 
 
 def process_activity_stream_feed(
@@ -144,15 +143,15 @@ def process_activity_stream_feed(
     airflow_path: str = "/opt/airflow",
 ) -> list[str]:
     """Download a feed's new objects and advance that feed's cursor."""
-    run_id = run_id or create_activity_stream_run(airflow_path)
+    run_id = run_id or create_activity_stream_run()
     cursor_name = cursor_name_for(feed_name)
     cursor = get_last_cursor(bluecore_db, cursor_name)
-    downloaded_files, newest_published = ingest_activity_stream_feed(
+    downloaded, newest_published = ingest_activity_stream_feed(
         url, run_id, feed_name, cursor, current_date, airflow_path
     )
     if newest_published:
         save_cursor(bluecore_db, cursor_name, max(cursor, newest_published))
-    return downloaded_files
+    return downloaded
 
 
 def ingest_activity_stream_feed(
@@ -170,12 +169,10 @@ def ingest_activity_stream_feed(
             "seed activity_streams_cursor before running this feed"
         )
 
-    run_path = feed_run_path(airflow_path, run_id, feed_name)
+    run_path = feed_run_path(airflow_path, run_id)
     run_path.mkdir(parents=True, exist_ok=True)
-
     used_file_names: set[str] = set()
-    downloaded_object_ids: set[str] = set()
-    downloaded_files: list[str] = []
+    download_object_ids: list[str] = []
     newest_published: str | None = None
     next_url: str | None = url
     visited_urls: set[str] = set()
@@ -195,11 +192,11 @@ def ingest_activity_stream_feed(
             eligible_dates.append(published_date)
             if published_date <= cursor_date:
                 continue
-            if item.object.id in downloaded_object_ids:
+            if item.object.id in download_object_ids:
                 continue
-            downloaded_object_ids.add(item.object.id)
-            file_path = _download_feed_item(item, feed_name, run_path, used_file_names)
-            downloaded_files.append(str(file_path))
+            if item.type != "Add":
+                continue
+            download_object_ids.append(item.object.id)
             published = str(published_date)
             if newest_published is None or published > newest_published:
                 newest_published = published
@@ -212,7 +209,12 @@ def ingest_activity_stream_feed(
             break
         next_url = feed.next
 
-    return downloaded_files, newest_published or ""
+    download_paths: list[str] = []
+    for object_id in download_object_ids:
+        file_path = _download_feed_item(object_id, feed_name, run_path, used_file_names)
+        download_paths.append(str(file_path))
+
+    return download_paths, newest_published or ""
 
 
 def _translate_url(url: str, format: str = "json") -> str:
@@ -238,12 +240,12 @@ def _fetch_feed(url: str) -> ActivityStreamsFeed:
     reraise=True,
 )
 def _download_feed_item(
-    item: FeedItem, feed_name: str, run_path: pathlib.Path, used_file_names: set[str]
+    url: str, feed_name: str, run_path: pathlib.Path, used_file_names: set[str]
 ) -> pathlib.Path:
-    response = httpx.get(_translate_url(item.object.id, "bibframe.json"))
+    response = httpx.get(_translate_url(url, "bibframe.json"))
     response.raise_for_status()
     file_path = run_path / _local_file_name(
-        item.object.id, FEED_FILE_SUFFIXES[feed_name], used_file_names
+        url, FEED_FILE_SUFFIXES[feed_name], used_file_names
     )
     file_path.write_bytes(response.content)
     return file_path

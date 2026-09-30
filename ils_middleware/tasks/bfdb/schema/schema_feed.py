@@ -1,4 +1,4 @@
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -18,7 +18,7 @@ class FeedObject(FeedBaseModel):
 
 class FeedItem(FeedBaseModel):
     id: str | None = None
-    type: Literal["Add", "Update", "Delete", "Depreacate"] | None = None
+    type: str | None = None
     actor: str | None = None
     object: FeedObject
     published: str

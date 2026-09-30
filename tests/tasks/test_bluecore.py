@@ -73,6 +73,15 @@ def test_delete_upload(tmp_path):
     delete_upload(str(upload_file2), remove_empty_parent=True)
     assert not upload_path.exists()
 
+    upload_path = tmp_path / "sub_dir"
+    os.mkdir(upload_path)
+    upload_file = upload_path / "bf-record.jsonld"
+    upload_file.touch()
+    upload_file2 = upload_path / "bf-record2.jsonld"
+    upload_file2.touch()
+    delete_upload([str(upload_file), str(upload_file2)], remove_empty_parent=True)
+    assert not upload_path.exists()
+
 
 def test_is_zip():
     assert is_zip("test.zip")
