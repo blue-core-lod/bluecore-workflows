@@ -12,3 +12,10 @@ COPY --chown=airflow:root ./plugins /opt/airflow/plugins
 
 RUN uv build
 RUN uv pip install --no-cache-dir "apache-airflow==${AIRFLOW_VERSION}" dist/*.whl
+
+# sqlalchemy-utils (<=0.42.1, required by flask-appbuilder) uses names that SQLAlchemy 2.1 made private.
+# Remove once an upstream sqlalchemy-utils release supports SQLAlchemy 2.1.
+RUN sed -i \
+      -e 's/attributes\.ScalarAttributeImpl/attributes._ScalarAttributeImpl/' \
+      -e 's/attributes\.register_attribute/attributes._register_attribute/' \
+      "$(python -c 'import importlib.util; print(importlib.util.find_spec("sqlalchemy_utils").submodule_search_locations[0])')/generic.py"
