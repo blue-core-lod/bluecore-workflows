@@ -16,6 +16,7 @@ version currently installed here does not have it, so nothing asserts on it.
 """
 
 import pytest
+from bluecore_models.utils.graph import CONTEXT_URL, framed_for_storage
 from sqlalchemy import JSON, Column, Integer, MetaData, String, Table, create_engine
 from sqlalchemy.pool import StaticPool
 
@@ -164,11 +165,28 @@ def test_reframe_needs_the_context():
     )
 
 
-def test_reframe_strips_the_context_again():
-    """@context comes off before storing, as it does on the way in."""
+def test_reframe_records_the_context():
+    """@context stays, naming the vocabulary that framed the row.
+
+    It used to be stripped, matching what set_jsonld did on the way in. Both
+    keep it now, and a row that does not say which context framed it is the one
+    thing that cannot be read back reliably -- so a sweep that removed the
+    marker again would undo the change it is here to apply.
+    """
     framed = reframe({"@id": WORK.format(1), "@type": "Work"}, WORK.format(1))
     assert framed is not None
-    assert "@context" not in framed
+    assert framed["@context"] == CONTEXT_URL
+
+
+def test_reframe_is_the_write_path_and_not_a_copy_of_it():
+    """Byte for byte what bluecore-models would store for the same resource.
+
+    This function reproduced set_jsonld's logic until the logic moved underneath
+    it. Asserting equality against framed_for_storage is cheaper than a test per
+    behaviour, and it cannot drift.
+    """
+    stored = {"@id": WORK.format(1), "@type": "Work", "note": "a note"}
+    assert reframe(stored, WORK.format(1)) == framed_for_storage(WORK.format(1), stored)
 
 
 def test_reframe_is_idempotent():

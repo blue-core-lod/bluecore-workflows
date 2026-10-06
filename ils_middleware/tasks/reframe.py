@@ -1,11 +1,8 @@
 """Re-serialise every framed resource's stored JSON-LD, without changing what it says.
 
-bluecore-models used to frame a resource's `data` and leave a property with one
-value as a bare value, so the same property arrived as a scalar on one resource
-and a list on the next -- and often both on one resource. `frame_jsonld` now
-coerces every property to a list. Rows written after that change get the new
-shape; rows already in the database keep the old one until they are re-framed,
-which is what this does.
+A resource's stored `data` is whatever `set_jsonld` wrote on the day it was
+written. When the bluecore-models JSON-LD context changes we want to be able to
+upgrade our data to use it.
 
 Profiles are not included: they share `resource_base` with the rest but are
 never framed on the way in either. See REFRAMABLE_TYPES.
@@ -34,7 +31,7 @@ import os
 from collections.abc import Iterator
 from typing import Any, NamedTuple
 
-from bluecore_models.utils.graph import CONTEXT, frame_jsonld
+from bluecore_models.utils.graph import framed_for_storage
 from sqlalchemy import MetaData, Table, bindparam, select, update
 from sqlalchemy.engine import Engine
 
@@ -94,16 +91,18 @@ def resource_table(engine: Engine) -> Table:
 def reframe(data: dict[str, Any] | None, uri: str) -> dict[str, Any] | None:
     """The stored JSON-LD, re-framed.
 
-    This has to reproduce `set_jsonld` in bluecore-models, not just call
-    `frame_jsonld`. A stored value has had its `@context` removed, and framing
-    without one leaves every compacted key -- `title`, `note` -- as an unknown
-    term rather than expanding it to its BIBFRAME URI. So the default context
-    goes back on before framing and comes off again after, exactly as the ORM
-    handler does on the way in.
+    `framed_for_storage` is the write path `set_jsonld` uses, so this is the
+    same transformation the ORM would apply, without the ORM applying it. That
+    matters for more than tidiness. This function used to reproduce the logic
+    instead, with a test standing guard against the copy drifting, and the copy
+    drifted: bluecore-models began storing `@context` so a row could say which
+    vocabulary framed it, while this was still stripping it on the way out. Run
+    unchanged, it would have removed the marker from every row it touched and
+    left exactly the document that cannot be read back reliably -- framed with
+    the current context, saying nothing about which.
 
-    Reproducing it is the price of not going through the ORM, whose `after_update`
-    events are what this module exists to avoid. `test_reframe_needs_the_context`
-    is the guard against the duplication drifting.
+    So a resource now carries `@context` after this runs. That is the point of
+    the change, not a side effect of it.
     """
     if data is None:
         return None
@@ -114,12 +113,7 @@ def reframe(data: dict[str, Any] | None, uri: str) -> dict[str, Any] | None:
         # raising on the first larger node -- an error about a "dictionary update
         # sequence" that says nothing about the resource being the wrong shape.
         raise TypeError(f"expected a JSON-LD object, got {type(data).__name__}")
-    document = dict(data)
-    if "@context" not in document:
-        document["@context"] = CONTEXT
-    framed = frame_jsonld(uri, document)
-    framed.pop("@context", None)
-    return framed
+    return framed_for_storage(uri, data)
 
 
 def batches(
