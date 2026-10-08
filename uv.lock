@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = "==3.12.*"
 
 [[package]]
@@ -528,25 +528,39 @@ wheels = [
 ]
 
 [[package]]
+name = "bibframe-json"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "jsonschema" },
+    { name = "referencing" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c8/eb/eb54d705450223720f33180f67aa4092f4db928a522c4d3cd8c552c9816f/bibframe_json-0.1.0.tar.gz", hash = "sha256:becfc99019121b07f12249a16b93ca5f9ca48bed647c957b1773c61b9ddb62f5", size = 232717, upload-time = "2026-10-03T18:03:03.758Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/ac/8a/0a7cfe7e208ea9bd191bec796bcea50d090378fb81acf32e84ce34c73d79/bibframe_json-0.1.0-py3-none-any.whl", hash = "sha256:ffcbc3132fce24027c117fbb5d6922ac722a885a6630a826ee58c4bf0fb37b09", size = 59335, upload-time = "2026-10-03T18:03:02.331Z" },
+]
+
+[[package]]
 name = "bluecore-models"
-version = "0.34.0"
+version = "0.35.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
+    { name = "bibframe-json" },
     { name = "psycopg", extra = ["binary"] },
     { name = "pyld" },
     { name = "rdflib" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/00/1f/2c46100b70c61f10623955869b861e790345333ac05ae74c4fb72a3ef65d/bluecore_models-0.34.0.tar.gz", hash = "sha256:3ad4aecfe430035718f491a4c08e7e58a5b98db6d17f52c8bd16ab29fd09772c", size = 183265, upload-time = "2026-10-02T18:37:52.494Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/a5/78/d5ca208117b8d1cf0412d9ee18425aff9672582bdbaf7c9ead1a05da2619/bluecore_models-0.35.0.tar.gz", hash = "sha256:61b46b2006a39d8a223333d82347bfb5fb4e952095b5b217e6e60febe0bcec99", size = 210091, upload-time = "2026-10-07T19:40:00.109Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/b1/13/2d4d90881f6d8cae1d324a61827e71e47c4e294545bb3c59919bf2d7510c/bluecore_models-0.34.0-py3-none-any.whl", hash = "sha256:6c564d4e6c5592a22be006c0aad55df39fae80808dcb85b0ff406873e41cb842", size = 70906, upload-time = "2026-10-02T18:37:51.294Z" },
+    { url = "https://files.pythonhosted.org/packages/a4/0f/23781769ec31108d89b85436ab2e137c5647e2b9e15cef1293e378c073a6/bluecore_models-0.35.0-py3-none-any.whl", hash = "sha256:578baf86ffe74eff3ba37e5cdd5275846ad44612b3317335c93826207671f1f9", size = 75013, upload-time = "2026-10-07T19:39:59.049Z" },
 ]
 
 [[package]]
 name = "bluecore-workflows"
-version = "1.4.2"
+version = "1.4.3"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
@@ -586,7 +600,7 @@ requires-dist = [
     { name = "apache-airflow", specifier = "==3.2.0" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak", specifier = ">=0.8.1" },
-    { name = "bluecore-models", specifier = ">=0.33.0" },
+    { name = "bluecore-models", specifier = ">=0.35.0" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
