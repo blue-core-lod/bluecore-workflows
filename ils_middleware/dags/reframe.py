@@ -12,23 +12,13 @@ logger = logging.getLogger(__name__)
 
 DOC_MD = f"""
 Re-serialises the `data` column of every Work, Instance, Item, Hub and Other
-Resource, so that every property is a list.
-
-This exists because `frame_jsonld` in bluecore-models used to leave a property
-with a single value as a bare value, so the same property arrived as a scalar on
-one resource and a list on the next, and a consumer had to check the type of
-every value it touched. Rows written since that change have the new shape; this
-brings the rest up to date.
+Resource, so that it matches the current JSON-LD context in bluecore-models.
 
 Profiles are left alone. They are stored in the same table, but bluecore-models
-never frames them -- sinopia-editor requires a profile's data in its own shape --
-so framing one would corrupt it rather than re-serialise it.
+never frames them since sinopia-editor currently requires a profile's data in its own
+shape.
 
-**It changes no triples.** The JSON says the same thing either way -- a one-value
-list and a bare value are the same statement in JSON-LD -- so this records no
-versions and writes through SQLAlchemy Core rather than the ORM, whose
-`after_update` handlers would otherwise log a cataloguing edit against every
-resource in the database.
+It doesn't change the RDF triples, just how they are expressed as JSON-LD.
 
 - **dry_run** (on by default) reports how many resources would change and writes
   nothing.
