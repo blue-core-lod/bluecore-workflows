@@ -113,3 +113,30 @@ def test_missing_work_build_graph(mock_requests, mock_bad_work_task_instance):
     ]
     with pytest.raises(ValueError, match=f"Error retrieving {work_uri}"):
         _build_graph(instance_jsonld, instance_uri)
+
+
+def test_build_graph_with_bluecore_api_context(monkeypatch, mocker: MockerFixture):
+    bc_instance = "http://localhost/instances/d576df38-2e54-4ec6-a584-6831b2775f4b"
+    bc_work = "http://localhost/works/338c9d94-416a-4b2b-b12f-d25cbbdaa997"
+    api_context = "http://localhost/api/context.jsonld"
+
+    def mock_get(*args, **kwargs):
+        response = mocker.stub(name="get_result")
+        response.status_code = 200
+        response.text = json.dumps(
+            {"@context": api_context, "@id": bc_work, "@type": "Work"}
+        )
+        return response
+
+    monkeypatch.setattr("ils_middleware.tasks.folio.graph.httpx.get", mock_get)
+
+    instance = {
+        "@context": api_context,
+        "@id": bc_instance,
+        "@type": "Instance",
+        "instanceOf": bc_work,
+    }
+    graph, work = _build_graph(instance, bc_instance)
+
+    assert work == bc_work
+    assert len(graph) == 3
