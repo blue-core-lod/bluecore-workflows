@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = "==3.12.*"
 
 [[package]]
@@ -544,7 +544,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.35.0"
+version = "0.36.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -555,9 +555,9 @@ dependencies = [
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a5/78/d5ca208117b8d1cf0412d9ee18425aff9672582bdbaf7c9ead1a05da2619/bluecore_models-0.35.0.tar.gz", hash = "sha256:61b46b2006a39d8a223333d82347bfb5fb4e952095b5b217e6e60febe0bcec99", size = 210091, upload-time = "2026-10-07T19:40:00.109Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ba/7d/7f1c3a01a547c2e665ea6e632e36d83f0530fcb9b51d78284ce86733db8d/bluecore_models-0.36.0.tar.gz", hash = "sha256:7ef62a78af3627685309985d1998125ae7798e8243b533b6d6218496762e66ee", size = 214168, upload-time = "2026-10-12T20:08:01.16Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a4/0f/23781769ec31108d89b85436ab2e137c5647e2b9e15cef1293e378c073a6/bluecore_models-0.35.0-py3-none-any.whl", hash = "sha256:578baf86ffe74eff3ba37e5cdd5275846ad44612b3317335c93826207671f1f9", size = 75013, upload-time = "2026-10-07T19:39:59.049Z" },
+    { url = "https://files.pythonhosted.org/packages/21/b4/f07be7a55c8bb009fb7024a87ab0a75b6c652325baee9a4619232be7f671/bluecore_models-0.36.0-py3-none-any.whl", hash = "sha256:1810c4be354439206b93b2bfd63abb4b97625b4b7bf6548d169b7ccb26635ab2", size = 75154, upload-time = "2026-10-12T20:07:59.919Z" },
 ]
 
 [[package]]
@@ -602,7 +602,7 @@ requires-dist = [
     { name = "apache-airflow", specifier = "==3.2.0" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak", specifier = ">=0.8.1" },
-    { name = "bluecore-models", specifier = ">=0.35.0" },
+    { name = "bluecore-models", specifier = ">=0.36.0" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
