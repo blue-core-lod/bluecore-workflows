@@ -16,6 +16,7 @@ version currently installed here does not have it, so nothing asserts on it.
 """
 
 import pytest
+from bluecore_models.utils.graph import CONTEXT_URL, framed_for_storage
 from sqlalchemy import JSON, Column, Integer, MetaData, String, Table, create_engine
 from sqlalchemy.pool import StaticPool
 
@@ -23,6 +24,27 @@ from ils_middleware.tasks import reframe as reframe_module
 from ils_middleware.tasks.reframe import batches, reframe, run, write
 
 WORK = "https://bcld.info/works/{}"
+PROFILE = "https://bcld.info/profiles/{}"
+
+# One profile as it is actually stored: a top-level array of Sinopia vocabulary
+# nodes, the first two of which have exactly two keys. Kept verbatim rather than
+# simplified, because the two-key nodes are the reason `dict()` half-succeeds.
+PROFILE_DATA = [
+    {
+        "@id": "http://id.loc.gov/ontologies/bibframe/agent",
+        "http://www.w3.org/2000/01/rdf-schema#label": [{"@value": "agent"}],
+    },
+    {
+        "@id": "http://sinopia.io/vocabulary/propertyType/resource",
+        "http://www.w3.org/2000/01/rdf-schema#label": [{"@value": "nested resource"}],
+    },
+    {
+        "@id": PROFILE.format(1),
+        "@type": ["http://sinopia.io/vocabulary/Profile"],
+        "http://sinopia.io/vocabulary/hasClass": [{"@id": "bf:Agent"}],
+        "http://sinopia.io/vocabulary/hasResourceId": [{"@value": "an-id"}],
+    },
+]
 
 
 @pytest.fixture
@@ -52,6 +74,7 @@ def table(engine):
         "resource_base",
         metadata,
         Column("id", Integer, primary_key=True),
+        Column("type", String),
         Column("uri", String),
         Column("data", JSON),
     )
@@ -65,10 +88,33 @@ def rows(engine, table):
     values = [
         {
             "id": index,
+            "type": "works",
             "uri": WORK.format(index),
             "data": {"@id": WORK.format(index), "@type": "Work", "note": "a note"},
         }
         for index in range(1, 6)
+    ]
+    with engine.begin() as connection:
+        connection.execute(table.insert(), values)
+    return values
+
+
+@pytest.fixture
+def profile_rows(engine, table):
+    """Two profiles, interleaved with the works by id.
+
+    Interleaved rather than appended so that a filter applied only to the first
+    batch, or a keyset that skipped from one work to the next by counting rows,
+    would show up.
+    """
+    values = [
+        {
+            "id": index,
+            "type": "profiles",
+            "uri": PROFILE.format(index),
+            "data": PROFILE_DATA,
+        }
+        for index in (6, 7)
     ]
     with engine.begin() as connection:
         connection.execute(table.insert(), values)
@@ -119,11 +165,28 @@ def test_reframe_needs_the_context():
     )
 
 
-def test_reframe_strips_the_context_again():
-    """@context comes off before storing, as it does on the way in."""
+def test_reframe_records_the_context():
+    """@context stays, naming the vocabulary that framed the row.
+
+    It used to be stripped, matching what set_jsonld did on the way in. Both
+    keep it now, and a row that does not say which context framed it is the one
+    thing that cannot be read back reliably -- so a sweep that removed the
+    marker again would undo the change it is here to apply.
+    """
     framed = reframe({"@id": WORK.format(1), "@type": "Work"}, WORK.format(1))
     assert framed is not None
-    assert "@context" not in framed
+    assert framed["@context"] == CONTEXT_URL
+
+
+def test_reframe_is_the_write_path_and_not_a_copy_of_it():
+    """Byte for byte what bluecore-models would store for the same resource.
+
+    This function reproduced set_jsonld's logic until the logic moved underneath
+    it. Asserting equality against framed_for_storage is cheaper than a test per
+    behaviour, and it cannot drift.
+    """
+    stored = {"@id": WORK.format(1), "@type": "Work", "note": "a note"}
+    assert reframe(stored, WORK.format(1)) == framed_for_storage(WORK.format(1), stored)
 
 
 def test_reframe_is_idempotent():
@@ -141,6 +204,19 @@ def test_reframe_is_idempotent():
 
 def test_reframe_passes_through_a_null():
     assert reframe(None, WORK.format(1)) is None
+
+
+def test_reframe_refuses_data_that_is_not_an_object():
+    """A JSON-LD array is rejected, and says so.
+
+    `dict()` on a list of nodes reads each one as a key/value pair, which the
+    two-key nodes satisfy, so it raises only on reaching a larger node and blames
+    a "dictionary update sequence". Nothing in this table should be an array now
+    that profiles are filtered out, so if one arrives the error should name the
+    shape.
+    """
+    with pytest.raises(TypeError, match="expected a JSON-LD object, got list"):
+        reframe(PROFILE_DATA, PROFILE.format(1))
 
 
 # --- the sweep ---------------------------------------------------------------
@@ -181,6 +257,49 @@ def test_batches_reports_a_row_it_cannot_frame(engine, table, rows, monkeypatch)
     assert seen[0].changed == 4
     assert len(seen[0].failed) == 1
     assert WORK.format(3) in seen[0].failed[0]
+
+
+def test_batches_leaves_profiles_alone(engine, table, rows, profile_rows, stub_reframe):
+    """A profile is never read, so it is neither changed nor reported as failed.
+
+    Profiles share resource_base with the works but are never framed on the way
+    in: sinopia-editor requires a profile's data in its own shape. Before the type
+    filter they were swept up, and every one of them failed -- which was luck, not
+    design. A profile whose array happened to hold only two-key nodes would have
+    passed `dict()`, been framed against the BIBFRAME context, and been written
+    over with no Version recorded, because the sweep bypasses the ORM.
+    """
+    seen = list(batches(engine, table, batch_size=10))
+
+    assert sum(batch.seen for batch in seen) == 5, "the works, and nothing else"
+    assert all(not batch.failed for batch in seen)
+    assert PROFILE.format(6) not in str(seen)
+
+
+def test_run_leaves_a_profile_unchanged(
+    engine, table, rows, profile_rows, stub_engine, monkeypatch
+):
+    """End to end: applying the sweep does not touch a profile's data.
+
+    Re-framing is stubbed with something that would rewrite anything handed to
+    it, rather than with the real one. The real one now raises on an array, so
+    this would pass on the strength of that error alone and would go on passing
+    if the type filter were removed -- which is the failure mode being guarded
+    against, not a guard against it.
+    """
+    monkeypatch.setattr(reframe_module, "reframe", lambda data, uri: {"mangled": uri})
+
+    run("sqlite://", dry_run=False, batch_size=2)
+
+    with engine.connect() as connection:
+        stored = (
+            connection.execute(table.select().where(table.c.type == "profiles"))
+            .mappings()
+            .all()
+        )
+
+    assert len(stored) == 2
+    assert all(row["data"] == PROFILE_DATA for row in stored)
 
 
 def test_write_applies_a_batch(engine, table, rows, stub_reframe):

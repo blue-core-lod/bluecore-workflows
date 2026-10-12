@@ -510,6 +510,21 @@ def test_non_primary_contributor():
     assert contributors[0]["name"] == "Butler, Octavia"
 
 
+def test_non_primary_contributor_unknown_role():
+    # https://stage.bcld.info/instances/1c2a49f1-fb3f-45b8-b4f5-6beb015f72a9 has a
+    # contribution whose role is an uncontrolled "ill." label instead of a FOLIO
+    # contributor type name, see issue #213
+    field, contributors = _non_primary_contributor(
+        values=[["Tagliabue, Joyce", "ill."]],
+        folio_client=MockFolioClient(),
+        record={},
+    )
+    assert field == "contributors"
+    assert contributors[0]["name"] == "Tagliabue, Joyce"
+    assert contributors[0]["contributorTypeText"] == "ill."
+    assert "contributorTypeId" not in contributors[0]
+
+
 def test_identifiers_local():
     identifiers = _identifiers(
         values=[["(OCoLC)1272909598"]],

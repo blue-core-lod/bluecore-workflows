@@ -123,15 +123,27 @@ def _contributors(**kwargs) -> tuple:
 
     contributors = record.get("contributors", [])
     for row in values:
+        name, role = row[0], row[1]
         contributor = {
             "contributorNameTypeId": lookup_contrib_name_id[
                 contrib_name_type.casefold()
             ],
-            "contributorTypeId": lookup_contrib_id[row[1].casefold()],
-            "contributorTypeText": row[1],
-            "name": row[0],
+            "contributorTypeText": role,
+            "name": name,
             "primary": is_primary,
         }
+        # A bf:role is expected to be a relator URI whose label matches a FOLIO
+        # contributor type, but catalogers can record an uncontrolled label like
+        # "ill." instead. Export the contributor without a type rather than
+        # failing the whole record, see issue #213.
+        contributor_type_id = lookup_contrib_id.get(role.strip().casefold())
+        if contributor_type_id:
+            contributor["contributorTypeId"] = contributor_type_id
+        else:
+            logger.warning(
+                f"No FOLIO contributor type for {name} role {role!r}; expected a "
+                "relator URI with a label matching a FOLIO contributor type"
+            )
         contributors.append(contributor)
 
     return "contributors", contributors
