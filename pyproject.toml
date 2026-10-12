@@ -1,6 +1,6 @@
 [project]
 name = "bluecore-workflows"
-version = "1.4.4"
+version = "1.5.0"
 description = "Blue Core Workflows using Apache Airflow"
 readme = "README.md"
 authors = [{ name = "Jeremy Nelson", email = "jpnelson@stanford.edu"}]
@@ -18,6 +18,7 @@ dependencies = [
     "folioclient",
     "numpy",
     "pendulum",
+    "pydantic",
     "boto3",
     # 0.35.0 for framed_for_storage, the write path this repo's reframe DAG applies
     "bluecore-models>=0.35.0",
@@ -26,7 +27,6 @@ dependencies = [
     "marc-bibframe>=0.2.1",
     "psycopg[binary]>=3.3.6",
 ]
-
 
 [dependency-groups]
 dev = [
@@ -59,3 +59,4 @@ addopts = "-k 'not test_task_instance and not test_parse_institutional_msgs and 
 ignore = [
     "DTZ001"
 ]
+
