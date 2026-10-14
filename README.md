@@ -86,6 +86,11 @@ FastAPI app alongside the Airflow REST API (sharing its authentication) and
 registers an [external view][EXTERNAL_VIEW] so that it shows up in the Airflow
 navigation for logged in users, rendered in an iframe at `/plugin/<url_route>`.
 
+The health plugin (`ils_middleware/plugins/health.py`) is the exception: it has
+no page or login, only a JSON route at `/bluecore-health/` reporting the
+installed bluecore-workflows and Airflow versions. The stack's nginx serves it
+as `/workflows/health`, like `/api/health` and `/sinopia/health`.
+
 ---
 
 ## 🧾 Bulk updates
