@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = "==3.12.*"
 
 [[package]]
@@ -572,6 +572,7 @@ dependencies = [
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
+    { name = "jsonpath-ng" },
     { name = "lxml" },
     { name = "marc-bibframe" },
     { name = "numpy" },
@@ -606,6 +607,7 @@ requires-dist = [
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
+    { name = "jsonpath-ng", specifier = ">=1.10.1" },
     { name = "lxml" },
     { name = "marc-bibframe", specifier = ">=0.2.1" },
     { name = "numpy" },
