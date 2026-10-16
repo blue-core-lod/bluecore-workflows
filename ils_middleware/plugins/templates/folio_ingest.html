@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+{% if message %}
+<p class="alert-message" role="status">{{ message }}</p>
+{% endif %}
+
+<form class="hrid-form" method="post" action="create">
+  <label for="hrid">FOLIO Instance HRID</label>
+  <input id="hrid" name="hrid" required />
+  <button type="submit">Create in Blue Core</button>
+</form>
+{% endblock %}

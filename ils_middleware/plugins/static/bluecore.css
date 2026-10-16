@@ -88,3 +88,34 @@ body.centered p {
   font-size: 1.5rem;
   color: var(--bluecore-fg-muted);
 }
+
+/* A single-field form, like the FOLIO ingest page's HRID form. */
+.hrid-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.hrid-form input,
+.hrid-form button {
+  font: inherit;
+  padding: 0.375rem 0.75rem;
+  border: 1px solid var(--bluecore-fg-muted);
+  border-radius: 0.375rem;
+}
+
+.hrid-form input {
+  background: transparent;
+  color: var(--bluecore-fg);
+}
+
+.hrid-form button {
+  cursor: pointer;
+}
+
+.alert-message {
+  margin-top: 1rem;
+  color: var(--bluecore-fg-muted);
+}
