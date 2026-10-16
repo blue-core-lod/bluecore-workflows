@@ -568,6 +568,7 @@ dependencies = [
     { name = "apache-airflow" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak" },
+    { name = "bibframe-json" },
     { name = "bluecore-models" },
     { name = "boto3" },
     { name = "folio-uuid" },
@@ -603,7 +604,12 @@ requires-dist = [
     { name = "apache-airflow", specifier = "==3.2.0" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak", specifier = ">=0.8.1" },
+<<<<<<< HEAD
     { name = "bluecore-models", specifier = ">=0.37.0" },
+=======
+    { name = "bibframe-json", specifier = ">=0.1.0" },
+    { name = "bluecore-models", specifier = ">=0.36.0" },
+>>>>>>> 609bd38 (Adds DAG to ingest a FOLIO Instance into Blue Core)
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },

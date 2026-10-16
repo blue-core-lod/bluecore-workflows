@@ -98,6 +98,17 @@ class MockFolioClient:
                 response=httpx.Response(422),
             )
 
+    def folio_get(self, path, key=None, query="", **kwargs):
+        if path == "/inventory/instances" and query == 'hrid=="in000555"':
+            return [
+                {
+                    "id": "aaaa1111-2222-3333-4444-555566667777",
+                    "hrid": "in000555",
+                    "_version": "3",
+                }
+            ]
+        return []
+
     def get_folio_http_client(self):
         return mock_httpx_client()
 
