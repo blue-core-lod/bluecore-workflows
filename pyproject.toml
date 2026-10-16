@@ -24,6 +24,7 @@ dependencies = [
     "apache-airflow-providers-keycloak>=0.10.0",
     "marc-bibframe>=0.2.1",
     "psycopg[binary]>=3.3.6",
+    "jsonpath-ng>=1.10.1",
 ]
 
 
