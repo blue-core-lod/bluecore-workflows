@@ -544,7 +544,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.36.0"
+version = "0.37.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -555,14 +555,14 @@ dependencies = [
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ba/7d/7f1c3a01a547c2e665ea6e632e36d83f0530fcb9b51d78284ce86733db8d/bluecore_models-0.36.0.tar.gz", hash = "sha256:7ef62a78af3627685309985d1998125ae7798e8243b533b6d6218496762e66ee", size = 214168, upload-time = "2026-10-12T20:08:01.16Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/82/fe/c75830b889aa71e78190ba7c0856e223d44bf2b226d6964cb5ba2ba80a8e/bluecore_models-0.37.0.tar.gz", hash = "sha256:983d4fad791d913e9f1b8161b8634e9d1494d3e89409ffdfa0033fbaa7e988d3", size = 219757, upload-time = "2026-10-16T16:33:49.579Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/21/b4/f07be7a55c8bb009fb7024a87ab0a75b6c652325baee9a4619232be7f671/bluecore_models-0.36.0-py3-none-any.whl", hash = "sha256:1810c4be354439206b93b2bfd63abb4b97625b4b7bf6548d169b7ccb26635ab2", size = 75154, upload-time = "2026-10-12T20:07:59.919Z" },
+    { url = "https://files.pythonhosted.org/packages/7f/e0/8e1efcc510730b7e9c246a8baa266bd8336d0d748361c0e41bfab6f58718/bluecore_models-0.37.0-py3-none-any.whl", hash = "sha256:64729af2cf66d8cd47c610348f44fd13d6abd6ca5206f7258f4d6f145e496ad0", size = 78777, upload-time = "2026-10-16T16:33:48.457Z" },
 ]
 
 [[package]]
 name = "bluecore-workflows"
-version = "1.4.6"
+version = "1.4.7"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
@@ -602,7 +602,7 @@ requires-dist = [
     { name = "apache-airflow", specifier = "==3.2.0" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak", specifier = ">=0.8.1" },
-    { name = "bluecore-models", specifier = ">=0.36.0" },
+    { name = "bluecore-models", specifier = ">=0.37.0" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
