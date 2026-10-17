@@ -12,7 +12,7 @@ from bibframe_json import CONTEXT_URL
 from bluecore_models.bluecore_graph import save_graph
 from bluecore_models.models.version import CURRENT_USER_ID
 from bluecore_models.namespaces import BF
-from bluecore_models.utils.graph import load_jsonld
+from bluecore_models.utils.graph import init_graph, load_jsonld
 from folioclient import FolioClient
 from jsonpath_ng import parse
 from sqlalchemy.orm import sessionmaker
@@ -458,18 +458,40 @@ def generate_bibframe(folio_instance: dict, institution: str) -> list:
     return [work, bf_instance]
 
 
-@task
-def ingest_into_bluecore(bibframe: list, user_uid: str | None = None) -> str:
+def _bibframe_graph(
+    bibframe: list | None, bibframe_rdf_xml: str | None
+) -> rdflib.Graph:
     """
-    Takes a list containing BIBFRAME Work and Instance and saves them to the
-    Blue Core database, which mints Blue Core URIs for the placeholder ones.
-    Returns the URI of the Instance that was saved
+    The graph from whichever branch ran: JSON-LD mapped from the Inventory
+    JSON, or RDF/XML from marc2bibframe
+    """
+    if bibframe:
+        return load_jsonld(bibframe)
+    if bibframe_rdf_xml:
+        graph = init_graph()
+        graph.parse(data=bibframe_rdf_xml, format="xml")
+        return graph
+    raise ValueError("No BIBFRAME to ingest from either the JSON or MARC branch")
+
+
+# Joins the JSON and MARC branches, so one of its upstreams is always skipped
+@task(trigger_rule="none_failed_min_one_success")
+def ingest_into_bluecore(
+    bibframe: list | None = None,
+    user_uid: str | None = None,
+    bibframe_rdf_xml: str | None = None,
+) -> str:
+    """
+    Takes either a list containing a BIBFRAME Work and Instance in JSON-LD or
+    the RDF/XML marc2bibframe made, and saves them to the Blue Core database,
+    which mints Blue Core URIs for the placeholder ones. A skipped branch's
+    output arrives as None. Returns the URI of the Instance that was saved
     """
     if user_uid:
         # Lets bluecore_models record who made the version
         CURRENT_USER_ID.set(user_uid)
 
-    graph = load_jsonld(bibframe)
+    graph = _bibframe_graph(bibframe, bibframe_rdf_xml)
 
     session_maker = sessionmaker(bind=get_engine(get_bluecore_db()))
     bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
