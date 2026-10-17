@@ -460,3 +460,32 @@ def test_update_source_uri_failure_fails_task(mock_folio_put):
 
     with pytest.raises(httpx.HTTPStatusError, match="422"):
         update_source_uri.function(dict(FOLIO_INSTANCE), BF_INSTANCE_URI, "cornell")
+
+
+def test_ingest_into_bluecore_from_marc_branch(mocker):
+    mocker.patch("ils_middleware.tasks.folio.bibframe.get_bluecore_db")
+    mocker.patch("ils_middleware.tasks.folio.bibframe.get_engine")
+    save_graph = mocker.patch(
+        "ils_middleware.tasks.folio.bibframe.save_graph",
+        side_effect=lambda session_maker, graph, **kwargs: graph,
+    )
+    graph = rdflib.Graph()
+    work = rdflib.URIRef("urn:folio:stanford:a123#Work")
+    instance = rdflib.URIRef("urn:folio:stanford:a123#Instance")
+    graph.add((work, rdflib.RDF.type, BF.Work))
+    graph.add((instance, rdflib.RDF.type, BF.Instance))
+    graph.add((instance, BF.instanceOf, work))
+
+    # The JSON branch was skipped, so its output arrives as None
+    uri = ingest_into_bluecore.function(
+        None, user_uid="", bibframe_rdf_xml=graph.serialize(format="xml")
+    )
+
+    assert uri == str(instance)
+    saved = save_graph.call_args.args[1]
+    assert (instance, BF.instanceOf, work) in saved
+
+
+def test_ingest_into_bluecore_needs_bibframe():
+    with pytest.raises(ValueError, match="No BIBFRAME to ingest"):
+        ingest_into_bluecore.function(None, user_uid="", bibframe_rdf_xml=None)
