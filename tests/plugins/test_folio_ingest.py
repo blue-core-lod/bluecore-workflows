@@ -117,4 +117,20 @@ def test_create_triggers_dag(client, mock_trigger_dag):
     assert mock_trigger_dag.call_args.args == (FOLIO_TO_BLUECORE_DAG_ID,)
     kwargs = mock_trigger_dag.call_args.kwargs
     assert kwargs["triggering_user_name"] == "cataloger"
-    assert kwargs["conf"] == {"hrid": "a123", "user_uid": "abc-123"}
+    assert kwargs["conf"] == {"hrid": "a123", "user_uid": "abc-123", "use_marc": False}
+
+
+def test_home_has_use_marc_checkbox(client):
+    response = client.get("/")
+
+    assert 'type="checkbox" name="use_marc"' in response.text
+    assert "Use MARC" in response.text
+
+
+def test_create_with_use_marc(client, mock_trigger_dag):
+    response = client.post("/create", data={"hrid": "a123", "use_marc": "true"})
+
+    assert f"Started {FOLIO_TO_BLUECORE_DAG_ID} run manual__1 for a123 from MARC" in (
+        response.text
+    )
+    assert mock_trigger_dag.call_args.kwargs["conf"]["use_marc"] is True
