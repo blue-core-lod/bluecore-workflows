@@ -81,10 +81,13 @@ def create(
     request: Request,
     user: GetUserDep,
     hrid: str = Form(default=""),
+    # An unchecked checkbox is left out of the form entirely
+    use_marc: bool = Form(default=False),
 ) -> RedirectResponse:
     """
     Triggers the DAG that creates a BIBFRAME Work and Instance in Blue Core
-    from the FOLIO Inventory record with this HRID
+    from the FOLIO Inventory record with this HRID, transforming its MARC
+    record with marc2bibframe instead when use_marc is checked
     """
     hrid = hrid.strip()
     if not hrid:
@@ -94,7 +97,7 @@ def create(
             FOLIO_TO_BLUECORE_DAG_ID,
             triggered_by=DagRunTriggeredByType.UI,
             triggering_user_name=user.get_name(),
-            conf={"hrid": hrid, "user_uid": user.get_id()},
+            conf={"hrid": hrid, "user_uid": user.get_id(), "use_marc": use_marc},
         )
     except Exception as e:  # noqa: BLE001 -- shown to the user rather than a 500
         logger.error(f"Failed to trigger {FOLIO_TO_BLUECORE_DAG_ID}: {e}")
@@ -105,9 +108,10 @@ def create(
         return _redirect_home(
             request, f"Error starting {FOLIO_TO_BLUECORE_DAG_ID} for {hrid}"
         )
+    source = " from MARC" if use_marc else ""
     return _redirect_home(
         request,
-        f"Started {FOLIO_TO_BLUECORE_DAG_ID} run {dag_run.run_id} for {hrid}",
+        f"Started {FOLIO_TO_BLUECORE_DAG_ID} run {dag_run.run_id} for {hrid}{source}",
     )
 
 
