@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = "==3.12.*"
 
 [[package]]
@@ -562,16 +562,18 @@ wheels = [
 
 [[package]]
 name = "bluecore-workflows"
-version = "1.4.8"
+version = "1.5.0"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak" },
+    { name = "bibframe-json" },
     { name = "bluecore-models" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
+    { name = "jsonpath-ng" },
     { name = "lxml" },
     { name = "marc-bibframe" },
     { name = "numpy" },
@@ -602,10 +604,12 @@ requires-dist = [
     { name = "apache-airflow", specifier = "==3.2.0" },
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak", specifier = ">=0.8.1" },
+    { name = "bibframe-json", specifier = ">=0.1.0" },
     { name = "bluecore-models", specifier = ">=0.37.0" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
+    { name = "jsonpath-ng", specifier = ">=1.10.1" },
     { name = "lxml" },
     { name = "marc-bibframe", specifier = ">=0.2.1" },
     { name = "numpy" },

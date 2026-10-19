@@ -1,6 +1,6 @@
 [project]
 name = "bluecore-workflows"
-version = "1.4.8"
+version = "1.5.0"
 description = "Blue Core Workflows using Apache Airflow"
 readme = "README.md"
 authors = [{ name = "Jeremy Nelson", email = "jpnelson@stanford.edu"}]
@@ -24,6 +24,8 @@ dependencies = [
     "apache-airflow-providers-keycloak>=0.8.1",
     "marc-bibframe>=0.2.1",
     "psycopg[binary]>=3.3.6",
+    "jsonpath-ng>=1.10.1",
+    "bibframe-json>=0.1.0",
 ]
 
 
