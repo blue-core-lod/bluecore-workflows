@@ -5,7 +5,7 @@ import uuid
 import pytest
 import rdflib
 import requests  # type: ignore
-from airflow.models import Variable
+from airflow.sdk import Variable
 from pytest_mock import MockerFixture
 from tasks import mock_task_instance, test_task_instance  # noqa: F401
 

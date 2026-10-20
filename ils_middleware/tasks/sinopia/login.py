@@ -1,7 +1,7 @@
 """Blue Core Login"""
 
 import httpx
-from airflow.models import Variable
+from airflow.sdk import Variable
 
 
 def sinopia_login(**kwargs):

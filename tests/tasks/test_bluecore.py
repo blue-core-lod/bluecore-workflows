@@ -1,3 +1,5 @@
+import gzip
+import json
 import os
 import tarfile
 import zipfile
@@ -11,6 +13,7 @@ from ils_middleware.tasks.bluecore import (
     batch_archived_files,
     delete_upload,
     get_bluecore_db,
+    is_gzip_json_lines,
     is_zip,
     load_cbd_files,
     zip_to_tar_gz,
@@ -44,6 +47,85 @@ def test_batch_archived_files(tmp_path):
     test_batches = batch_archived_files(str(archived_file_path))
     assert len(test_batches) == 5
     assert len(test_batches[0]) == 2_000
+
+
+def _build_json_lines_gz(tmp_path, total_lines=12):
+    json_lines_path = tmp_path / "hubs.bibframe.jsonld.gz"
+    with gzip.open(json_lines_path, "wt", encoding="utf-8") as fo:
+        for i in range(total_lines):
+            doc = {
+                "@context": "http://id.loc.gov/resources/hubs/context.json",
+                "@id": f"/resources/hubs/{i}",
+                "@graph": [
+                    {"@id": f"http://id.loc.gov/resources/hubs/{i}", "bf:code": str(i)}
+                ],
+            }
+            fo.write(json.dumps(doc) + "\n")
+    return json_lines_path
+
+
+def test_is_gzip_json_lines(tmp_path):
+    assert is_gzip_json_lines(_build_json_lines_gz(tmp_path))
+    assert not is_gzip_json_lines(_build_cbd_archive(tmp_path))
+
+
+def test_batch_archived_files_json_lines(tmp_path):
+    json_lines_path = _build_json_lines_gz(tmp_path)
+
+    test_batches = batch_archived_files(str(json_lines_path))
+
+    assert test_batches == [["0-3"], ["3-6"], ["6-9"], ["9-12"]]
+
+
+def test_batch_archived_files_fewer_files_than_batches(tmp_path):
+    json_lines_path = _build_json_lines_gz(tmp_path, total_lines=3)
+
+    assert batch_archived_files(str(json_lines_path)) == [["0-1"], ["1-2"], ["2-3"]]
+
+
+def test_load_cbd_files_json_lines(mocker, tmp_path):
+    json_lines_path = _build_json_lines_gz(tmp_path)
+
+    mocker.patch("ils_middleware.tasks.bluecore.create_engine")
+    mocker.patch("ils_middleware.tasks.bluecore.sessionmaker")
+
+    save_graph_mock = mocker.patch("ils_middleware.tasks.bluecore.save_graph")
+
+    errors = load_cbd_files(
+        ["3-6"],
+        "postgresql://bluecore_admin:bluecore_admin@localhost/bluecore",
+        "user-uid",
+        str(json_lines_path),
+    )
+
+    assert errors == []
+    assert save_graph_mock.call_count == 3
+    saved_codes = sorted(
+        str(obj)
+        for call in save_graph_mock.call_args_list
+        for obj in call.args[1].objects()
+    )
+    assert saved_codes == ["3", "4", "5"]
+
+
+def test_load_cbd_files_json_lines_bad_line(mocker, tmp_path):
+    json_lines_path = tmp_path / "bad.jsonld.gz"
+    with gzip.open(json_lines_path, "wt", encoding="utf-8") as fo:
+        fo.write("{not json\n")
+
+    mocker.patch("ils_middleware.tasks.bluecore.create_engine")
+    mocker.patch("ils_middleware.tasks.bluecore.sessionmaker")
+    save_graph_mock = mocker.patch("ils_middleware.tasks.bluecore.save_graph")
+
+    errors = load_cbd_files(
+        ["0-1"],
+        "postgresql://bluecore_admin:bluecore_admin@localhost/bluecore",
+        "user-uid",
+        str(json_lines_path),
+    )
+
+    assert errors == ["line 0"]
+    assert save_graph_mock.call_count == 0
 
 
 def test_delete_upload(tmp_path):

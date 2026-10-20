@@ -4,8 +4,8 @@ import logging
 
 import lxml.etree as ET
 import requests  # type: ignore
-from airflow.models import Variable
 from airflow.providers.amazon.aws.hooks.s3 import S3Hook
+from airflow.sdk import Variable
 
 logger = logging.getLogger(__name__)
 
