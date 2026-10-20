@@ -12,10 +12,10 @@ from collections.abc import Iterator
 
 import rdflib
 from airflow.providers.postgres.hooks.postgres import PostgresHook
-from bibframe_json import CONTEXT_URL
+from bibframe_json import CONTEXT_URL, context_for
 from bluecore_models.bluecore_graph import save_graph
 from bluecore_models.models.version import CURRENT_USER_ID
-from bluecore_models.utils.graph import init_graph, load_jsonld
+from bluecore_models.utils.graph import bind_namespaces, init_graph, load_jsonld
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
@@ -27,6 +27,26 @@ logging.getLogger("rdflib").setLevel(logging.ERROR)
 logging.getLogger("bluecore_models").setLevel(logging.ERROR)
 
 logger = logging.getLogger(__name__)
+
+# id.loc.gov's hubs context is only these prefixes, so a copy is held here and
+# handed to rdflib rather than fetched or swapped for CONTEXT_URL, whose
+# vocabulary lacks dcterms, madsrdf and xsd. This dict will need to be
+# refactored once we have examples of work and instance contexts
+LOC_CONTEXTS = {
+    "http://id.loc.gov/resources/hubs/context.json": {
+        "bf": "http://id.loc.gov/ontologies/bibframe/",
+        "bflc": "http://id.loc.gov/ontologies/bflc/",
+        "dcterms": "http://purl.org/dc/terms/",
+        "foaf": "http://xmlns.com/foaf/0.1/",
+        "lcc": "http://id.loc.gov/ontologies/lcc#",
+        "madsrdf": "http://www.loc.gov/mads/rdf/v1#",
+        "pmo": "http://performedmusicontology.org/ontology/",
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+        "skos": "http://www.w3.org/2004/02/skos/core#",
+        "xsd": "http://www.w3.org/2001/XMLSchema#",
+    },
+}
 
 
 # Pool sizing per engine (i.e. per Celery worker child process). The load tasks
@@ -200,16 +220,46 @@ def load(file_path: str, user_uid: str, bluecore_db: str):
     logger.info(f"processed {len(bc_graph)} triples")
 
 
-def _prepare_jsonld(rdf_json: dict) -> dict:
+def _prepare_jsonld(rdf_json: dict | list) -> dict | list:
     """
     Readies a JSON-LD document for load_jsonld: a @context that bibframe-json
-    doesn't ship (e.g. id.loc.gov's) is replaced with CONTEXT_URL, and a
-    top-level @id wrapping a @graph is dropped so the nodes land in the
-    default graph instead of a named graph
+    doesn't ship (e.g. id.loc.gov's) is replaced with CONTEXT_URL, while an
+    absent or shipped @context is kept, and a top-level @id wrapping a @graph
+    is dropped so the nodes become the default graph instead of a named graph.
+    A top-level list (expanded JSON-LD) is processed row by row.
     """
+    if isinstance(rdf_json, list):
+        return [
+            _prepare_jsonld(row) if isinstance(row, dict) else row for row in rdf_json
+        ]
     if "@graph" in rdf_json:
-        return {"@context": CONTEXT_URL, "@graph": rdf_json["@graph"]}
-    return {**rdf_json, "@context": CONTEXT_URL}
+        document = {"@graph": rdf_json["@graph"]}
+    else:
+        document = {k: v for k, v in rdf_json.items() if k != "@context"}
+    context = rdf_json.get("@context")
+    if context is None:
+        return document
+    if not (isinstance(context, str) and context_for(context)):
+        context = CONTEXT_URL
+    return {"@context": context, **document}
+
+
+def _parse_jsonld(rdf_json: dict | list) -> rdflib.Graph:
+    """
+    Parses a JSON-LD document into a graph. A document naming a context held
+    in LOC_CONTEXTS is parsed with that copy, so its prefixes resolve and
+    nothing is fetched; anything else is readied by _prepare_jsonld and read
+    with load_jsonld
+    """
+    named = rdf_json.get("@context") if isinstance(rdf_json, dict) else None
+    if isinstance(named, str) and named in LOC_CONTEXTS:
+        prepared = _prepare_jsonld(rdf_json)
+        assert isinstance(prepared, dict)  # a dict in gives a dict out
+        document = {k: v for k, v in prepared.items() if k != "@context"}
+        graph = init_graph()
+        graph.parse(data=document, format="json-ld", context=LOC_CONTEXTS[named])
+        return bind_namespaces(graph)
+    return load_jsonld(_prepare_jsonld(rdf_json))
 
 
 def _tar_graphs(
@@ -231,7 +281,7 @@ def _tar_graphs(
             try:
                 match graph_format:
                     case "json-ld":
-                        graph = load_jsonld(_prepare_jsonld(json.loads(raw_rdf)))
+                        graph = _parse_jsonld(json.loads(raw_rdf))
 
                     case _:
                         graph = init_graph()
@@ -264,7 +314,7 @@ def _json_lines_graphs(
                 continue
             name = f"line {line_number}"
             try:
-                graph = load_jsonld(_prepare_jsonld(json.loads(line)))
+                graph = _parse_jsonld(json.loads(line))
             except Exception as e:  # noqa: BLE001 -- one bad line shouldn't abort the batch
                 logger.error(f"Failed to load {name}: {e}")
                 graph = None
@@ -293,11 +343,11 @@ def load_cbd_files(
 
     errors = []
 
-    logger.info(f"Starting load of {len(cbd_files):,} files")
-
     if is_gzip_json_lines(archived_file_path):
+        logger.info(f"Starting load of lines {', '.join(cbd_files)}")
         graphs = _json_lines_graphs(cbd_files, archived_file_path)
     else:
+        logger.info(f"Starting load of {len(cbd_files):,} files")
         graphs = _tar_graphs(cbd_files, archived_file_path)
 
     i = 0
