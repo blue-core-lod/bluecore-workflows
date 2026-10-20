@@ -11,18 +11,9 @@ from bluecore_models.utils.marc import replace_dlc_assigner
 from marc_bibframe import marcxml_to_graph
 
 from ils_middleware.tasks.folio.bibframe import folio_client
+from ils_middleware.tasks.folio.inventory import marc_base_uri
 
 logger = logging.getLogger(__name__)
-
-
-def marc_base_uri(institution: str) -> str:
-    """
-    Base for the URIs marc2bibframe mints, which have the form
-    {base}{001}#Work. FOLIO keeps the Instance HRID in the 001, so the URIs
-    are stable across runs and, kept as derivedFrom, let a rerun find the
-    resources already saved
-    """
-    return f"urn:folio:{institution}:"
 
 
 def marc_json_to_xml(marc_json: dict) -> str:

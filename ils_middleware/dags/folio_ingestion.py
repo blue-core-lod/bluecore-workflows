@@ -74,7 +74,11 @@ def folio_instance_to_bluecore():
 
     # The branches merge here; the skipped one's output arrives as None
     bf_instance_uri = ingest_into_bluecore(
-        bibframe, user_uid=user_uid, bibframe_rdf_xml=bibframe_rdf_xml
+        folio_instance,
+        institution,
+        bibframe=bibframe,
+        user_uid=user_uid,
+        bibframe_rdf_xml=bibframe_rdf_xml,
     )
     update_source_uri(folio_instance, bf_instance_uri, institution)
 

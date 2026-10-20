@@ -1,7 +1,12 @@
+import io
+import pathlib
+import uuid
+
 import httpx
+import pymarc
 import pytest
 import rdflib
-from bluecore_models.utils.graph import load_jsonld
+from bluecore_models.utils.graph import load_jsonld, replace_uri
 
 from ils_middleware.tasks.folio.bibframe import (
     folio_client,
@@ -15,8 +20,13 @@ from ils_middleware.tasks.folio.bibframe import (
     retrieve_folio_instance,
     update_source_uri,
 )
+from ils_middleware.tasks.folio.marc import marc_base_uri, marc_to_bibframe
 
 BF = rdflib.Namespace("http://id.loc.gov/ontologies/bibframe/")
+
+MARC_FIXTURE = pathlib.Path(__file__).parents[2] / "fixtures" / "record.xml"
+
+BLUECORE_URL = "https://dev.bcld.info"
 
 REFERENCE_DATA = {
     "alt_title_types": [{"id": "alt-1", "name": "Variant title"}],
@@ -141,6 +151,40 @@ def _graph(doc: dict) -> rdflib.Graph:
     return load_jsonld(doc)
 
 
+def _bluecore_uri(placeholder) -> rdflib.URIRef:
+    """The URI _fake_save_graph mints for a placeholder"""
+    minted = uuid.uuid5(uuid.NAMESPACE_URL, str(placeholder))
+    return rdflib.URIRef(f"{BLUECORE_URL}/resources/{minted}")
+
+
+def _fake_save_graph(session_maker, graph, namespace, **kwargs):
+    """
+    Stands in for save_graph: swaps each Work and Instance URI for a Blue Core
+    one and, as save_graph does, records the placeholder as bf:derivedFrom on
+    the bf:adminMetadata of the resource minted for it
+    """
+    assert namespace == BLUECORE_URL
+    for class_ in (BF.Work, BF.Instance):
+        for placeholder in list(graph.subjects(rdflib.RDF.type, class_)):
+            minted = _bluecore_uri(placeholder)
+            replace_uri(graph, placeholder, minted)
+            admin_metadata = rdflib.BNode()
+            graph.add((minted, BF.adminMetadata, admin_metadata))
+            graph.add((admin_metadata, BF.derivedFrom, placeholder))
+    return graph
+
+
+@pytest.fixture
+def mock_bluecore(mocker, monkeypatch):
+    monkeypatch.setenv("AIRFLOW_VAR_BLUECORE_URL", BLUECORE_URL)
+    mocker.patch("ils_middleware.tasks.folio.bibframe.get_bluecore_db")
+    mocker.patch("ils_middleware.tasks.folio.bibframe.get_engine")
+    return mocker.patch(
+        "ils_middleware.tasks.folio.bibframe.save_graph",
+        side_effect=_fake_save_graph,
+    )
+
+
 def test_folio_to_bf_work(reference_data):
     work = folio_to_bf_work(FOLIO_INSTANCE, reference_data)
 
@@ -169,7 +213,9 @@ def test_folio_to_bf_work(reference_data):
         {"@type": "bf:ClassificationLcc", "bf:classificationPortion": "M1366.D38"},
         {"@type": "bf:Classification", "bf:classificationPortion": "X 1.2"},
     ]
-    assert work["bf:language"] == [{"rdfs:label": "eng"}]
+    assert work["bf:language"] == [
+        {"@id": "http://id.loc.gov/vocabulary/languages/eng"}
+    ]
     series, hub = work["bf:relation"]
     assert series["bf:associatedResource"]["@type"] == "bf:Series"
     assert hub["bf:associatedResource"] == {
@@ -189,7 +235,23 @@ def test_folio_to_bf_work(reference_data):
     ]
 
     graph = _graph(work)
-    assert (rdflib.URIRef(work["@id"]), rdflib.RDF.type, BF.Work) in graph
+    subject = rdflib.URIRef(work["@id"])
+    assert (subject, rdflib.RDF.type, BF.Work) in graph
+    assert (
+        subject,
+        BF.language,
+        rdflib.URIRef("http://id.loc.gov/vocabulary/languages/eng"),
+    ) in graph
+
+
+def test_folio_to_bf_work_skips_empty_languages(reference_data):
+    folio_instance = {**FOLIO_INSTANCE, "languages": ["", "fre"]}
+
+    work = folio_to_bf_work(folio_instance, reference_data)
+
+    assert work["bf:language"] == [
+        {"@id": "http://id.loc.gov/vocabulary/languages/fre"}
+    ]
 
 
 def test_folio_to_bf_work_omits_placeholder_content(reference_data):
@@ -237,13 +299,7 @@ def test_folio_to_bf_instance(reference_data):
         },
         {"@type": "bf:CopyrightDate", "bflc:simpleDate": "℗1959"},
     ]
-    assert bf_instance["bf:electronicLocator"] == [
-        {
-            "rdf:value": "https://example.org/kob",
-            "rdfs:label": "Liner notes",
-            "bf:note": "Stanford only",
-        }
-    ]
+    assert bf_instance["bf:electronicLocator"] == [{"@id": "https://example.org/kob"}]
     assert bf_instance["bf:note"] == [
         {
             "@type": "bf:Note",
@@ -256,6 +312,11 @@ def test_folio_to_bf_instance(reference_data):
     subject = rdflib.URIRef(bf_instance["@id"])
     assert (subject, rdflib.RDF.type, BF.Instance) in graph
     assert (subject, BF.instanceOf, rdflib.URIRef(work_uri)) in graph
+    assert (
+        subject,
+        BF.electronicLocator,
+        rdflib.URIRef("https://example.org/kob"),
+    ) in graph
 
 
 def test_minimal_instance_has_no_empty_properties(reference_data):
@@ -379,10 +440,11 @@ def test_retrieve_folio_instance_needs_exactly_one(mocker, found, error):
         retrieve_folio_instance.function("a123", "stanford")
 
 
-def test_retrieve_folio_instance_already_in_bluecore(mocker):
+def test_retrieve_folio_instance_already_in_bluecore(mocker, monkeypatch):
+    monkeypatch.setenv("AIRFLOW_VAR_BLUECORE_URL", BLUECORE_URL)
     mock_client = mocker.MagicMock()
     mock_client.folio_get.return_value = [
-        {**FOLIO_INSTANCE, "sourceUri": "https://bcld.info/instances/1234"}
+        {**FOLIO_INSTANCE, "sourceUri": f"{BLUECORE_URL}/instances/1234"}
     ]
     mocker.patch(
         "ils_middleware.tasks.folio.bibframe.folio_client",
@@ -393,32 +455,43 @@ def test_retrieve_folio_instance_already_in_bluecore(mocker):
         retrieve_folio_instance.function("a123", "stanford")
 
 
-def test_ingest_into_bluecore(mocker, reference_data):
+def test_retrieve_folio_instance_from_another_bluecore(mocker, monkeypatch):
+    # Only this environment's Blue Core counts: a dev run can ingest an
+    # Instance whose sourceUri points at production
+    monkeypatch.setenv("AIRFLOW_VAR_BLUECORE_URL", BLUECORE_URL)
+    folio_instance = {**FOLIO_INSTANCE, "sourceUri": "https://bcld.info/instances/1"}
+    mock_client = mocker.MagicMock()
+    mock_client.folio_get.return_value = [folio_instance]
+    mocker.patch(
+        "ils_middleware.tasks.folio.bibframe.folio_client",
+        return_value=mock_client,
+    )
+
+    assert retrieve_folio_instance.function("a123", "stanford") == folio_instance
+
+
+def test_ingest_into_bluecore(mocker, mock_bluecore, reference_data):
     work = folio_to_bf_work(FOLIO_INSTANCE, reference_data)
     bf_instance = folio_to_bf_instance(
         FOLIO_INSTANCE, reference_data, work_uri=work["@id"]
     )
-    mocker.patch("ils_middleware.tasks.folio.bibframe.get_bluecore_db")
-    mocker.patch("ils_middleware.tasks.folio.bibframe.get_engine")
     current_user_id = mocker.patch(
         "ils_middleware.tasks.folio.bibframe.CURRENT_USER_ID"
     )
-    # Stands in for Blue Core minting its own URIs
-    save_graph = mocker.patch(
-        "ils_middleware.tasks.folio.bibframe.save_graph",
-        side_effect=lambda session_maker, graph, **kwargs: graph,
+
+    uri = ingest_into_bluecore.function(
+        FOLIO_INSTANCE, "stanford", bibframe=[work, bf_instance], user_uid="abc-123"
     )
 
-    uri = ingest_into_bluecore.function([work, bf_instance], user_uid="abc-123")
-
     current_user_id.set.assert_called_once_with("abc-123")
-    graph = save_graph.call_args.args[1]
+    assert uri == str(_bluecore_uri(bf_instance["@id"]))
+    # The Instance's bf:instanceOf follows the Work to its Blue Core URI
+    graph = mock_bluecore.call_args.args[1]
     assert (
-        rdflib.URIRef(bf_instance["@id"]),
+        rdflib.URIRef(uri),
         BF.instanceOf,
-        rdflib.URIRef(work["@id"]),
+        _bluecore_uri(work["@id"]),
     ) in graph
-    assert uri == bf_instance["@id"]
 
 
 BF_INSTANCE_URI = "https://bcld.info/instances/1234"
@@ -462,13 +535,7 @@ def test_update_source_uri_failure_fails_task(mock_folio_put):
         update_source_uri.function(dict(FOLIO_INSTANCE), BF_INSTANCE_URI, "cornell")
 
 
-def test_ingest_into_bluecore_from_marc_branch(mocker):
-    mocker.patch("ils_middleware.tasks.folio.bibframe.get_bluecore_db")
-    mocker.patch("ils_middleware.tasks.folio.bibframe.get_engine")
-    save_graph = mocker.patch(
-        "ils_middleware.tasks.folio.bibframe.save_graph",
-        side_effect=lambda session_maker, graph, **kwargs: graph,
-    )
+def test_ingest_into_bluecore_from_marc_branch(mock_bluecore):
     graph = rdflib.Graph()
     work = rdflib.URIRef("urn:folio:stanford:a123#Work")
     instance = rdflib.URIRef("urn:folio:stanford:a123#Instance")
@@ -478,14 +545,69 @@ def test_ingest_into_bluecore_from_marc_branch(mocker):
 
     # The JSON branch was skipped, so its output arrives as None
     uri = ingest_into_bluecore.function(
-        None, user_uid="", bibframe_rdf_xml=graph.serialize(format="xml")
+        FOLIO_INSTANCE,
+        "stanford",
+        bibframe=None,
+        user_uid="",
+        bibframe_rdf_xml=graph.serialize(format="xml"),
     )
 
-    assert uri == str(instance)
-    saved = save_graph.call_args.args[1]
-    assert (instance, BF.instanceOf, work) in saved
+    assert uri == str(_bluecore_uri(instance))
+    saved = mock_bluecore.call_args.args[1]
+    assert (rdflib.URIRef(uri), BF.instanceOf, _bluecore_uri(work)) in saved
+
+
+def test_ingest_into_bluecore_picks_folio_instance_over_related_ones(mock_bluecore):
+    # A 776 makes marc2bibframe describe the other format as a second Instance
+    (record,) = pymarc.parse_xml_to_array(io.StringIO(MARC_FIXTURE.read_text()))
+    record.add_ordered_field(pymarc.Field(tag="001", data="a123"))
+    record.add_ordered_field(
+        pymarc.Field(
+            tag="776",
+            indicators=["0", "8"],
+            subfields=[
+                pymarc.Subfield("i", "Online version:"),
+                pymarc.Subfield("w", "(OCoLC)123456"),
+            ],
+        )
+    )
+    rdf_xml = marc_to_bibframe.function(
+        pymarc.record_to_xml(record, namespace=True).decode("utf-8"), "stanford"
+    )
+    marc_instance = rdflib.URIRef(f"{marc_base_uri('stanford')}a123#Instance")
+    graph = rdflib.Graph().parse(data=rdf_xml, format="xml")
+    instances = set(graph.subjects(rdflib.RDF.type, BF.Instance))
+    assert marc_instance in instances and len(instances) > 1
+
+    uri = ingest_into_bluecore.function(
+        FOLIO_INSTANCE, "stanford", user_uid="", bibframe_rdf_xml=rdf_xml
+    )
+
+    assert uri == str(_bluecore_uri(marc_instance))
+
+
+def test_ingest_into_bluecore_needs_instance_from_placeholder(mock_bluecore):
+    # An Instance with no derivedFrom link to the placeholder isn't the one
+    # FOLIO should point at, however many Instances were saved
+    mock_bluecore.side_effect = lambda session_maker, graph, **kwargs: graph
+    graph = rdflib.Graph()
+    graph.add(
+        (rdflib.URIRef(f"{BLUECORE_URL}/instances/1"), rdflib.RDF.type, BF.Instance)
+    )
+
+    with pytest.raises(
+        ValueError, match="No Instance derived from urn:folio:stanford:a123#Instance"
+    ):
+        ingest_into_bluecore.function(
+            FOLIO_INSTANCE,
+            "stanford",
+            user_uid="",
+            bibframe_rdf_xml=graph.serialize(format="xml"),
+        )
 
 
 def test_ingest_into_bluecore_needs_bibframe():
     with pytest.raises(ValueError, match="No BIBFRAME to ingest"):
-        ingest_into_bluecore.function(None, user_uid="", bibframe_rdf_xml=None)
+        ingest_into_bluecore.function(
+            FOLIO_INSTANCE, "stanford", user_uid="", bibframe_rdf_xml=None
+        )

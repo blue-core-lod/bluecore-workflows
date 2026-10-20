@@ -18,7 +18,7 @@ from jsonpath_ng import parse
 from sqlalchemy.orm import sessionmaker
 
 from ils_middleware.tasks.bluecore import get_bluecore_db, get_engine
-from ils_middleware.tasks.folio.inventory import lookup_by_local_id
+from ils_middleware.tasks.folio.inventory import lookup_by_local_id, marc_base_uri
 from ils_middleware.tasks.keycloak import get_user_profile
 
 logger = logging.getLogger(__name__)
@@ -82,6 +82,9 @@ PROVISION_ACTIVITY_TYPES = {
 SOURCE_OF_DESCRIPTION_NOTE = "Source of Description note"
 SUMMARY_NOTE = "Summary"
 
+# FOLIO records languages as MARC language codes, e.g. "eng"
+LANGUAGES_VOCABULARY = "http://id.loc.gov/vocabulary/languages/"
+
 # JSONPath expressions into a FOLIO Inventory Instance
 ALTERNATIVE_TITLES = parse("$.alternativeTitles[*]")
 CLASSIFICATIONS = parse("$.classifications[*]")
@@ -126,6 +129,11 @@ def folio_client(institution: str) -> FolioClient:
         connection.login,
         connection.password,
     )
+
+
+def bluecore_url() -> str:
+    """The base of the URIs Blue Core mints"""
+    return os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
 
 
 def _values(expression, record: dict) -> list:
@@ -322,13 +330,7 @@ def _provision_activities(folio_instance: dict) -> list:
 
 def _electronic_locators(folio_instance: dict) -> list:
     return [
-        _compact(
-            {
-                "rdf:value": access.get("uri"),
-                "rdfs:label": access.get("linkText"),
-                "bf:note": access.get("publicNote"),
-            }
-        )
+        {"@id": access["uri"]}
         for access in _values(ELECTRONIC_ACCESS, folio_instance)
         if access.get("uri")
     ]
@@ -359,8 +361,9 @@ def folio_to_bf_work(folio_instance: dict, reference_data: dict) -> dict:
             ],
             "bf:classification": _classifications(folio_instance, reference_data),
             "bf:language": [
-                {"rdfs:label": language}
+                {"@id": f"{LANGUAGES_VOCABULARY}{language}"}
                 for language in _values(LANGUAGES, folio_instance)
+                if language
             ],
             "bf:relation": _series(folio_instance),
             "bf:summary": [
@@ -474,9 +477,42 @@ def _bibframe_graph(
     raise ValueError("No BIBFRAME to ingest from either the JSON or MARC branch")
 
 
+def _placeholder_instance_uri(
+    folio_instance: dict, institution: str, marc: bool
+) -> str:
+    """
+    The URI the branch that ran gave the Instance before Blue Core minted its
+    own: {base}{001}#Instance from marc2bibframe, or the urn:uuid
+    folio_to_bf_instance mints
+    """
+    if marc:
+        return f"{marc_base_uri(institution)}{folio_instance['hrid']}#Instance"
+    return _mint_uri(folio_instance["id"], "instance")
+
+
+def _saved_instance_uri(bc_graph: rdflib.Graph, placeholder_uri: str) -> str:
+    """
+    The Blue Core URI save_graph minted for the placeholder Instance URI.
+    marc2bibframe also makes an Instance for each related-format field (776,
+    775), so the graph can hold more than one. save_graph records the
+    placeholder as bf:derivedFrom on the minted Instance's bf:adminMetadata
+    """
+    placeholder = rdflib.URIRef(placeholder_uri)
+    for admin_metadata in bc_graph.subjects(BF.derivedFrom, placeholder):
+        instance = bc_graph.value(predicate=BF.adminMetadata, object=admin_metadata)
+        if (
+            instance is not None
+            and (instance, rdflib.RDF.type, BF.Instance) in bc_graph
+        ):
+            return str(instance)
+    raise ValueError(f"No Instance derived from {placeholder_uri} was saved")
+
+
 # Joins the JSON and MARC branches, so one of its upstreams is always skipped
 @task(trigger_rule="none_failed_min_one_success")
 def ingest_into_bluecore(
+    folio_instance: dict,
+    institution: str,
     bibframe: list | None = None,
     user_uid: str | None = None,
     bibframe_rdf_xml: str | None = None,
@@ -485,19 +521,24 @@ def ingest_into_bluecore(
     Takes either a list containing a BIBFRAME Work and Instance in JSON-LD or
     the RDF/XML marc2bibframe made, and saves them to the Blue Core database,
     which mints Blue Core URIs for the placeholder ones. A skipped branch's
-    output arrives as None. Returns the URI of the Instance that was saved
+    output arrives as None. Returns the URI minted for the FOLIO Instance,
+    not any related Instance
     """
     if user_uid:
         # Lets bluecore_models record who made the version
         CURRENT_USER_ID.set(user_uid)
 
     graph = _bibframe_graph(bibframe, bibframe_rdf_xml)
+    # _bibframe_graph prefers the JSON branch, so the MARC one ran if it's empty
+    placeholder_uri = _placeholder_instance_uri(
+        folio_instance, institution, marc=not bibframe
+    )
 
     session_maker = sessionmaker(bind=get_engine(get_bluecore_db()))
-    bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
-    bc_graph = save_graph(session_maker, graph, namespace=bc_url, source="FOLIO")
-
-    instance_uri = str(next(bc_graph.subjects(rdflib.RDF.type, BF.Instance)))
+    bc_graph = save_graph(
+        session_maker, graph, namespace=bluecore_url(), source="FOLIO"
+    )
+    instance_uri = _saved_instance_uri(bc_graph, placeholder_uri)
     logger.info(f"Saved {instance_uri} to Blue Core")
     return instance_uri
 
@@ -511,7 +552,7 @@ def retrieve_folio_instance(hrid: str, institution: str) -> dict:
     if folio_instance is None:
         raise ValueError(f"No FOLIO Instance found for {hrid}")
     source_uri = folio_instance.get("sourceUri", "")
-    if "bcld.info" in source_uri:
+    if source_uri.startswith(bluecore_url()):
         raise ValueError(f"{hrid} already is in Blue Core with uri: {source_uri}")
     return folio_instance
 
