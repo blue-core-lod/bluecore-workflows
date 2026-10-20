@@ -3,10 +3,10 @@
 from datetime import datetime
 
 import pytest
-from airflow import DAG
 from airflow.models.taskinstance import TaskInstance
 from airflow.providers.amazon.aws.hooks.ses import SesHook
 from airflow.providers.standard.operators.empty import EmptyOperator
+from airflow.sdk import DAG
 from pytest_mock import MockerFixture
 from tasks import mock_task_instance, test_task_instance  # noqa: F401
 
