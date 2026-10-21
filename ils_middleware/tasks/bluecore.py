@@ -1,15 +1,21 @@
+import gzip
 import io
+import json
 import logging
+import math
 import os
 import pathlib
 import tarfile
 import time
 import zipfile
+from collections.abc import Iterator
 
 import rdflib
 from airflow.providers.postgres.hooks.postgres import PostgresHook
+from bibframe_json import CONTEXT_URL, context_for
 from bluecore_models.bluecore_graph import save_graph
 from bluecore_models.models.version import CURRENT_USER_ID
+from bluecore_models.utils.graph import bind_namespaces, init_graph, load_jsonld
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy.exc import OperationalError
@@ -21,6 +27,26 @@ logging.getLogger("rdflib").setLevel(logging.ERROR)
 logging.getLogger("bluecore_models").setLevel(logging.ERROR)
 
 logger = logging.getLogger(__name__)
+
+# id.loc.gov's hubs context is only these prefixes, so a copy is held here and
+# handed to rdflib rather than fetched or swapped for CONTEXT_URL, whose
+# vocabulary lacks dcterms, madsrdf and xsd. This dict will need to be
+# refactored once we have examples of work and instance contexts
+LOC_CONTEXTS = {
+    "http://id.loc.gov/resources/hubs/context.json": {
+        "bf": "http://id.loc.gov/ontologies/bibframe/",
+        "bflc": "http://id.loc.gov/ontologies/bflc/",
+        "dcterms": "http://purl.org/dc/terms/",
+        "foaf": "http://xmlns.com/foaf/0.1/",
+        "lcc": "http://id.loc.gov/ontologies/lcc#",
+        "madsrdf": "http://www.loc.gov/mads/rdf/v1#",
+        "pmo": "http://performedmusicontology.org/ontology/",
+        "rdf": "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rdfs": "http://www.w3.org/2000/01/rdf-schema#",
+        "skos": "http://www.w3.org/2004/02/skos/core#",
+        "xsd": "http://www.w3.org/2001/XMLSchema#",
+    },
+}
 
 
 # Pool sizing per engine (i.e. per Celery worker child process). The load tasks
@@ -59,17 +85,49 @@ def get_engine(bluecore_db: str) -> Engine:
     return engine
 
 
+def is_gzip_json_lines(archive_file_location: str | pathlib.Path) -> bool:
+    """
+    Determines if file is a gzipped file that is not a tar archive, i.e. a
+    single JSON Lines file like hubs.bibframe.jsonld.gz with one JSON-LD
+    document per line
+    """
+    archive_file_path = pathlib.Path(archive_file_location)
+    with archive_file_path.open("rb") as fo:
+        is_gzip = fo.read(2) == b"\x1f\x8b"
+    return is_gzip and not tarfile.is_tarfile(archive_file_path)
+
+
+def _batch_ranges(total: int, number_of_batches: int) -> list[range]:
+    """Splits total items into at most number_of_batches contiguous ranges"""
+    if total < 1:
+        return []
+    batch_size = math.ceil(total / number_of_batches)
+    return [
+        range(start, min(start + batch_size, total))
+        for start in range(0, total, batch_size)
+    ]
+
+
 def batch_archived_files(
     archive_file_location: str, number_of_batches: int = 5
 ) -> list[list[str]]:
     """
-    Retrieves list of files from a zip file and batches the file names into
-    lists
+    Retrieves list of files from a tar archive and batches the file names into
+    lists. For a gzipped JSON Lines file, each batch is a single
+    "start-end" line range (end exclusive) instead of file names.
     """
     archive_file_path = pathlib.Path(archive_file_location)
 
     if not archive_file_path.exists():
         raise FileNotFoundError(f"{archive_file_path} does not exist")
+
+    if is_gzip_json_lines(archive_file_path):
+        with gzip.open(archive_file_path, "rb") as json_lines_file:
+            total_lines = sum(1 for _ in json_lines_file)
+        return [
+            [f"{line_range.start}-{line_range.stop}"]
+            for line_range in _batch_ranges(total_lines, number_of_batches)
+        ]
 
     with tarfile.open(archive_file_path, "r") as archive_file:
         file_names = [
@@ -79,13 +137,10 @@ def batch_archived_files(
             and not pathlib.Path(name).name.startswith("._")
         ]
 
-    total_names = len(file_names)
-    batch_size = int(total_names / number_of_batches)
-    batches = []
-    for i in range(0, total_names, batch_size):
-        batch = file_names[i : i + batch_size]
-        batches.append(batch)
-    return batches
+    return [
+        file_names[line_range.start : line_range.stop]
+        for line_range in _batch_ranges(len(file_names), number_of_batches)
+    ]
 
 
 def delete_upload(upload: str, remove_empty_parent: bool = False) -> None:
@@ -165,11 +220,113 @@ def load(file_path: str, user_uid: str, bluecore_db: str):
     logger.info(f"processed {len(bc_graph)} triples")
 
 
+def _prepare_jsonld(rdf_json: dict | list) -> dict | list:
+    """
+    Readies a JSON-LD document for load_jsonld: a @context that bibframe-json
+    doesn't ship (e.g. id.loc.gov's) is replaced with CONTEXT_URL, while an
+    absent or shipped @context is kept, and a top-level @id wrapping a @graph
+    is dropped so the nodes become the default graph instead of a named graph.
+    A top-level list (expanded JSON-LD) is processed row by row.
+    """
+    if isinstance(rdf_json, list):
+        return [
+            _prepare_jsonld(row) if isinstance(row, dict) else row for row in rdf_json
+        ]
+    if "@graph" in rdf_json:
+        document = {"@graph": rdf_json["@graph"]}
+    else:
+        document = {k: v for k, v in rdf_json.items() if k != "@context"}
+    context = rdf_json.get("@context")
+    if context is None:
+        return document
+    if not (isinstance(context, str) and context_for(context)):
+        context = CONTEXT_URL
+    return {"@context": context, **document}
+
+
+def _parse_jsonld(rdf_json: dict | list) -> rdflib.Graph:
+    """
+    Parses a JSON-LD document into a graph. A document naming a context held
+    in LOC_CONTEXTS is parsed with that copy, so its prefixes resolve and
+    nothing is fetched; anything else is readied by _prepare_jsonld and read
+    with load_jsonld
+    """
+    named = rdf_json.get("@context") if isinstance(rdf_json, dict) else None
+    if isinstance(named, str) and named in LOC_CONTEXTS:
+        prepared = _prepare_jsonld(rdf_json)
+        assert isinstance(prepared, dict)  # a dict in gives a dict out
+        document = {k: v for k, v in prepared.items() if k != "@context"}
+        graph = init_graph()
+        graph.parse(data=document, format="json-ld", context=LOC_CONTEXTS[named])
+        return bind_namespaces(graph)
+    return load_jsonld(_prepare_jsonld(rdf_json))
+
+
+def _tar_graphs(
+    cbd_files: list, archived_file_path: str
+) -> Iterator[tuple[str, rdflib.Graph | None]]:
+    """Yields the name and parsed graph (None on failure) for each tar member"""
+    with tarfile.open(archived_file_path, "r") as cbd_archived_file:
+        for name in cbd_files:
+            if pathlib.Path(name).name.startswith("._"):
+                continue
+            graph_format = rdflib.util.guess_format(name)
+            if graph_format is None:
+                continue
+            cbd_file_buf = cbd_archived_file.extractfile(name)
+            if cbd_file_buf is None:
+                yield name, None
+                continue
+            raw_rdf = cbd_file_buf.read()
+            try:
+                match graph_format:
+                    case "json-ld":
+                        graph = _parse_jsonld(json.loads(raw_rdf))
+
+                    case _:
+                        graph = init_graph()
+                        graph.parse(data=raw_rdf, format=graph_format)
+            except Exception as e:  # noqa: BLE001 -- one bad file shouldn't abort the batch
+                logger.error(f"Failed to parse {name}: {e}")
+                graph = None
+
+            yield name, graph
+
+
+def _json_lines_graphs(
+    line_ranges: list, archived_file_path: str
+) -> Iterator[tuple[str, rdflib.Graph | None]]:
+    """
+    Yields a name and parsed graph (None on failure) for each line of a
+    gzipped JSON Lines file that falls within the "start-end" line ranges
+    """
+    ranges = []
+    for line_range in line_ranges:
+        start, end = line_range.split("-")
+        ranges.append(range(int(start), int(end)))
+    last_line = max((r.stop for r in ranges), default=0)
+
+    with gzip.open(archived_file_path, "rt", encoding="utf-8") as json_lines_file:
+        for line_number, line in enumerate(json_lines_file):
+            if line_number >= last_line:
+                break
+            if not line.strip() or not any(line_number in r for r in ranges):
+                continue
+            name = f"line {line_number}"
+            try:
+                graph = _parse_jsonld(json.loads(line))
+            except Exception as e:  # noqa: BLE001 -- one bad line shouldn't abort the batch
+                logger.error(f"Failed to load {name}: {e}")
+                graph = None
+            yield name, graph
+
+
 def load_cbd_files(
     cbd_files: list, bluecore_db: str, user_uid: str, archived_file_path: str
 ):
     """
-    Load CBD files
+    Load CBD files from a tar archive, or line ranges from a gzipped JSON
+    Lines file (see batch_archived_files)
     """
     logger = logging.getLogger(__name__)
 
@@ -186,47 +343,44 @@ def load_cbd_files(
 
     errors = []
 
-    logger.info(f"Starting load of {len(cbd_files):,} files")
+    if is_gzip_json_lines(archived_file_path):
+        logger.info(f"Starting load of lines {', '.join(cbd_files)}")
+        graphs = _json_lines_graphs(cbd_files, archived_file_path)
+    else:
+        logger.info(f"Starting load of {len(cbd_files):,} files")
+        graphs = _tar_graphs(cbd_files, archived_file_path)
 
-    with tarfile.open(archived_file_path, "r") as cbd_archived_file:
-        for i, name in enumerate(cbd_files):
-            if pathlib.Path(name).name.startswith("._"):
-                continue
-            graph_format = rdflib.util.guess_format(name)
-            if graph_format is None:
-                continue
-            graph = rdflib.Graph()
-            cbd_file_buf = cbd_archived_file.extractfile(name)
-            if cbd_file_buf is None:
+    i = 0
+    for i, (name, graph) in enumerate(graphs, start=1):
+        if graph is None:
+            errors.append(name)
+            continue
+        # If deadlock occurs, try saving the graph again by sleep up to 2 seconds
+        # to see if deadlock continues
+        for attempt in range(3):
+            try:
+                # Bulk load: Works/Instances are authoritative, but the many
+                # shared Other Resources these records reference are only
+                # linked, not re-described, on every record (their
+                # descriptions are maintained by a separate process).
+                save_graph(
+                    session_maker,
+                    graph,
+                    namespace=bc_url,
+                    update_other_resources=False,
+                )
+                break
+            except OperationalError as e:
+                if attempt == 2:
+                    raise
+                logger.error(f"Operational Error {e} for {name}")
+                time.sleep(2**attempt)
+            except Exception as e:  # noqa: BLE001 -- one bad file shouldn't abort the batch
+                logger.error(f"Error {e} for {name}")
                 errors.append(name)
-                continue
-            graph.parse(data=cbd_file_buf.read(), format=graph_format)
-            # If deadlock occurs, try saving the graph again by sleep up to 2 seconds
-            # to see if deadlock continues
-            for attempt in range(3):
-                try:
-                    # Bulk load: Works/Instances are authoritative, but the many
-                    # shared Other Resources these records reference are only
-                    # linked, not re-described, on every record (their
-                    # descriptions are maintained by a separate process).
-                    save_graph(
-                        session_maker,
-                        graph,
-                        namespace=bc_url,
-                        update_other_resources=False,
-                    )
-                    break
-                except OperationalError as e:
-                    if attempt == 2:
-                        raise
-                    logger.error(f"Operational Error {e} for {name}")
-                    time.sleep(2**attempt)
-                except Exception as e:  # noqa: BLE001 -- one bad file shouldn't abort the batch
-                    logger.error(f"Error {e} for {name}")
-                    errors.append(name)
-                    break
+                break
 
-            if i > 0 and not i % 100:
-                logger.info(f"{i:,} graphs saved")
-    logger.info(f"Finished load of {len(cbd_files):,} with {len(errors):,} errors")
+        if not i % 100:
+            logger.info(f"{i:,} graphs saved")
+    logger.info(f"Finished load of {i:,} graphs with {len(errors):,} errors")
     return errors
