@@ -10,29 +10,10 @@ import httpx
 from airflow.sdk import Connection
 from folioclient import FolioClient
 
+from ils_middleware.tasks.folio.inventory import lookup_by_local_id
 from ils_middleware.tasks.sinopia.email import send_local_id_not_found_email
 
 logger = logging.getLogger(__name__)
-
-
-def _lookup_by_local_id(
-    local_id: str, folio_client: FolioClient, httpx_client
-) -> dict | None:
-    """Looks up an existing FOLIO instance by an external local identifier.
-
-    Queries FOLIO's own "hrid" field, since that's the property FOLIO exposes
-    for this purpose; the value being searched for is our generic local_id,
-    which may be an HRID or another institution's local system identifier.
-    """
-    result = httpx_client.get(
-        f"{folio_client.okapi_url}/inventory/instances",
-        headers=folio_client.okapi_headers,
-        params={"query": f'hrid=="{local_id}"'},
-    )
-    if result.status_code != 200:
-        return None
-    instances = result.json().get("instances", [])
-    return instances[0] if instances else None
 
 
 def _check_for_existance(
@@ -44,9 +25,7 @@ def _check_for_existance(
         for record in records:
             local_id = local_ids.get(record.get("sourceUri", "").split("/")[-1])
             if local_id:
-                existing_record = _lookup_by_local_id(
-                    local_id, folio_client, httpx_client
-                )
+                existing_record = lookup_by_local_id(local_id, folio_client)
                 if existing_record is None:
                     logger.warning(
                         f"No existing FOLIO instance found for local identifier {local_id}; "
