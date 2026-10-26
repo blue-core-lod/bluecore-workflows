@@ -558,7 +558,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.37.2"
+version = "0.38.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -569,9 +569,9 @@ dependencies = [
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/01/c0/ff2a741bbbb1f98381aefd4266df79a0f10b937770fc14bc5459348975a7/bluecore_models-0.37.2.tar.gz", hash = "sha256:0c3f8e1a2fadeb41bac20894748e344b58334155dc67872aa9c44f4023569800", size = 220066, upload-time = "2026-10-20T13:46:01.557Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/f6/18f06559a8bbdfebb82e50e02258633821d628a5e516a13352f2949181d7/bluecore_models-0.38.1.tar.gz", hash = "sha256:858183cbfc6715c2f11c75b7456254922106b8f06b18ce522183fe04fd5de0e6", size = 221818, upload-time = "2026-10-26T17:14:40.658Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2e/bd/21fc2d33a84b9e7bb6dc3965e070c1a878f9d0919c2b15a4643faa7c8298/bluecore_models-0.37.2-py3-none-any.whl", hash = "sha256:1bdd12a24893c36ed8c8b7e7d3fb8e6ecf442560da80e72b72d872b4db49213a", size = 78861, upload-time = "2026-10-20T13:46:00.083Z" },
+    { url = "https://files.pythonhosted.org/packages/35/7a/75ede60ad20f924fe4d1a521da1f75108f9148ede957ff54e14ff5869182/bluecore_models-0.38.1-py3-none-any.whl", hash = "sha256:23412e2cc9e637865abd0e2929d33cfa0ea57878a7bf15d663cbc0e518c6c32a", size = 80202, upload-time = "2026-10-26T17:14:39.326Z" },
 ]
 
 [[package]]
@@ -619,7 +619,7 @@ requires-dist = [
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak", specifier = ">=0.10.0" },
     { name = "bibframe-json", specifier = ">=0.1.0" },
-    { name = "bluecore-models", specifier = ">=0.37.2" },
+    { name = "bluecore-models", specifier = ">=0.38.1" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
