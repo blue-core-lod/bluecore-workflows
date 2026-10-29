@@ -80,6 +80,7 @@ def get_engine(bluecore_db: str) -> Engine:
             pool_recycle=POOL_RECYCLE,
             pool_size=POOL_SIZE,
             max_overflow=MAX_OVERFLOW,
+            connect_args={"prepare_threshold": None},
         )
         _engines[bluecore_db] = engine
     return engine
