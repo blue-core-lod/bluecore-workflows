@@ -71,13 +71,15 @@ importing the modules in its plugins folder, so each plugin also needs a module
 in `plugins/` that imports its `AirflowPlugin` subclass.
 
 Airflow gives every plugin its own FastAPI app under its own URL prefix, so
-there is no single origin to hang assets off. `plugins/shared.py` holds what
-each plugin would otherwise repeat --- where Airflow is served from, the Jinja
-environment, and a `static` mount --- and `templates/base.html` holds the page
-chrome, so a plugin template only needs:
+there is no single origin to hang assets off. What each plugin would otherwise
+repeat --- where Airflow is served from, login, the Jinja environment, the
+shared page chrome, styles and script, and a `static` mount --- comes from
+[bluecore-airflow-common][AIRFLOW_COMMON]. A plugin keeps only its own page
+templates (in `ils_middleware/plugins/templates`) and icons (in
+`ils_middleware/plugins/static`), and a plugin template only needs:
 
 ```jinja
-{% extends "base.html" %}
+{% extends "bluecore/base.html" %}
 {% block content %}...{% endblock %}
 ```
 
@@ -167,4 +169,5 @@ To have Black apply formatting: `uv run ruff format .`
 [MYPY]: https://mypy.readthedocs.io/en/stable/
 [UV]: https://docs.astral.sh/uv/
 [RUFF]: https://docs.astral.sh/ruff/
+[AIRFLOW_COMMON]: https://github.com/blue-core-lod/bluecore-airflow-common
 [EXTERNAL_VIEW]: https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/plugins.html#external-views

@@ -557,6 +557,18 @@ wheels = [
 ]
 
 [[package]]
+name = "bluecore-airflow-common"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "apache-airflow" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/c2/aa/dd64f7d09ef2c97b6acda6e693dc8f414bca3cebe9fcc71f47771b0dbe5e/bluecore_airflow_common-0.1.0.tar.gz", hash = "sha256:b9bd8d80c62b21d8c2ef9b340d88f8bfaa2ab76ce1c5901bbe2285d4b7bede92", size = 5953, upload-time = "2026-10-26T22:17:58.368Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/41/fb/11d4d4ed5a099e59ce60d7c9e64a15d560c8f7e7a42bde7ab1eb44a3c2ef/bluecore_airflow_common-0.1.0-py3-none-any.whl", hash = "sha256:8bbc2f9a9e0c766e5f3d9d26699661b50597339a7beac32ae5d8834b688ce589", size = 8044, upload-time = "2026-10-26T22:17:57.199Z" },
+]
+
+[[package]]
 name = "bluecore-models"
 version = "0.38.2"
 source = { registry = "https://pypi.org/simple" }
@@ -583,6 +595,7 @@ dependencies = [
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak" },
     { name = "bibframe-json" },
+    { name = "bluecore-airflow-common" },
     { name = "bluecore-models" },
     { name = "boto3" },
     { name = "folio-uuid" },
@@ -619,6 +632,7 @@ requires-dist = [
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak", specifier = ">=0.10.0" },
     { name = "bibframe-json", specifier = ">=0.1.0" },
+    { name = "bluecore-airflow-common", specifier = ">=0.1.0" },
     { name = "bluecore-models", specifier = ">=0.38.1" },
     { name = "boto3" },
     { name = "folio-uuid" },
