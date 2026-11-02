@@ -558,8 +558,8 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.38.1"
-source = { registry = "https://pypi.org/simple" }
+version = "0.37.2"
+source = { git = "https://github.com/blue-core-lod/bluecore-models?rev=t191-add-intance-export#adecb2851be0c692996dbe87edfea89d0f7b9bad" }
 dependencies = [
     { name = "alembic" },
     { name = "bibframe-json" },
@@ -569,14 +569,10 @@ dependencies = [
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c7/f6/18f06559a8bbdfebb82e50e02258633821d628a5e516a13352f2949181d7/bluecore_models-0.38.1.tar.gz", hash = "sha256:858183cbfc6715c2f11c75b7456254922106b8f06b18ce522183fe04fd5de0e6", size = 221818, upload-time = "2026-10-26T17:14:40.658Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/35/7a/75ede60ad20f924fe4d1a521da1f75108f9148ede957ff54e14ff5869182/bluecore_models-0.38.1-py3-none-any.whl", hash = "sha256:23412e2cc9e637865abd0e2929d33cfa0ea57878a7bf15d663cbc0e518c6c32a", size = 80202, upload-time = "2026-10-26T17:14:39.326Z" },
-]
 
 [[package]]
 name = "bluecore-workflows"
-version = "1.5.2"
+version = "1.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
@@ -619,7 +615,7 @@ requires-dist = [
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak", specifier = ">=0.10.0" },
     { name = "bibframe-json", specifier = ">=0.1.0" },
-    { name = "bluecore-models", specifier = ">=0.38.1" },
+    { name = "bluecore-models", git = "https://github.com/blue-core-lod/bluecore-models?rev=t191-add-intance-export" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },

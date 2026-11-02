@@ -1,6 +1,6 @@
 [project]
 name = "bluecore-workflows"
-version = "1.5.2"
+version = "1.6.0"
 description = "Blue Core Workflows using Apache Airflow"
 readme = "README.md"
 authors = [{ name = "Jeremy Nelson", email = "jpnelson@stanford.edu"}]
@@ -61,3 +61,6 @@ addopts = "-k 'not test_task_instance and not test_parse_institutional_msgs and 
 ignore = [
     "DTZ001"
 ]
+
+[tool.uv.sources]
+bluecore-models = { git = "https://github.com/blue-core-lod/bluecore-models", rev = "t191-add-intance-export" }

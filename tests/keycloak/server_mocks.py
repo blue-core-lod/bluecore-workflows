@@ -29,7 +29,9 @@ def mock_keycloak(monkeypatch, mocker):
         # Used in general/test_init.py::test_parse_messages
         if args[0].endswith("7922d096-9b45-4235-be9a-a89d390bee83"):
             payload = {
+                "id": 42,
                 "uuid": "7922d096-9b45-4235-be9a-a89d390bee83",
+                "updated_at": "2026-10-05T12:30:00",
                 "uri": "https://bcld.info/instance/7922d096-9b45-4235-be9a-a89d390bee83",
                 "data": {
                     "@id": "https://bcld.info/instance/7922d096-9b45-4235-be9a-a89d390bee83",

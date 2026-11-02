@@ -56,6 +56,12 @@ def parse_messages(**kwargs) -> str:
             value={
                 "email": user["email"],
                 "group": user["groups"][0],
+                "user_id": user["id"],
+                "username": user.get("username"),
+                # id and updated_at identify the Version being exported, since
+                # add_version sets Version.created_at from updated_at
+                "resource_id": resource_payload.get("id"),
+                "updated_at": resource_payload.get("updated_at"),
                 "resource_uri": resource_uri,
                 "resource": resource_payload["data"],
                 "local_id": message.get("local_id"),
