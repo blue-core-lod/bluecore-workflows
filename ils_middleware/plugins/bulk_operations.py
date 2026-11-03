@@ -21,11 +21,12 @@ the API calls behind it are built out in:
 
 from __future__ import annotations
 
+import pathlib
+
+import bluecore_airflow_common as common
 from airflow.plugins_manager import AirflowPlugin
 from fastapi import Depends, FastAPI, Request
 from fastapi.responses import HTMLResponse
-
-from ils_middleware.plugins import shared
 
 PLUGIN_NAME = "bluecore_bulk_operations"
 TITLE = "Blue Core Bulk Operations"
@@ -39,20 +40,24 @@ NAV_LABEL = "Bulk"
 URL_PREFIX = "/bulk-operations"
 URL_ROUTE = "bulk-operations"
 
+# This plugin's own templates and icons; the shared page chrome and styles
+# come from bluecore_airflow_common.
+PLUGINS_DIR = pathlib.Path(__file__).parent
+TEMPLATES = common.templates(PLUGINS_DIR / "templates")
 
 app = FastAPI(title=TITLE)
-shared.mount_static(app)
+common.mount_static(app, PLUGINS_DIR / "static")
 
 
 @app.get(
-    "/", response_class=HTMLResponse, dependencies=[Depends(shared.requires_login)]
+    "/", response_class=HTMLResponse, dependencies=[Depends(common.requires_login)]
 )
 def bulk_operations(request: Request) -> HTMLResponse:
     """Render the bulk operations page."""
-    return shared.TEMPLATES.TemplateResponse(
+    return TEMPLATES.TemplateResponse(
         request=request,
         name="bulk_operations.html",
-        context=shared.context(URL_PREFIX, title=TITLE),
+        context=common.context(URL_PREFIX, title=TITLE),
     )
 
 
@@ -70,12 +75,12 @@ class BulkOperationsPlugin(AirflowPlugin):
     external_views = [  # noqa: RUF012
         {
             "name": NAV_LABEL,
-            "href": f"{shared.airflow_root_path()}{URL_PREFIX}/",
+            "href": f"{common.airflow_root_path()}{URL_PREFIX}/",
             "url_route": URL_ROUTE,
             "destination": "nav",
             # Rendered by the Airflow UI in an <img>, so the icon cannot pick up
             # the nav's text color and each color mode needs its own file.
-            "icon": shared.static_url(URL_PREFIX, "layers.svg"),
-            "icon_dark_mode": shared.static_url(URL_PREFIX, "layers-dark.svg"),
+            "icon": common.static_url(URL_PREFIX, "layers.svg"),
+            "icon_dark_mode": common.static_url(URL_PREFIX, "layers-dark.svg"),
         }
     ]

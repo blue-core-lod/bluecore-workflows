@@ -27,6 +27,7 @@ dependencies = [
     "psycopg[binary]>=3.3.6",
     "jsonpath-ng>=1.10.1",
     "bibframe-json>=0.1.0",
+    "bluecore-airflow-common>=0.1.0",
 ]
 
 

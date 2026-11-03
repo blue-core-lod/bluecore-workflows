@@ -1,7 +1,7 @@
+import bluecore_airflow_common as common
 import pytest
 from fastapi.testclient import TestClient
 
-from ils_middleware.plugins import shared
 from ils_middleware.plugins.bulk_operations import (
     NAV_LABEL,
     TITLE,
@@ -14,7 +14,7 @@ from ils_middleware.plugins.bulk_operations import (
 
 @pytest.fixture
 def client():
-    app.dependency_overrides[shared.requires_login] = lambda: None
+    app.dependency_overrides[common.requires_login] = lambda: None
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -42,8 +42,8 @@ def test_external_view_has_an_icon_per_color_mode():
 
     # The UI renders these in an <img>, which cannot inherit the nav's text
     # color, so a light and a dark variant are both needed.
-    assert external_view["icon"] == shared.static_url(URL_PREFIX, "layers.svg")
-    assert external_view["icon_dark_mode"] == shared.static_url(
+    assert external_view["icon"] == common.static_url(URL_PREFIX, "layers.svg")
+    assert external_view["icon_dark_mode"] == common.static_url(
         URL_PREFIX, "layers-dark.svg"
     )
 
@@ -60,8 +60,8 @@ def test_bulk_operations_page_uses_the_shared_chrome(client):
     response = client.get("/")
 
     # Inherited from base.html, with URLs resolved for this plugin's prefix.
-    assert shared.static_url(URL_PREFIX, "bluecore.css") in response.text
-    assert shared.static_url(URL_PREFIX, "bluecore.js") in response.text
+    assert common.static_url(URL_PREFIX, "bluecore/bluecore.css") in response.text
+    assert common.static_url(URL_PREFIX, "bluecore/bluecore.js") in response.text
     assert 'class="centered"' in response.text
 
 
