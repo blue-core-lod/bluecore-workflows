@@ -8,8 +8,8 @@ import pathlib
 import tarfile
 import time
 import zipfile
-from contextlib import nullcontext
 from collections.abc import Iterator
+from contextlib import nullcontext
 
 import rdflib
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -144,19 +144,6 @@ def batch_archived_files(
         for line_range in _batch_ranges(len(file_names), number_of_batches)
     ]
 
- def batch_files(files: list[str], number_of_batches: int = 5) -> list[list[str]]:
-    """
-    Batches a list of files into smaller lists.
-    """
-    total_files = len(files)
-    batch_size = int(total_files / number_of_batches)
-    if batch_size == 0:
-        batch_size = 1
-    batches: list[list[str]] = []
-    for i in range(0, total_files, batch_size):
-        batch = files[i : i + batch_size]
-        batches.append(batch)
-    return batches
 
 def delete_upload(upload: str | list[str], remove_empty_parent: bool = False) -> None:
     """
@@ -492,3 +479,4 @@ def get_file(file: str, tar_file: tarfile.TarFile | None):
     if tar_file is not None:
         return tar_file.extractfile(file)
     return pathlib.Path(file).open("rb")
+
