@@ -8,7 +8,9 @@ from airflow.sdk import dag, task
 
 from ils_middleware.tasks.bfdb_activity_streams import (
     ACTIVITY_STREAM_FEEDS,
+    FeedDownload,
     combine_downloads,
+    commit_feed_cursors,
     create_activity_stream_run,
     current_run_date,
     process_activity_stream_feed,
@@ -30,6 +32,7 @@ BFDB_AGENT_USER_UID = "BFDB Agent"
     schedule=None,
     start_date=pendulum.datetime(2026, 9, 11, tz="America/New_York"),
     catchup=False,
+    max_active_runs=1,
     tags=["bfdb", "activity-streams"],
     default_args={"owner": "airflow"},
 )
@@ -56,7 +59,7 @@ def process_activity_streams():
         activity_stream_run_id: str,
         bluecore_db: str,
         current_date: str,
-    ) -> list[str]:
+    ) -> FeedDownload:
         feed_name = feed_config["feed_name"]
         feed_url = feed_config["feed_url"]
         logger.info(f"Processing activity stream feed {feed_url}")
@@ -65,15 +68,23 @@ def process_activity_streams():
         )
 
     @task
-    def collect_downloads(feed_downloads: list[list[str]]) -> list[str]:
-        return combine_downloads(feed_downloads)
+    def collect_downloads(feed_downloads: list[FeedDownload]) -> list[str]:
+        return combine_downloads([feed["files"] for feed in feed_downloads])
 
-    @task
-    def delete_file_path(files: list[str], errors: list[str]):
+    @task(trigger_rule="none_failed")
+    def commit_cursors(
+        bluecore_db: str,
+        feed_downloads: list[FeedDownload],
+        errors: list[list[str]],
+    ) -> None:
+        commit_feed_cursors(bluecore_db, feed_downloads, errors)
+
+    @task(trigger_rule="none_failed")
+    def delete_file_path(files: list[str], errors: list[list[str]]):
         if not files:
             return
 
-        if len(errors) > 0:
+        if any(name for batch in errors for name in batch):
             msg = f"Errors exist; keeping {files}"
             logger.error(msg)
             return
@@ -93,6 +104,7 @@ def process_activity_streams():
             bluecore_db=kwargs["bluecore_db"],
             user_uid=kwargs["user_uid"],
             files=kwargs["files"],
+            rdf_format="json-ld",
         )
 
     activity_stream_run_id = create_run_id()
@@ -111,7 +123,10 @@ def process_activity_streams():
         user_uid=BFDB_AGENT_USER_UID,
     ).expand(files=bfdb_batches)
     delete_task = delete_file_path(files=files, errors=errors)
-    errors >> delete_task
+    committed = commit_cursors(
+        bluecore_db=bluecore_db, feed_downloads=feed_downloads, errors=errors
+    )
+    committed >> delete_task
 
 
 process_activity_streams_dag = process_activity_streams()

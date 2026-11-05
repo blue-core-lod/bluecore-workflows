@@ -449,7 +449,9 @@ def test_cursor_name_for_feed():
     ] == ["bfdb_works", "bfdb_instances", "bfdb_hubs"]
 
 
-def test_process_activity_stream_feed_advances_feed_cursor(mocker, tmp_path):
+def test_process_activity_stream_feed_defers_cursor_until_load_succeeds(
+    mocker, tmp_path
+):
     run_uuid = uuid.UUID("33333333-3333-3333-3333-333333333333")
     run_id = str(run_uuid)
     feed_url = "https://id.loc.gov/resources/works/activitystreams/feed/1.json"
@@ -488,7 +490,37 @@ def test_process_activity_stream_feed_advances_feed_cursor(mocker, tmp_path):
         airflow_path=str(tmp_path),
     )
 
-    assert downloaded_files == [str(tmp_path / run_id / "654321.work")]
+    assert downloaded_files == {
+        "files": [str(tmp_path / run_id / "654321.work")],
+        "cursor_name": "bfdb_works",
+        "cursor": "2026-09-12",
+    }
+    assert (
+        bfdb_activity_streams.get_last_cursor(database_url, "bfdb_works")
+        == "2026-09-10"
+    )
+    with pytest.raises(ValueError, match="Load errors"):
+        bfdb_activity_streams.commit_feed_cursors(
+            database_url, [downloaded_files], [[], downloaded_files["files"]]
+        )
+    assert (
+        bfdb_activity_streams.get_last_cursor(database_url, "bfdb_works")
+        == "2026-09-10"
+    )
+    assert (
+        bfdb_activity_streams.process_activity_stream_feed(
+            database_url,
+            feed_url,
+            "works",
+            "2026-09-14",
+            run_id,
+            airflow_path=str(tmp_path),
+        )
+        == downloaded_files
+    )
+    bfdb_activity_streams.commit_feed_cursors(
+        database_url, [downloaded_files], [[], []]
+    )
     assert (
         bfdb_activity_streams.get_last_cursor(database_url, "bfdb_works")
         == "2026-09-12"
@@ -533,7 +565,13 @@ def test_process_activity_stream_feed_keeps_cursor_when_nothing_processed(
         airflow_path=str(tmp_path),
     )
 
-    assert downloaded_files == []
+    assert downloaded_files == {
+        "files": [],
+        "cursor_name": "bfdb_hubs",
+        "cursor": "2026-09-13",
+    }
+    bfdb_activity_streams.commit_feed_cursors(database_url, [downloaded_files], [])
+    assert not (tmp_path / str(run_uuid)).exists()
     assert (
         bfdb_activity_streams.get_last_cursor(database_url, "bfdb_hubs") == "2026-09-13"
     )

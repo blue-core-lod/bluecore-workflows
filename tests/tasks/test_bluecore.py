@@ -221,3 +221,62 @@ def test_zip_to_tar_gz(tmp_path):
     tar_file_name = zip_to_tar_gz(str(zip_file_path))
     assert not zip_file_path.exists()
     assert tar_file_name.endswith("cbd.tar.gz")
+
+
+@pytest.mark.parametrize("suffix", ["work", "instance", "hub", "json"])
+def test_load_files_explicit_jsonld_format(mocker, tmp_path, suffix):
+    path = tmp_path / f"1234.{suffix}"
+    path.write_text(
+        '[{"@id": "https://example.test/1234", "https://example.test/title": "Title"}]'
+    )
+    mocker.patch.object(bluecore, "get_engine")
+    mocker.patch.object(bluecore, "sessionmaker")
+    save = mocker.patch.object(bluecore, "save_graph")
+
+    assert (
+        bluecore.load_files([str(path)], "db", "BFDB Agent", rdf_format="json-ld") == []
+    )
+    assert len(save.call_args.args[1]) == 1
+
+
+@pytest.mark.parametrize("archived", [False, True])
+def test_load_files_records_bad_files_and_continues(mocker, tmp_path, archived):
+    contents = {
+        "first.json": "{}",
+        "html.json": "<html>error</html>",
+        "truncated.json": '[{"@id":',
+        "unknown.xyz": "{}",
+        "last.json": "{}",
+    }
+    for name, content in contents.items():
+        (tmp_path / name).write_text(content)
+    archive_path = tmp_path / "records.tar"
+    with tarfile.open(archive_path, "w") as archive:
+        for name in contents:
+            archive.add(tmp_path / name, arcname=name)
+    names = list(contents) + ["missing.json"]
+    files = names if archived else [str(tmp_path / name) for name in names]
+    mocker.patch.object(bluecore, "get_engine")
+    mocker.patch.object(bluecore, "sessionmaker")
+    save = mocker.patch.object(bluecore, "save_graph")
+
+    errors = bluecore.load_files(
+        files, "db", "user", str(archive_path) if archived else None
+    )
+
+    assert errors == [files[index] for index in (1, 2, 3, 5)]
+    assert save.call_count == 2
+
+
+def test_load_files_retries_deadlock(mocker, tmp_path):
+    path = tmp_path / "valid.json"
+    path.write_text("{}")
+    mocker.patch.object(bluecore, "get_engine")
+    mocker.patch.object(bluecore, "sessionmaker")
+    sleep = mocker.patch.object(bluecore.time, "sleep")
+    deadlock = OperationalError("deadlock", None, Exception("deadlock"))
+    save = mocker.patch.object(bluecore, "save_graph", side_effect=[deadlock, None])
+
+    assert bluecore.load_files([str(path)], "db", "user") == []
+    assert save.call_count == 2
+    sleep.assert_called_once_with(1)

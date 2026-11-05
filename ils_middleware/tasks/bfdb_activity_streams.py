@@ -2,6 +2,7 @@ import json
 import pathlib
 import uuid
 from datetime import date, datetime, timedelta
+from typing import TypedDict
 from urllib.parse import urlparse
 from zoneinfo import ZoneInfo
 
@@ -45,6 +46,12 @@ ACTIVITY_STREAM_FEEDS = [
         "feed_url": "https://id.loc.gov/resources/hubs/activitystreams/feed/1",
     },
 ]
+
+
+class FeedDownload(TypedDict):
+    files: list[str]
+    cursor_name: str
+    cursor: str
 
 
 def create_activity_stream_run() -> str:
@@ -141,17 +148,34 @@ def process_activity_stream_feed(
     current_date: str,
     run_id: str | None = None,
     airflow_path: str = "/opt/airflow",
-) -> list[str]:
-    """Download a feed's new objects and advance that feed's cursor."""
+) -> FeedDownload:
+    """Download new objects and return a cursor proposal without saving it."""
     run_id = run_id or create_activity_stream_run()
     cursor_name = cursor_name_for(feed_name)
     cursor = get_last_cursor(bluecore_db, cursor_name)
     downloaded, newest_published = ingest_activity_stream_feed(
         url, run_id, feed_name, cursor, current_date, airflow_path
     )
-    if newest_published:
-        save_cursor(bluecore_db, cursor_name, max(cursor, newest_published))
-    return downloaded
+    return {
+        "files": downloaded,
+        "cursor_name": cursor_name,
+        "cursor": max(cursor, newest_published),
+    }
+
+
+def commit_feed_cursors(
+    bluecore_db: str,
+    feed_downloads: list[FeedDownload],
+    batch_errors: list[list[str]],
+) -> None:
+    """Advance cursors only after every downloaded file has loaded."""
+    errors = [name for batch in batch_errors for name in batch]
+    if errors:
+        raise ValueError(
+            f"Load errors; keeping downloads and cursors unchanged: {errors}"
+        )
+    for feed in feed_downloads:
+        save_cursor(bluecore_db, feed["cursor_name"], feed["cursor"])
 
 
 def ingest_activity_stream_feed(
@@ -170,7 +194,6 @@ def ingest_activity_stream_feed(
         )
 
     run_path = feed_run_path(airflow_path, run_id)
-    run_path.mkdir(parents=True, exist_ok=True)
     used_file_names: set[str] = set()
     download_object_ids: list[str] = []
     newest_published: str | None = None
@@ -210,6 +233,8 @@ def ingest_activity_stream_feed(
         next_url = feed.next
 
     download_paths: list[str] = []
+    if download_object_ids:
+        run_path.mkdir(parents=True, exist_ok=True)
     for object_id in download_object_ids:
         file_path = _download_feed_item(object_id, feed_name, run_path, used_file_names)
         download_paths.append(str(file_path))

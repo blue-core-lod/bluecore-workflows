@@ -1,5 +1,6 @@
 """Generate static, incrementally paginated feeds from Blue Core versions."""
 
+import logging
 import pathlib
 import tempfile
 from dataclasses import dataclass
@@ -34,6 +35,7 @@ RESOURCE_TYPES = {
 }
 EVENT_ID_PREFIX = "urn:bluecore:version:"
 STATE_FILE_NAME = "feed-state.json"
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -42,7 +44,7 @@ class VersionEntry:
     uri: str
     data: dict[str, Any]
     actor: str | None
-    created_at: datetime
+    created_at: datetime | None
     is_first: bool
 
 
@@ -167,6 +169,8 @@ def build_collection(
 
 
 def feed_item(entry: VersionEntry, feed_name: str) -> FeedItem:
+    if entry.created_at is None:
+        raise ValueError(f"Version {entry.id} has no created_at")
     published = entry.created_at.isoformat()
     return FeedItem(
         id=f"{EVENT_ID_PREFIX}{entry.id}",
@@ -221,6 +225,9 @@ def stage_feed(
     # earlier pages retain their entries and are never rebuilt from the database.
     groups: list[list[FeedItem]] = [current_items]
     for entry in entries:
+        if entry.created_at is None:
+            logger.warning("Skipping version %s: created_at is NULL", entry.id)
+            continue
         if len(groups[-1]) == PAGE_SIZE:
             groups.append([])
         groups[-1].append(feed_item(entry, feed_name))

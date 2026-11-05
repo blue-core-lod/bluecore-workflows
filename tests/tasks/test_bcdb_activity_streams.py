@@ -1,3 +1,4 @@
+from dataclasses import replace
 from datetime import UTC, datetime, timedelta
 
 from sqlalchemy.dialects import postgresql
@@ -217,6 +218,40 @@ def test_generate_feeds_publishes_then_advances_cursors(tmp_path, monkeypatch):
         feeds.load_page(feeds.page_path(tmp_path / "works", 1)).orderedItems[0].id
         == "urn:bluecore:version:1"
     )
+
+
+def test_generate_feeds_skips_undated_versions_and_advances_state(
+    tmp_path, monkeypatch, caplog
+):
+    batches = [
+        {
+            "hubs": [],
+            "works": [replace(version_entry(1), created_at=None)],
+            "instances": [],
+        },
+        {"hubs": [], "works": [version_entry(2)], "instances": []},
+        {
+            "hubs": [],
+            "works": [replace(version_entry(3), created_at=None)],
+            "instances": [],
+        },
+        {"hubs": [], "works": [], "instances": []},
+    ]
+    cursors = []
+
+    def new_versions(bluecore_db, after_id, batch_size):
+        cursors.append(after_id)
+        return batches.pop(0)
+
+    monkeypatch.setattr(feeds, "new_versions", new_versions)
+
+    assert feeds.generate_feeds("db", str(tmp_path), batch_size=1) == 3
+    assert cursors == [0, 1, 2, 3]
+    assert feeds.load_state(tmp_path).version_id == 3
+    page = feeds.load_page(feeds.page_path(tmp_path / "works", 1))
+    assert [item.id for item in page.orderedItems] == ["urn:bluecore:version:2"]
+    assert "Skipping version 1" in caplog.text
+    assert "Skipping version 3" in caplog.text
 
 
 def test_populate_feeds_processes_bounded_batches(tmp_path, monkeypatch):
