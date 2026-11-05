@@ -558,8 +558,8 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.37.2"
-source = { git = "https://github.com/blue-core-lod/bluecore-models?rev=t191-add-intance-export#adecb2851be0c692996dbe87edfea89d0f7b9bad" }
+version = "0.39.0"
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
     { name = "bibframe-json" },
@@ -568,6 +568,10 @@ dependencies = [
     { name = "rdflib" },
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "tenacity" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/07/14/18d455cd19883d700a1f86b88abae0920e13781727c1de3a7e871205a634/bluecore_models-0.39.0.tar.gz", hash = "sha256:0d242c39b4b7d286e748e3649840d6bf047174189a141ac3db9c81f0c3ee59b7", size = 231201, upload-time = "2026-11-05T17:37:22.489Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/de/bb/aa4fb1cd0f29fabe1ee433a8815e4bef5997f98134e4bdd7862a51d3644d/bluecore_models-0.39.0-py3-none-any.whl", hash = "sha256:1dfcb6da2711c6864682d916298563ce320e990538ede4be687eb63196f29521", size = 86106, upload-time = "2026-11-05T17:37:21.249Z" },
 ]
 
 [[package]]
@@ -615,7 +619,7 @@ requires-dist = [
     { name = "apache-airflow-providers-amazon" },
     { name = "apache-airflow-providers-keycloak", specifier = ">=0.10.0" },
     { name = "bibframe-json", specifier = ">=0.1.0" },
-    { name = "bluecore-models", git = "https://github.com/blue-core-lod/bluecore-models?rev=t191-add-intance-export" },
+    { name = "bluecore-models", specifier = ">=0.39.0" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
