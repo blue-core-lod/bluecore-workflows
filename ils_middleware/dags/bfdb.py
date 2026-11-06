@@ -104,7 +104,6 @@ def process_activity_streams():
             bluecore_db=kwargs["bluecore_db"],
             user_uid=kwargs["user_uid"],
             files=kwargs["files"],
-            rdf_format="json-ld",
         )
 
     activity_stream_run_id = create_run_id()

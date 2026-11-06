@@ -1,8 +1,9 @@
+import json
 from unittest.mock import MagicMock
 
 import httpx
 import pytest
-from airflow.models import Connection
+from airflow.sdk import Connection
 from pytest_mock import MockerFixture
 from tasks import (
     mock_requests_okapi,  # noqa: F401
@@ -30,7 +31,8 @@ def mock_airflow_connection():
         host=okapi_uri,
         login="folio_user",
         password="pass",
-        extra={"tenant": "sul "},
+        # Airflow stores connection `extra` as a JSON string, not a dict.
+        extra=json.dumps({"tenant": "sul "}),
     )
 
 
@@ -98,6 +100,17 @@ class MockFolioClient:
                 response=httpx.Response(422),
             )
 
+    def folio_get(self, path, key=None, query="", **kwargs):
+        if path == "/inventory/instances" and query == 'hrid=="in000555"':
+            return [
+                {
+                    "id": "aaaa1111-2222-3333-4444-555566667777",
+                    "hrid": "in000555",
+                    "_version": "3",
+                }
+            ]
+        return []
+
     def get_folio_http_client(self):
         return mock_httpx_client()
 
@@ -115,7 +128,7 @@ def test_happypath_post_folio_record(
     mock_requests_okapi,  # noqa: F811
 ):
     mocker.patch(
-        "ils_middleware.tasks.folio.new.Connection.get_connection_from_secrets",
+        "ils_middleware.tasks.folio.new.Connection.get",
         return_value=mock_airflow_connection,
     )
 
@@ -141,7 +154,7 @@ def test_raised_error(
     mocker: MockerFixture,
 ):
     mocker.patch(
-        "ils_middleware.tasks.folio.new.Connection.get_connection_from_secrets",
+        "ils_middleware.tasks.folio.new.Connection.get",
         return_value=mock_airflow_connection,
     )
 
@@ -157,7 +170,7 @@ def test_raised_error(
 
 def test_check_for_existance_existing_record(mocker, mock_task_instance):  # noqa: F811
     mocker.patch(
-        "ils_middleware.tasks.folio.new.Connection.get_connection_from_secrets",
+        "ils_middleware.tasks.folio.new.Connection.get",
         return_value=mock_airflow_connection,
     )
     records = [{"id": "f85ea17b-4861-426d-a681-e24f0b44b57f"}]
@@ -171,7 +184,7 @@ def test_check_for_existance_existing_record(mocker, mock_task_instance):  # noq
 
 def test_check_for_existance_local_id_overlay(mocker):
     mocker.patch(
-        "ils_middleware.tasks.folio.new.Connection.get_connection_from_secrets",
+        "ils_middleware.tasks.folio.new.Connection.get",
         return_value=mock_airflow_connection,
     )
     records = [
@@ -195,7 +208,7 @@ def test_check_for_existance_local_id_overlay(mocker):
 
 def test_check_for_existance_local_id_not_found(mocker):
     mocker.patch(
-        "ils_middleware.tasks.folio.new.Connection.get_connection_from_secrets",
+        "ils_middleware.tasks.folio.new.Connection.get",
         return_value=mock_airflow_connection,
     )
     records = [
@@ -268,7 +281,7 @@ class MockTaskInstance:
 
 def test_put_to_okapi_exception(mocker, mock_task_instance, caplog):  # noqa: F811
     mocker.patch(
-        "ils_middleware.tasks.folio.new.Connection.get_connection_from_secrets",
+        "ils_middleware.tasks.folio.new.Connection.get",
         return_value=mock_airflow_connection,
     )
 

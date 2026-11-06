@@ -1,7 +1,7 @@
 """Tests Sinopia Login Function."""
 
 import pytest
-from airflow.models import Variable
+from airflow.sdk import Variable
 
 from ils_middleware.tasks.sinopia.login import httpx, sinopia_login
 

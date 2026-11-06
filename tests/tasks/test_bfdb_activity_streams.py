@@ -29,6 +29,10 @@ CREATE_CURSOR_TABLE = (
 )
 
 
+def create_test_engine(db_url: str):
+    return create_engine(db_url)
+
+
 def _feed_payload(
     feed_url: str, items: list[tuple[str, str]], next_url: str | None = None
 ) -> dict:
@@ -333,7 +337,7 @@ def test_ingest_activity_stream_feed_requires_cursor(mocker, tmp_path):
 
 def test_get_last_cursor_returns_latest_cursor(tmp_path):
     database_url = f"sqlite:///{tmp_path / 'bluecore.db'}"
-    engine = create_engine(database_url)
+    engine = create_test_engine(database_url)
     with engine.begin() as connection:
         connection.execute(text(CREATE_CURSOR_TABLE))
         connection.execute(
@@ -359,7 +363,7 @@ def test_get_last_cursor_returns_latest_cursor(tmp_path):
 
 def test_save_cursor_overwrites_existing_cursor(tmp_path):
     database_url = f"sqlite:///{tmp_path / 'bluecore.db'}"
-    engine = create_engine(database_url)
+    engine = create_test_engine(database_url)
     with engine.begin() as connection:
         connection.execute(text(CREATE_CURSOR_TABLE))
     engine.dispose()
@@ -367,7 +371,7 @@ def test_save_cursor_overwrites_existing_cursor(tmp_path):
     bfdb_activity_streams.save_cursor(database_url, "bfdb_works", "2026-09-10")
     bfdb_activity_streams.save_cursor(database_url, "bfdb_works", "2026-09-12")
 
-    engine = create_engine(database_url)
+    engine = create_test_engine(database_url)
     with engine.connect() as connection:
         rows = connection.execute(
             text('SELECT cursor_name, "cursor" FROM activity_streams_cursor')
@@ -379,7 +383,7 @@ def test_save_cursor_overwrites_existing_cursor(tmp_path):
 
 def test_get_last_cursor_without_rows(tmp_path):
     database_url = f"sqlite:///{tmp_path / 'empty.db'}"
-    engine = create_engine(database_url)
+    engine = create_test_engine(database_url)
     with engine.begin() as connection:
         connection.execute(text(CREATE_CURSOR_TABLE))
     engine.dispose()
@@ -458,7 +462,7 @@ def test_process_activity_stream_feed_defers_cursor_until_load_succeeds(
     object_url = "https://id.loc.gov/resources/works/654321.json"
 
     database_url = f"sqlite:///{tmp_path / 'bluecore.db'}"
-    engine = create_engine(database_url)
+    engine = create_test_engine(database_url)
     with engine.begin() as connection:
         connection.execute(text(CREATE_CURSOR_TABLE))
         connection.execute(
@@ -535,7 +539,7 @@ def test_process_activity_stream_feed_keeps_cursor_when_nothing_processed(
     feed_url = "https://id.loc.gov/resources/hubs/activitystreams/feed/1.json"
 
     database_url = f"sqlite:///{tmp_path / 'bluecore.db'}"
-    engine = create_engine(database_url)
+    engine = create_test_engine(database_url)
     with engine.begin() as connection:
         connection.execute(text(CREATE_CURSOR_TABLE))
         connection.execute(

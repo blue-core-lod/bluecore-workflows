@@ -9,7 +9,6 @@ import tarfile
 import time
 import zipfile
 from collections.abc import Iterator
-from contextlib import nullcontext
 
 import rdflib
 from airflow.providers.postgres.hooks.postgres import PostgresHook
@@ -75,13 +74,18 @@ def get_engine(bluecore_db: str) -> Engine:
     creating and caching it on first use."""
     engine = _engines.get(bluecore_db)
     if engine is None:
+        # prepare_threshold is psycopg 3 specific; other drivers (e.g. the
+        # sqlite3 used in tests) reject it as a connect argument.
+        connect_args = (
+            {"prepare_threshold": None} if bluecore_db.startswith("postgresql") else {}
+        )
         engine = create_engine(
             bluecore_db,
             pool_pre_ping=True,
             pool_recycle=POOL_RECYCLE,
             pool_size=POOL_SIZE,
             max_overflow=MAX_OVERFLOW,
-            connect_args={"prepare_threshold": None},
+            connect_args=connect_args,
         )
         _engines[bluecore_db] = engine
     return engine
@@ -396,15 +400,25 @@ def load_cbd_files(
     return errors
 
 
+def batch_files(files: list[str], number_of_batches: int = 5) -> list[list[str]]:
+    """
+    Batches a list of files into smaller lists.
+    """
+    total_files = len(files)
+    return [
+        [f"{line_range.start}-{line_range.stop}"]
+        for line_range in _batch_ranges(total_files, number_of_batches)
+    ]
+
+
 def load_files(
     files: list[str],
     bluecore_db: str,
     user_uid: str,
-    archived_file_path: str | None = None,
     update_other_resources: bool = False,
 ):
     """
-    Load files
+    Load RDF files from a list of file paths
     """
     logger = logging.getLogger(__name__)
 
@@ -423,60 +437,42 @@ def load_files(
 
     logger.info(f"Starting load of {len(files):,} files")
 
-    with (
-        tarfile.open(archived_file_path, "r")
-        if archived_file_path is not None
-        else nullcontext(None)
-    ) as archive:
-        for i, name in enumerate(files):
-            if pathlib.Path(name).name.startswith("._"):
-                continue
-            graph_format = rdflib.util.guess_format(name)
-            if graph_format is None:
-                continue
+    for i, name in enumerate(files):
+        if pathlib.Path(name).name.startswith("._"):
+            continue
+        graph_format = rdflib.util.guess_format(name)
+        if graph_format is None:
+            continue
 
-            source = get_file(name, archive)
-            if source is None:
+        graph = rdflib.Graph()
+        graph.parse(data=pathlib.Path(name).read_bytes(), format=graph_format)
+
+        # If deadlock occurs, try saving the graph again by sleep up to 2 seconds
+        # to see if deadlock continues
+        for attempt in range(3):
+            try:
+                # Bulk load: Works/Instances are authoritative, but the many
+                # shared Other Resources these records reference are only
+                # linked, not re-described, on every record (their
+                # descriptions are maintained by a separate process).
+                save_graph(
+                    session_maker,
+                    graph,
+                    namespace=bc_url,
+                    update_other_resources=update_other_resources,
+                )
+                break
+            except OperationalError as e:
+                if attempt == 2:
+                    raise
+                logger.error(f"Operational Error {e} for {name}")
+                time.sleep(2**attempt)
+            except Exception as e:  # noqa: BLE001 -- one bad file shouldn't abort the batch
+                logger.error(f"Error {e} for {name}")
                 errors.append(name)
-                continue
+                break
 
-            with source:
-                graph = rdflib.Graph()
-                graph.parse(data=source.read(), format=graph_format)
-
-                # If deadlock occurs, try saving the graph again by sleep up to 2 seconds
-                # to see if deadlock continues
-                for attempt in range(3):
-                    try:
-                        # Bulk load: Works/Instances are authoritative, but the many
-                        # shared Other Resources these records reference are only
-                        # linked, not re-described, on every record (their
-                        # descriptions are maintained by a separate process).
-                        save_graph(
-                            session_maker,
-                            graph,
-                            namespace=bc_url,
-                            update_other_resources=update_other_resources,
-                        )
-                        break
-                    except OperationalError as e:
-                        if attempt == 2:
-                            raise
-                        logger.error(f"Operational Error {e} for {name}")
-                        time.sleep(2**attempt)
-                    except Exception as e:  # noqa: BLE001 -- one bad file shouldn't abort the batch
-                        logger.error(f"Error {e} for {name}")
-                        errors.append(name)
-                        break
-
-                if i > 0 and not i % 100:
-                    logger.info(f"{i:,} graphs saved")
+        if i > 0 and not i % 100:
+            logger.info(f"{i:,} graphs saved")
     logger.info(f"Finished load of {len(files):,} with {len(errors):,} errors")
     return errors
-
-
-def get_file(file: str, tar_file: tarfile.TarFile | None):
-    if tar_file is not None:
-        return tar_file.extractfile(file)
-    return pathlib.Path(file).open("rb")
-

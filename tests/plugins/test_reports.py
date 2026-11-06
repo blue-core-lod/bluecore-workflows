@@ -1,7 +1,7 @@
+import bluecore_airflow_common as common
 import pytest
 from fastapi.testclient import TestClient
 
-from ils_middleware.plugins import shared
 from ils_middleware.plugins.reports import (
     NAV_LABEL,
     TITLE,
@@ -14,7 +14,7 @@ from ils_middleware.plugins.reports import (
 
 @pytest.fixture
 def client():
-    app.dependency_overrides[shared.requires_login] = lambda: None
+    app.dependency_overrides[common.requires_login] = lambda: None
     yield TestClient(app)
     app.dependency_overrides.clear()
 
@@ -33,8 +33,8 @@ def test_plugin_registers_external_view():
     assert external_view["destination"] == "nav"
     assert external_view["url_route"] == URL_ROUTE
     assert external_view["href"].endswith(f"{URL_PREFIX}/")
-    assert external_view["icon"] == shared.static_url(URL_PREFIX, "report.svg")
-    assert external_view["icon_dark_mode"] == shared.static_url(
+    assert external_view["icon"] == common.static_url(URL_PREFIX, "report.svg")
+    assert external_view["icon_dark_mode"] == common.static_url(
         URL_PREFIX, "report-dark.svg"
     )
 
@@ -51,8 +51,8 @@ def test_reports_page_uses_the_shared_chrome(client):
     response = client.get("/")
 
     # Inherited from base.html, with URLs resolved for this plugin's prefix.
-    assert shared.static_url(URL_PREFIX, "bluecore.css") in response.text
-    assert shared.static_url(URL_PREFIX, "bluecore.js") in response.text
+    assert common.static_url(URL_PREFIX, "bluecore/bluecore.css") in response.text
+    assert common.static_url(URL_PREFIX, "bluecore/bluecore.js") in response.text
 
 
 def test_reports_page_requires_login():
