@@ -570,7 +570,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-models"
-version = "0.38.2"
+version = "0.39.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "alembic" },
@@ -581,14 +581,14 @@ dependencies = [
     { name = "sqlalchemy", extra = ["asyncio"] },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ae/1f/2cf52dd9edb1badecac75248122b1439be2e63bec4e171352077d92b6260/bluecore_models-0.38.2.tar.gz", hash = "sha256:a525f6c1edaeb93b6d3fbbba30eadd6509b16867048eae8c521b001c40b7cbe3", size = 226866, upload-time = "2026-10-29T17:02:18.881Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/07/14/18d455cd19883d700a1f86b88abae0920e13781727c1de3a7e871205a634/bluecore_models-0.39.0.tar.gz", hash = "sha256:0d242c39b4b7d286e748e3649840d6bf047174189a141ac3db9c81f0c3ee59b7", size = 231201, upload-time = "2026-11-05T17:37:22.489Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/05/23/e7d5a34f0e7bcfc052346bbcceedd8fcbf4750a52062918ced1e2ccd3263/bluecore_models-0.38.2-py3-none-any.whl", hash = "sha256:39eb66fea820c54be25a21970c62caa1d3f983a8cbbbefa79aad4bc36cb97c10", size = 82266, upload-time = "2026-10-29T17:02:17.437Z" },
+    { url = "https://files.pythonhosted.org/packages/de/bb/aa4fb1cd0f29fabe1ee433a8815e4bef5997f98134e4bdd7862a51d3644d/bluecore_models-0.39.0-py3-none-any.whl", hash = "sha256:1dfcb6da2711c6864682d916298563ce320e990538ede4be687eb63196f29521", size = 86106, upload-time = "2026-11-05T17:37:21.249Z" },
 ]
 
 [[package]]
 name = "bluecore-workflows"
-version = "1.5.3"
+version = "1.6.0"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
@@ -633,7 +633,7 @@ requires-dist = [
     { name = "apache-airflow-providers-keycloak", specifier = ">=0.10.0" },
     { name = "bibframe-json", specifier = ">=0.1.0" },
     { name = "bluecore-airflow-common", specifier = ">=0.1.0" },
-    { name = "bluecore-models", specifier = ">=0.38.1" },
+    { name = "bluecore-models", specifier = ">=0.39.0" },
     { name = "boto3" },
     { name = "folio-uuid" },
     { name = "folioclient" },
