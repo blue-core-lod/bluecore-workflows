@@ -4,12 +4,12 @@ import logging
 import pathlib
 import tempfile
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from bluecore_models.models import ResourceBase, Version
 from pydantic import BaseModel, Field
-from sqlalchemy import exists, select
+from sqlalchemy import exists, or_, select
 from sqlalchemy.orm import Session, aliased
 
 from ils_middleware.tasks.bfdb.schema.schema_feed import (
@@ -35,6 +35,14 @@ RESOURCE_TYPES = {
 }
 EVENT_ID_PREFIX = "urn:bluecore:version:"
 STATE_FILE_NAME = "feed-state.json"
+# The feed cursor is a Version id, but sequence ids are allocated at insert
+# time while rows only become visible at commit: a concurrent writer can make
+# id 101 visible before id 100, and a cursor advanced to 101 would then skip
+# 100 forever. created_at is written while the inserting transaction is still
+# open, so excluding versions newer than this lag keeps the cursor from
+# advancing past ids whose transactions may not have committed yet. The lag
+# only needs to exceed the longest writing transaction.
+VERSION_SAFETY_LAG = timedelta(minutes=5)
 logger = logging.getLogger(__name__)
 
 
@@ -42,7 +50,6 @@ logger = logging.getLogger(__name__)
 class VersionEntry:
     id: int
     uri: str
-    data: dict[str, Any]
     actor: str | None
     created_at: datetime | None
     is_first: bool
@@ -76,7 +83,6 @@ def new_versions(
             ResourceBase.type,
             Version.id,
             ResourceBase.uri,
-            Version.data,
             Version.keycloak_user_id,
             Version.created_at,
             is_first.label("is_first"),
@@ -84,6 +90,15 @@ def new_versions(
         .join(ResourceBase, Version.resource_id == ResourceBase.id)
         .where(ResourceBase.type.in_(RESOURCE_TYPES))
         .where(Version.id > after_id)
+        # See VERSION_SAFETY_LAG: never pass the cursor over an id whose
+        # writing transaction may still be uncommitted. NULL created_at rows
+        # are kept so they still reach the skip-with-warning path downstream.
+        .where(
+            or_(
+                Version.created_at < datetime.now(UTC) - VERSION_SAFETY_LAG,
+                Version.created_at.is_(None),
+            )
+        )
         .order_by(Version.id)
     )
     if batch_size is not None:

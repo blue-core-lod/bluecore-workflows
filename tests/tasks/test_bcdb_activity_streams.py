@@ -10,7 +10,6 @@ def version_entry(index: int, *, is_first: bool = False) -> feeds.VersionEntry:
     return feeds.VersionEntry(
         id=index,
         uri=f"https://bcld.info/works/{index}",
-        data={"@type": ["bf:Text"]},
         actor="cataloger",
         created_at=datetime(2026, 9, 15, tzinfo=UTC) - timedelta(minutes=index),
         is_first=is_first,
@@ -50,6 +49,11 @@ def test_new_versions_uses_correlated_not_exists(monkeypatch):
     assert "NOT (EXISTS" in sql
     assert "GROUP BY" not in sql
     assert "VERSIONS.ID > 42" in sql
+    # Safety lag against ids whose writing transactions have not committed yet
+    assert "VERSIONS.CREATED_AT <" in sql
+    assert "VERSIONS.CREATED_AT IS NULL" in sql
+    # The full JSONB payload is never used by the feeds
+    assert "VERSIONS.DATA" not in sql
 
 
 def test_new_versions_applies_batch_limit(monkeypatch):
