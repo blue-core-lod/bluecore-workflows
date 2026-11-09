@@ -404,10 +404,9 @@ def batch_files(files: list[str], number_of_batches: int = 5) -> list[list[str]]
     """
     Batches a list of files into smaller lists.
     """
-    total_files = len(files)
     return [
-        [f"{line_range.start}-{line_range.stop}"]
-        for line_range in _batch_ranges(total_files, number_of_batches)
+        files[batch_range.start : batch_range.stop]
+        for batch_range in _batch_ranges(len(files), number_of_batches)
     ]
 
 
@@ -442,6 +441,11 @@ def load_files(
             continue
         graph_format = rdflib.util.guess_format(name)
         if graph_format is None:
+            # An unrecognized format must be visible as an error: callers use
+            # an empty error list as the signal that it is safe to delete the
+            # downloads and advance feed cursors.
+            logger.error(f"Unknown RDF format for {name}")
+            errors.append(name)
             continue
 
         graph = rdflib.Graph()

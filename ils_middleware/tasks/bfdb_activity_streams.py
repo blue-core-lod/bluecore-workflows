@@ -74,10 +74,22 @@ def combine_downloads(feed_downloads: list[list[str]]) -> list[str]:
     collected: list[str] = []
     for (parent, lc_id), paths in grouped.items():
         if len(paths) == 1:
-            collected.append(str(paths[0]))
+            collected.append(str(_ensure_json_suffix(paths[0])))
             continue
         collected.append(str(_combine_json_arrays(parent, lc_id, paths)))
     return collected
+
+
+def _ensure_json_suffix(path: pathlib.Path) -> pathlib.Path:
+    """
+    Rename feed-suffixed downloads (.work/.instance/.hub) to .json so that
+    load_files recognizes them as JSON-LD instead of silently skipping them.
+    """
+    if path.suffix == ".json":
+        return path
+    json_path = path.with_suffix(".json")
+    path.replace(json_path)
+    return json_path
 
 
 def _combine_json_arrays(

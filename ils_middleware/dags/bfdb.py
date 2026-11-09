@@ -27,9 +27,8 @@ logger = logging.getLogger(__name__)
 BFDB_AGENT_USER_UID = "BFDB Agent"
 
 
-# schedule="0 0 * * *",
 @dag(
-    schedule=None,
+    schedule="0 0 * * *",
     start_date=pendulum.datetime(2026, 9, 11, tz="America/New_York"),
     catchup=False,
     max_active_runs=1,

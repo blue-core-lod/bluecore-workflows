@@ -522,6 +522,22 @@ def test_zip_to_tar_gz(tmp_path):
     assert tar_file_name.endswith("cbd.tar.gz")
 
 
+def test_batch_files_preserves_all_file_names():
+    files = [f"{number}.json" for number in range(7)]
+
+    batches = bluecore.batch_files(files, number_of_batches=3)
+
+    assert batches == [
+        ["0.json", "1.json", "2.json"],
+        ["3.json", "4.json", "5.json"],
+        ["6.json"],
+    ]
+
+
+def test_batch_files_with_empty_list():
+    assert bluecore.batch_files([]) == []
+
+
 @pytest.mark.parametrize("suffix", ["json", "jsonld"])
 def test_load_files_jsonld(mocker, tmp_path, suffix):
     path = tmp_path / f"1234.{suffix}"
@@ -549,8 +565,9 @@ def test_load_files_records_save_errors_and_continues(mocker, tmp_path):
 
     errors = bluecore.load_files(files, "db", "user")
 
-    # "._hidden.json" and "unknown.xyz" are skipped; "bad.json" fails to save
-    assert errors == [files[1]]
+    # "._hidden.json" is skipped; "bad.json" fails to save and the
+    # unrecognized "unknown.xyz" is reported as an error
+    assert errors == [files[1], files[3]]
     assert save.call_count == 3
 
 

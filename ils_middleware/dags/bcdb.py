@@ -14,6 +14,7 @@ from ils_middleware.tasks.bluecore import get_bluecore_db
     schedule="0 2 * * *",
     start_date=datetime(2026, 9, 15),
     catchup=False,
+    max_active_runs=1,
     tags=["bcdb", "activity-streams"],
     default_args={"owner": "airflow"},
 )

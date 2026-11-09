@@ -421,14 +421,16 @@ def test_combine_downloads_merges_same_lc_id_across_feed_types(tmp_path):
     )
 
     combined_path = tmp_path / "1234.json"
-    assert collected == [str(combined_path), str(hub_path)]
+    renamed_hub_path = tmp_path / "5678.json"
+    assert collected == [str(combined_path), str(renamed_hub_path)]
     assert json.loads(combined_path.read_text(encoding="utf-8")) == [
         {"@id": "work"},
         {"@id": "instance"},
     ]
     assert not work_path.exists()
     assert not instance_path.exists()
-    assert hub_path.exists()
+    assert not hub_path.exists()
+    assert json.loads(renamed_hub_path.read_text(encoding="utf-8")) == [{"@id": "hub"}]
 
 
 def test_combine_downloads_rejects_non_array_documents(tmp_path):
