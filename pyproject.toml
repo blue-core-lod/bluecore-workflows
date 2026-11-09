@@ -18,6 +18,7 @@ dependencies = [
     "folioclient",
     "numpy",
     "pendulum",
+    "pydantic",
     "boto3",
     "bluecore-models>=0.39.0",
     "bibframe-json>=0.1.0",
@@ -29,7 +30,6 @@ dependencies = [
     "bibframe-json>=0.1.0",
     "bluecore-airflow-common>=0.1.0",
 ]
-
 
 [dependency-groups]
 dev = [
@@ -62,3 +62,5 @@ addopts = "-k 'not test_task_instance and not test_parse_institutional_msgs and 
 ignore = [
     "DTZ001"
 ]
+
+
