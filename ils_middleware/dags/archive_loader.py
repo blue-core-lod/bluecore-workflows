@@ -72,8 +72,10 @@ def archived_file_loader():
 
     @task
     def delete_file_path(archive_file_path: str, errors: list):
-        if len(errors) > 0:
-            msg = f"Errors exist; keeping {archive_file_path}"
+        # errors holds one list of failed file names per mapped cbd_file_loader batch
+        failed = [name for batch_errors in errors for name in batch_errors]
+        if failed:
+            msg = f"Errors exist in {failed}; keeping {archive_file_path}"
             logger.error(msg)
             return
         current_path = pathlib.Path(archive_file_path)
