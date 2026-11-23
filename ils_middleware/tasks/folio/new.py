@@ -60,34 +60,63 @@ def _notify_local_id_not_found(unmatched_local_ids: list, task_instance) -> None
             send_local_id_not_found_email(message, unmatched["local_id"])
 
 
-def _push_to_xcom(records: list, task_instance):
+def _push_to_xcom(records: list, task_instance) -> list:
+    """Pushes the FOLIO id and HRID of each record, keyed by instance uuid,
+    and returns the uuids"""
+    uuids = []
     for record in records:
         logger.debug(record)
         uri = record["sourceUri"]
         uuid = uri.split("/")[-1]
         task_instance.xcom_push(key=uuid, value=record["id"])
+        task_instance.xcom_push(
+            key=f"{uuid}-export",
+            value={"folio_id": record["id"], "hrid": record.get("hrid")},
+        )
+        uuids.append(uuid)
+    return uuids
 
 
-def _post_to_okapi(**kwargs):
+def _lookup_hrid(record_id: str, folio_client: FolioClient) -> str | None:
+    """Retrieves the HRID FOLIO assigned to a new instance"""
+    try:
+        instance = folio_client.folio_get(f"/inventory/instances/{record_id}")
+    except httpx.HTTPError as e:
+        logger.warning(f"Error retrieving HRID for {record_id} {e}")
+        return None
+    if isinstance(instance, dict):
+        return instance.get("hrid")
+    return None
+
+
+def _post_to_okapi(**kwargs) -> list:
     task_instance = kwargs["task_instance"]
     records = kwargs["records"]
     folio_client = kwargs["folio_client"]
     endpoint = kwargs.get("endpoint", "/inventory/instances")
 
+    posted = []
     for record in records:
         try:
             result = folio_client.folio_post(endpoint, payload=record)
             logger.info(f"Record result {result}")
         except httpx.HTTPStatusError as e:
             logger.error(f"Error POST record {record['id']} {e}")
+            continue
+        hrid = result.get("hrid") if isinstance(result, dict) else None
+        record["hrid"] = hrid or _lookup_hrid(record["id"], folio_client)
+        if record["hrid"] is None:
+            logger.warning(f"No HRID found for new record {record['id']}")
+        posted.append(record)
 
-    _push_to_xcom(records, task_instance)
+    return _push_to_xcom(posted, task_instance)
 
 
-def _put_to_okapi(**kwargs):
+def _put_to_okapi(**kwargs) -> list:
     task_instance = kwargs["task_instance"]
     records = kwargs["records"]
     folio_client = kwargs["folio_client"]
+    updated = []
     for record in records:
         try:
             folio_client.folio_put(
@@ -95,7 +124,9 @@ def _put_to_okapi(**kwargs):
             )
         except httpx.HTTPStatusError as e:
             logger.error(f"Error PUT record {record} {e}")
-    _push_to_xcom(records, task_instance)
+            continue
+        updated.append(record)
+    return _push_to_xcom(updated, task_instance)
 
 
 def post_folio_records(**kwargs):
@@ -136,6 +167,9 @@ def post_folio_records(**kwargs):
     new_records, existing_records, unmatched_local_ids = _check_for_existance(
         inventory_records, folio_client, local_ids=local_ids
     )
-    _post_to_okapi(records=new_records, folio_client=folio_client, **kwargs)
-    _put_to_okapi(records=existing_records, folio_client=folio_client, **kwargs)
+    exported = _post_to_okapi(records=new_records, folio_client=folio_client, **kwargs)
+    exported += _put_to_okapi(
+        records=existing_records, folio_client=folio_client, **kwargs
+    )
+    task_instance.xcom_push(key="exported", value=exported)
     _notify_local_id_not_found(unmatched_local_ids, task_instance)

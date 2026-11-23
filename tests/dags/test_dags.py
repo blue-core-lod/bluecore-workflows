@@ -32,6 +32,18 @@ def test_dag_integrity(dag_path, mock_variable):
         dag.check_cycle()
 
 
+@pytest.mark.parametrize(
+    "dag_file, prefix",
+    [("stanford.py", "process_folio."), ("cornell.py", "")],
+)
+def test_record_instance_exports_follows_folio(dag_file, prefix, mock_variable):
+    dag_path = pathlib.Path(__file__).parents[2] / "ils_middleware/dags" / dag_file
+    module = _import_file(dag_file, dag_path)
+
+    record_exports = module.dag.get_task(f"{prefix}record-instance-exports")
+    assert record_exports.upstream_task_ids == {f"{prefix}new-or-upsert-folio-records"}
+
+
 def _import_file(module_name, module_path):
     import importlib.util
 

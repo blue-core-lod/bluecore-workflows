@@ -15,6 +15,7 @@ import ils_middleware.tasks.folio.new as new_folio
 from ils_middleware.tasks.folio.new import (
     _check_for_existance,
     _notify_local_id_not_found,
+    _post_to_okapi,
     _put_to_okapi,
     post_folio_records,
 )
@@ -285,7 +286,7 @@ def test_put_to_okapi_exception(mocker, mock_task_instance, caplog):  # noqa: F8
         return_value=mock_airflow_connection,
     )
 
-    _put_to_okapi(
+    updated = _put_to_okapi(
         task_instance=MockTaskInstance(),
         records=[
             {
@@ -297,3 +298,79 @@ def test_put_to_okapi_exception(mocker, mock_task_instance, caplog):  # noqa: F8
     )
 
     assert "422 Error" in caplog.text
+    assert updated == []
+
+
+def _pushed(task_instance) -> dict:
+    return {
+        call.kwargs["key"]: call.kwargs["value"]
+        for call in task_instance.xcom_push.call_args_list
+    }
+
+
+def test_post_to_okapi_pushes_hrid_from_response(mocker):
+    task_instance = mocker.Mock()
+
+    posted = _post_to_okapi(
+        task_instance=task_instance,
+        records=[{"id": "147b1171", "sourceUri": "https://bcld.info/instance/aaaa"}],
+        folio_client=MockFolioClient(),
+    )
+
+    assert posted == ["aaaa"]
+    assert _pushed(task_instance) == {
+        "aaaa": "147b1171",
+        "aaaa-export": {"folio_id": "147b1171", "hrid": "in000780"},
+    }
+
+
+def test_post_to_okapi_looks_up_hrid(mocker):
+    task_instance = mocker.Mock()
+    folio_client = mocker.Mock()
+    folio_client.folio_post.return_value = None
+    folio_client.folio_get.return_value = {"id": "147b1171", "hrid": "in000999"}
+
+    _post_to_okapi(
+        task_instance=task_instance,
+        records=[{"id": "147b1171", "sourceUri": "https://bcld.info/instance/aaaa"}],
+        folio_client=folio_client,
+    )
+
+    folio_client.folio_get.assert_called_once_with("/inventory/instances/147b1171")
+    assert _pushed(task_instance)["aaaa-export"]["hrid"] == "in000999"
+
+
+def test_post_to_okapi_skips_failed_record(mocker):
+    task_instance = mocker.Mock()
+
+    posted = _post_to_okapi(
+        task_instance=task_instance,
+        endpoint="/instance-storage/batch/instances?upsert=true",
+        records=[{"id": "147b1171", "sourceUri": "https://bcld.info/instance/aaaa"}],
+        folio_client=MockFolioClient(),
+    )
+
+    assert posted == []
+    task_instance.xcom_push.assert_not_called()
+
+
+def test_put_to_okapi_pushes_existing_hrid(mocker):
+    task_instance = mocker.Mock()
+
+    updated = _put_to_okapi(
+        task_instance=task_instance,
+        records=[
+            {
+                "id": "aaaa1111",
+                "hrid": "in000555",
+                "sourceUri": "https://bcld.info/instance/bbbb",
+            }
+        ],
+        folio_client=MockFolioClient(),
+    )
+
+    assert updated == ["bbbb"]
+    assert _pushed(task_instance)["bbbb-export"] == {
+        "folio_id": "aaaa1111",
+        "hrid": "in000555",
+    }

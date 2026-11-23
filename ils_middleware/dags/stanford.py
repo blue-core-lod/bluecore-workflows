@@ -4,6 +4,7 @@ from airflow.providers.standard.operators.empty import EmptyOperator
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.sdk import DAG, TaskGroup
 
+from ils_middleware.tasks.bluecore_export import record_instance_exports
 from ils_middleware.tasks.folio.build import build_records
 from ils_middleware.tasks.folio.graph import construct_graph
 from ils_middleware.tasks.folio.map import FOLIO_FIELDS, map_to_folio
@@ -89,8 +90,20 @@ with DAG(
             },
         )
 
+        record_exports = PythonOperator(
+            task_id="record-instance-exports",
+            python_callable=record_instance_exports,
+            op_kwargs={
+                "group": "stanford",
+                "task_groups_ids": [
+                    "process_folio",
+                ],
+            },
+        )
+
         bf_graphs >> folio_map_task_group
         folio_map_task_group >> folio_records >> new_folio_records
+        new_folio_records >> record_exports
 
     # Dummy Operator
     processed_sinopia = EmptyOperator(
