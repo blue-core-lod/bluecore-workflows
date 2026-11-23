@@ -1,5 +1,5 @@
 version = 1
-revision = 5
+revision = 3
 requires-python = "==3.12.*"
 
 [[package]]
@@ -619,7 +619,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-workflows"
-version = "1.6.2"
+version = "1.7.0"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
@@ -637,6 +637,7 @@ dependencies = [
     { name = "numpy" },
     { name = "pendulum" },
     { name = "psycopg", extra = ["binary"] },
+    { name = "pydantic" },
     { name = "pymarc" },
     { name = "rdflib" },
     { name = "sqlalchemy" },
@@ -674,6 +675,7 @@ requires-dist = [
     { name = "numpy" },
     { name = "pendulum" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.6" },
+    { name = "pydantic" },
     { name = "pymarc" },
     { name = "rdflib" },
     { name = "sqlalchemy" },

@@ -74,13 +74,18 @@ def get_engine(bluecore_db: str) -> Engine:
     creating and caching it on first use."""
     engine = _engines.get(bluecore_db)
     if engine is None:
+        # prepare_threshold is psycopg 3 specific; other drivers (e.g. the
+        # sqlite3 used in tests) reject it as a connect argument.
+        connect_args = (
+            {"prepare_threshold": None} if bluecore_db.startswith("postgresql") else {}
+        )
         engine = create_engine(
             bluecore_db,
             pool_pre_ping=True,
             pool_recycle=POOL_RECYCLE,
             pool_size=POOL_SIZE,
             max_overflow=MAX_OVERFLOW,
-            connect_args={"prepare_threshold": None},
+            connect_args=connect_args,
         )
         _engines[bluecore_db] = engine
     return engine
@@ -144,14 +149,22 @@ def batch_archived_files(
     ]
 
 
-def delete_upload(upload: str, remove_empty_parent: bool = False) -> None:
+def delete_upload(upload: str | list[str], remove_empty_parent: bool = False) -> None:
     """
     Deletes upload file
     """
-    upload_path = pathlib.Path(upload)
-    upload_path.unlink()
+    if not upload:
+        return
+
+    if isinstance(upload, str):
+        upload = [upload]
+
+    for to_remove in upload:
+        upload_path = pathlib.Path(to_remove)
+        upload_path.unlink()
+
     if remove_empty_parent:
-        parent_dir = upload_path.parent
+        parent_dir = pathlib.Path(upload[0]).parent
         if parent_dir.exists() and not any(parent_dir.iterdir()):
             parent_dir.rmdir()
 
@@ -384,4 +397,86 @@ def load_cbd_files(
         if not i % 100:
             logger.info(f"{i:,} graphs saved")
     logger.info(f"Finished load of {i:,} graphs with {len(errors):,} errors")
+    return errors
+
+
+def batch_files(files: list[str], number_of_batches: int = 5) -> list[list[str]]:
+    """
+    Batches a list of files into smaller lists.
+    """
+    return [
+        files[batch_range.start : batch_range.stop]
+        for batch_range in _batch_ranges(len(files), number_of_batches)
+    ]
+
+
+def load_files(
+    files: list[str],
+    bluecore_db: str,
+    user_uid: str,
+    update_other_resources: bool = False,
+):
+    """
+    Load RDF files from a list of file paths
+    """
+    logger = logging.getLogger(__name__)
+
+    try:
+        CURRENT_USER_ID.set(user_uid)
+        logger.info("Using CURRENT_USER_ID: %s", user_uid)
+    except Exception as e:  # noqa: BLE001 -- must not abort the load over this
+        logger.error("Failed to set CURRENT_USER_ID: %s", e)
+
+    bc_url = os.environ.get("AIRFLOW_VAR_BLUECORE_URL", "https://bcld.info")
+
+    engine = get_engine(bluecore_db)
+    session_maker = sessionmaker(bind=engine)
+
+    errors: list[str] = []
+
+    logger.info(f"Starting load of {len(files):,} files")
+
+    for i, name in enumerate(files):
+        if pathlib.Path(name).name.startswith("._"):
+            continue
+        graph_format = rdflib.util.guess_format(name)
+        if graph_format is None:
+            # An unrecognized format must be visible as an error: callers use
+            # an empty error list as the signal that it is safe to delete the
+            # downloads and advance feed cursors.
+            logger.error(f"Unknown RDF format for {name}")
+            errors.append(name)
+            continue
+
+        graph = rdflib.Graph()
+        graph.parse(data=pathlib.Path(name).read_bytes(), format=graph_format)
+
+        # If deadlock occurs, try saving the graph again by sleep up to 2 seconds
+        # to see if deadlock continues
+        for attempt in range(3):
+            try:
+                # Bulk load: Works/Instances are authoritative, but the many
+                # shared Other Resources these records reference are only
+                # linked, not re-described, on every record (their
+                # descriptions are maintained by a separate process).
+                save_graph(
+                    session_maker,
+                    graph,
+                    namespace=bc_url,
+                    update_other_resources=update_other_resources,
+                )
+                break
+            except OperationalError as e:
+                if attempt == 2:
+                    raise
+                logger.error(f"Operational Error {e} for {name}")
+                time.sleep(2**attempt)
+            except Exception as e:  # noqa: BLE001 -- one bad file shouldn't abort the batch
+                logger.error(f"Error {e} for {name}")
+                errors.append(name)
+                break
+
+        if i > 0 and not i % 100:
+            logger.info(f"{i:,} graphs saved")
+    logger.info(f"Finished load of {len(files):,} with {len(errors):,} errors")
     return errors

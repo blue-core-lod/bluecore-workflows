@@ -116,6 +116,20 @@ Instances or Hubs listed in a CSV. Trigger it from the Airflow UI with:
   update, which records a version per resource against the user who triggered
   the run.
 
+## Activity streams
+
+The BFDB consumer requires seeded `bfdb_works`, `bfdb_instances`, and
+`bfdb_hubs` cursors in `activity_streams_cursor`. It loads downloads as JSON-LD,
+including the feed-specific `.work`, `.instance`, and `.hub` files. Cursors
+advance only after all mapped load batches succeed without file errors.
+Failed runs retain their downloads and cursors for investigation and replay;
+successful runs delete their downloads and empty run directory. Only one
+BFDB run is active at a time.
+
+The BCDB producer skips versions with a NULL `created_at`, logging the version
+ID rather than inventing a publication timestamp. Its version checkpoint still
+advances past those rows, allowing later versions to publish.
+
 ## 📊 DAG run reports
 A DAG that reports on its run writes the report to the reports volume, one
 directory per DAG and one per run inside it, as JSON alongside a plain HTML

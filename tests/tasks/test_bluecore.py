@@ -159,6 +159,15 @@ def test_delete_upload(tmp_path):
     delete_upload(str(upload_file2), remove_empty_parent=True)
     assert not upload_path.exists()
 
+    upload_path = tmp_path / "sub_dir"
+    os.mkdir(upload_path)
+    upload_file = upload_path / "bf-record.jsonld"
+    upload_file.touch()
+    upload_file2 = upload_path / "bf-record2.jsonld"
+    upload_file2.touch()
+    delete_upload([str(upload_file), str(upload_file2)], remove_empty_parent=True)
+    assert not upload_path.exists()
+
 
 def test_is_zip():
     assert is_zip("test.zip")
@@ -511,3 +520,66 @@ def test_zip_to_tar_gz(tmp_path):
     tar_file_name = zip_to_tar_gz(str(zip_file_path))
     assert not zip_file_path.exists()
     assert tar_file_name.endswith("cbd.tar.gz")
+
+
+def test_batch_files_preserves_all_file_names():
+    files = [f"{number}.json" for number in range(7)]
+
+    batches = bluecore.batch_files(files, number_of_batches=3)
+
+    assert batches == [
+        ["0.json", "1.json", "2.json"],
+        ["3.json", "4.json", "5.json"],
+        ["6.json"],
+    ]
+
+
+def test_batch_files_with_empty_list():
+    assert bluecore.batch_files([]) == []
+
+
+@pytest.mark.parametrize("suffix", ["json", "jsonld"])
+def test_load_files_jsonld(mocker, tmp_path, suffix):
+    path = tmp_path / f"1234.{suffix}"
+    path.write_text(
+        '[{"@id": "https://example.test/1234", "https://example.test/title": "Title"}]'
+    )
+    mocker.patch.object(bluecore, "get_engine")
+    mocker.patch.object(bluecore, "sessionmaker")
+    save = mocker.patch.object(bluecore, "save_graph")
+
+    assert bluecore.load_files([str(path)], "db", "BFDB Agent") == []
+    assert len(save.call_args.args[1]) == 1
+
+
+def test_load_files_records_save_errors_and_continues(mocker, tmp_path):
+    names = ["first.json", "bad.json", "._hidden.json", "unknown.xyz", "last.json"]
+    for name in names:
+        (tmp_path / name).write_text("{}")
+    files = [str(tmp_path / name) for name in names]
+    mocker.patch.object(bluecore, "get_engine")
+    mocker.patch.object(bluecore, "sessionmaker")
+    save = mocker.patch.object(
+        bluecore, "save_graph", side_effect=[None, Exception("save failed"), None]
+    )
+
+    errors = bluecore.load_files(files, "db", "user")
+
+    # "._hidden.json" is skipped; "bad.json" fails to save and the
+    # unrecognized "unknown.xyz" is reported as an error
+    assert errors == [files[1], files[3]]
+    assert save.call_count == 3
+
+
+def test_load_files_retries_deadlock(mocker, tmp_path):
+    path = tmp_path / "valid.json"
+    path.write_text("{}")
+    mocker.patch.object(bluecore, "get_engine")
+    mocker.patch.object(bluecore, "sessionmaker")
+    sleep = mocker.patch.object(bluecore.time, "sleep")
+    deadlock = OperationalError("deadlock", None, Exception("deadlock"))
+    save = mocker.patch.object(bluecore, "save_graph", side_effect=[deadlock, None])
+
+    assert bluecore.load_files([str(path)], "db", "user") == []
+    assert save.call_count == 2
+    sleep.assert_called_once_with(1)
