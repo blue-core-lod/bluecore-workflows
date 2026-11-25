@@ -619,7 +619,7 @@ wheels = [
 
 [[package]]
 name = "bluecore-workflows"
-version = "1.6.3"
+version = "1.6.4"
 source = { editable = "." }
 dependencies = [
     { name = "apache-airflow" },
@@ -670,7 +670,7 @@ requires-dist = [
     { name = "folioclient" },
     { name = "jsonpath-ng", specifier = ">=1.10.1" },
     { name = "lxml" },
-    { name = "marc-bibframe", specifier = ">=0.2.1" },
+    { name = "marc-bibframe", specifier = ">=0.5.0" },
     { name = "numpy" },
     { name = "pendulum" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3.3.6" },
@@ -1512,7 +1512,7 @@ wheels = [
 
 [[package]]
 name = "marc-bibframe"
-version = "0.4.0"
+version = "0.5.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bibframe-json" },
@@ -1521,9 +1521,9 @@ dependencies = [
     { name = "pymarc" },
     { name = "rdflib" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/09/58/51757df5ae046c889ac638830a59e7deebb467b0e5e417e6d42038499bf6/marc_bibframe-0.4.0.tar.gz", hash = "sha256:5153e39ac88cf6a4e7c05311bd96e4fc9270fd167c9e329fe28d63b4413b1fcd", size = 308772, upload-time = "2026-11-23T17:59:33.186Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/b2/2e/fc8e8b6d7175533976388b642af5188aa3fd8684ea00f283fe069fd35d77/marc_bibframe-0.5.0.tar.gz", hash = "sha256:d26e988bb35f77fe276e254c72e6f3d1a3cac45289c2f9b48c3e956796429076", size = 316793, upload-time = "2026-11-25T17:43:17.767Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/aa/38/b0fbbad7a1ac63faa961b527cce266105619717cb80c48a03a0baa2ff24f/marc_bibframe-0.4.0-py3-none-any.whl", hash = "sha256:fc72d3de08bde25fa1062e61f6b5f772a31f9f88d577b646c0a3f0a1c351868b", size = 297507, upload-time = "2026-11-23T17:59:31.996Z" },
+    { url = "https://files.pythonhosted.org/packages/f4/00/dd5217c45934f2c8a4de9f3114ded450b1f31e3de491c615c2204e13c28d/marc_bibframe-0.5.0-py3-none-any.whl", hash = "sha256:ad4a76809ec6dfd9fc6e810147580dd7d993ba3b7eb03ced377d808b7d96d45c", size = 300820, upload-time = "2026-11-25T17:43:16.382Z" },
 ]
 
 [[package]]
