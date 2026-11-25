@@ -61,7 +61,9 @@ def marc_to_bibframe():
         Transforms MARC XML to BIBFRAME RDF XML with marc-bibframe, then
         applies Blue Core policy to the result.
         """
-        graph = marcxml_to_graph(marc_xml, baseuri=source_base_uri)
+        graph = marcxml_to_graph(
+            marc_xml, baseuri=source_base_uri, mint_default_uris=True
+        )
         replace_dlc_assigner(graph)
         return graph.serialize(format="xml")
 

@@ -85,3 +85,23 @@ def test_marc_to_bibframe(marc_json):
     assert (work, rdflib.RDF.type, BF.Work) in graph
     assert (instance, rdflib.RDF.type, BF.Instance) in graph
     assert (instance, BF.instanceOf, work) in graph
+
+
+def test_marc_to_bibframe_mints_heading_uris(marc_json):
+    """A heading with no $0 keeps a URI minted under the base, not a blank node"""
+    marc_json["fields"].append(
+        {"650": {"ind1": " ", "ind2": "0", "subfields": [{"a": "Sagas"}]}}
+    )
+    rdf_xml = marc_to_bibframe.function(marc_json_to_xml(marc_json), "stanford")
+
+    graph = rdflib.Graph()
+    graph.parse(data=rdf_xml, format="xml")
+    base = marc_base_uri("stanford")
+    work = rdflib.URIRef(f"{base}a123#Work")
+    (sagas,) = [
+        topic
+        for topic in graph.objects(work, BF.subject)
+        if str(graph.value(topic, rdflib.RDFS.label)) == "Sagas"
+    ]
+    assert isinstance(sagas, rdflib.URIRef)
+    assert sagas.startswith(f"{base}a123#Topic650-")

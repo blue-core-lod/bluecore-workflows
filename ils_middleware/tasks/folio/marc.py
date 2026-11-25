@@ -46,6 +46,8 @@ def marc_to_bibframe(marc_xml: str, institution: str) -> str:
     Transforms MARC XML to BIBFRAME with marc2bibframe, applies Blue Core's
     assigner policy as the marc_to_bibframe DAG does, and returns RDF/XML
     """
-    graph = marcxml_to_graph(marc_xml, baseuri=marc_base_uri(institution))
+    graph = marcxml_to_graph(
+        marc_xml, baseuri=marc_base_uri(institution), mint_default_uris=True
+    )
     replace_dlc_assigner(graph)
     return graph.serialize(format="xml")
